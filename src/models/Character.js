@@ -433,6 +433,15 @@ class Character {
             ['assets', () => this.refreshAssets()],
             ['industry jobs', () => this.refreshIndustryJobs()],
             ['planets', () => this.refreshPlanets()],
+            ['market orders', () => this.refreshMarketOrders()],
+            ['standings', () => this.refreshStandings()],
+            ['research agents', () => this.refreshResearchAgents()],
+            ['notifications', () => this.refreshNotifications()],
+            ['calendar', () => this.refreshCalendar()],
+            ['killmails', () => this.refreshKillmails()],
+            ['medals', () => this.refreshMedals()],
+            ['contacts', () => this.refreshContacts()],
+            ['factional warfare', () => this.refreshFwStats()],
         ];
 
         // asynchronously fetch all the other information and return a promise which resolves when everything is fetched
@@ -819,6 +828,227 @@ class Character {
 
             this.save();
         }
+    }
+
+    // Runs fetch(client) for a data type that needs a scope, when it's due: marks it refreshed when that works, as
+    // failing for want of the scope when the login lacks it, and leaves it due otherwise (retried next time).
+    async refreshScoped(type, fetch) {
+        if (!this.shouldRefresh(type)) {
+            return;
+        }
+
+        const client = new EsiClient();
+        await client.authChar(AuthorizedCharacter.get(this.id));
+        try {
+            await fetch(client);
+            this.markRefreshed(type);
+        } catch (err) {
+            if (err === 'Scope missing') {
+                this.markFailedNoScope(type);
+            }
+        }
+        this.save();
+    }
+
+    // Active market orders and those that ended in the last 90 days (filled, expired or cancelled), newest first.
+    async refreshMarketOrders() {
+        const scope = 'esi-markets.read_character_orders.v1';
+        await this.refreshScoped('market_orders', async client => {
+            const active = (await client.get('characters/' + this.id + '/orders', scope) || []).map(o => ({...o, state: 'active'}));
+            const history = await client.getAllPages('characters/' + this.id + '/orders/history', scope);
+            const raw = [...active, ...history];
+
+            const locationIds = [...new Set(raw.map(o => o.location_id))];
+            const names = await NameHelper.resolve([
+                ...raw.map(o => o.type_id),
+                ...raw.map(o => o.region_id),
+                ...locationIds.filter(id => NameHelper.isStation(id)),
+            ]);
+            const locations = {};
+            for (const id of locationIds) {
+                locations[id] = await resolveLocationName(id, client, this.id, names);
+            }
+
+            this.marketOrders = raw
+                .filter(o => !o.is_corporation)
+                .map(o => ({
+                    order_id: o.order_id,
+                    type_id: o.type_id,
+                    name: names[o.type_id] || `Type #${o.type_id}`,
+                    is_buy_order: o.is_buy_order === true,
+                    price: o.price,
+                    volume_total: o.volume_total,
+                    volume_remain: o.volume_remain,
+                    min_volume: o.min_volume,
+                    range: o.range,
+                    issued: o.issued,
+                    duration: o.duration,
+                    escrow: o.escrow,
+                    // ESI reports filled orders as expired with nothing left
+                    state: o.state === 'expired' && o.volume_remain === 0 ? 'filled' : o.state,
+                    location: locations[o.location_id],
+                    region: names[o.region_id],
+                }))
+                .sort((a, b) => new Date(b.issued) - new Date(a.issued));
+        });
+    }
+
+    async refreshStandings() {
+        await this.refreshScoped('standings', async client => {
+            const raw = await client.get('characters/' + this.id + '/standings', 'esi-characters.read_standings.v1') || [];
+            const names = await NameHelper.resolve(raw.map(s => s.from_id));
+            this.standings = raw.map(s => ({...s, name: names[s.from_id] || `#${s.from_id}`}));
+        });
+    }
+
+    async refreshResearchAgents() {
+        await this.refreshScoped('research_agents', async client => {
+            const raw = await client.get('characters/' + this.id + '/agents_research', 'esi-characters.read_agents_research.v1') || [];
+            const names = await NameHelper.resolve([...raw.map(a => a.agent_id), ...raw.map(a => a.skill_type_id)]);
+            this.researchAgents = raw.map(a => ({
+                ...a,
+                agent_name: names[a.agent_id] || `Agent #${a.agent_id}`,
+                skill_name: names[a.skill_type_id] || `Skill #${a.skill_type_id}`,
+            }));
+        });
+    }
+
+    // In-game notifications (ESI returns the latest few hundred), newest first.
+    async refreshNotifications() {
+        await this.refreshScoped('notifications', async client => {
+            const raw = await client.get('characters/' + this.id + '/notifications', 'esi-characters.read_notifications.v1') || [];
+            // only ids universe/names knows (a structure or "other" sender would fail the whole lookup)
+            const names = await NameHelper.resolve(raw
+                .filter(n => ['character', 'corporation', 'alliance', 'faction'].includes(n.sender_type))
+                .map(n => n.sender_id));
+            this.eveNotifications = raw
+                .map(n => ({
+                    notification_id: n.notification_id,
+                    type: n.type,
+                    timestamp: n.timestamp,
+                    is_read: n.is_read === true,
+                    sender_type: n.sender_type,
+                    sender_name: names[n.sender_id],
+                    text: n.text,
+                }))
+                .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        });
+    }
+
+    getUnreadNotificationCount() {
+        return (this.eveNotifications || []).filter(n => !n.is_read).length;
+    }
+
+    // Upcoming calendar events (ESI gives the next 50), soonest first.
+    async refreshCalendar() {
+        await this.refreshScoped('calendar', async client => {
+            const raw = await client.get('characters/' + this.id + '/calendar', 'esi-calendar.read_calendar_events.v1') || [];
+            this.calendarEvents = raw.sort((a, b) => new Date(a.event_date) - new Date(b.event_date));
+        });
+    }
+
+    // The 50 most recent kills and losses. A killmail never changes, so ones already loaded are kept as they are.
+    async refreshKillmails() {
+        await this.refreshScoped('killmails', async client => {
+            const recent = (await client.getAllPages('characters/' + this.id + '/killmails/recent', 'esi-killmails.read_killmails.v1'))
+                .sort((a, b) => b.killmail_id - a.killmail_id)
+                .slice(0, 50);
+            const known = new Map((this.killmails || []).map(k => [k.killmail_id, k]));
+
+            const fetched = [];
+            for (const {killmail_id, killmail_hash} of recent.filter(k => !known.has(k.killmail_id))) {
+                try {
+                    fetched.push({hash: killmail_hash, ...await new EsiClient().get(`killmails/${killmail_id}/${killmail_hash}`)});
+                } catch (err) {}
+            }
+
+            const finalBlow = km => km.attackers.find(a => a.final_blow) || km.attackers[0] || {};
+            const names = await NameHelper.resolve(fetched.flatMap(km => [
+                km.victim.character_id, km.victim.corporation_id, km.victim.alliance_id, km.victim.ship_type_id,
+                km.solar_system_id, finalBlow(km).character_id, finalBlow(km).corporation_id, finalBlow(km).ship_type_id,
+            ]));
+            for (const km of fetched) {
+                const fb = finalBlow(km);
+                known.set(km.killmail_id, {
+                    killmail_id: km.killmail_id,
+                    hash: km.hash,
+                    time: km.killmail_time,
+                    loss: String(km.victim.character_id) === this.id,
+                    victim: {
+                        character_id: km.victim.character_id,
+                        name: names[km.victim.character_id] || names[km.victim.corporation_id] || 'Structure',
+                        corporation: names[km.victim.corporation_id],
+                        alliance: names[km.victim.alliance_id],
+                        ship_type_id: km.victim.ship_type_id,
+                        ship: names[km.victim.ship_type_id] || `Type #${km.victim.ship_type_id}`,
+                        damage_taken: km.victim.damage_taken,
+                    },
+                    final_blow: {
+                        name: names[fb.character_id] || names[fb.corporation_id] || 'NPC',
+                        ship: names[fb.ship_type_id],
+                    },
+                    attackers: km.attackers.length,
+                    system: names[km.solar_system_id] || `System #${km.solar_system_id}`,
+                });
+            }
+
+            this.killmails = recent.map(k => known.get(k.killmail_id)).filter(k => k !== undefined);
+        });
+    }
+
+    async refreshMedals() {
+        await this.refreshScoped('medals', async client => {
+            const raw = await client.get('characters/' + this.id + '/medals', 'esi-characters.read_medals.v1') || [];
+            const names = await NameHelper.resolve(raw.flatMap(m => [m.corporation_id, m.issuer_id]));
+            this.medals = raw
+                .map(m => ({
+                    medal_id: m.medal_id,
+                    title: m.title,
+                    description: m.description,
+                    reason: m.reason,
+                    date: m.date,
+                    status: m.status,
+                    corporation_id: m.corporation_id,
+                    corporation: names[m.corporation_id],
+                    issuer: names[m.issuer_id],
+                }))
+                .sort((a, b) => new Date(b.date) - new Date(a.date));
+        });
+    }
+
+    async refreshContacts() {
+        const scope = 'esi-characters.read_contacts.v1';
+        await this.refreshScoped('contacts', async client => {
+            const raw = await client.getAllPages('characters/' + this.id + '/contacts', scope);
+            let labels = [];
+            try {
+                labels = await client.get('characters/' + this.id + '/contacts/labels', scope) || [];
+            } catch (err) {}
+            const labelNames = Object.fromEntries(labels.map(l => [l.label_id, l.label_name]));
+            const names = await NameHelper.resolve(raw.map(c => c.contact_id));
+
+            this.contacts = raw.map(c => ({
+                contact_id: c.contact_id,
+                contact_type: c.contact_type,
+                name: names[c.contact_id] || `#${c.contact_id}`,
+                standing: c.standing,
+                is_watched: c.is_watched === true,
+                is_blocked: c.is_blocked === true,
+                labels: (c.label_ids || []).map(id => labelNames[id]).filter(Boolean),
+            }));
+        });
+    }
+
+    // Factional warfare enlistment, rank, kills and victory points; faction_id is missing when not enlisted.
+    async refreshFwStats() {
+        await this.refreshScoped('fw_stats', async client => {
+            const stats = await client.get('characters/' + this.id + '/fw/stats', 'esi-characters.read_fw_stats.v1');
+            if (stats !== undefined && stats.faction_id !== undefined) {
+                const names = await NameHelper.resolve([stats.faction_id]);
+                stats.faction = names[stats.faction_id];
+            }
+            this.fwStats = stats;
+        });
     }
 
     async refreshFatigue() {
@@ -1331,6 +1561,15 @@ class Character {
             "assets": "Assets",
             "industry_jobs": "Industry Jobs",
             "planets": "Planetary Colonies",
+            "market_orders": "Market Orders",
+            "standings": "Standings",
+            "research_agents": "Research Agents",
+            "notifications": "EVE Notifications",
+            "calendar": "Calendar",
+            "killmails": "Killmails",
+            "medals": "Medals",
+            "contacts": "Contacts",
+            "fw_stats": "Factional Warfare",
         };
 
         // TODO: clean this up jfc

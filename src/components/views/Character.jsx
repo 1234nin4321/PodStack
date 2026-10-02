@@ -20,11 +20,19 @@ import Industry from './Character/Industry';
 import Planets from './Character/Planets';
 import Wallet from './Character/Wallet';
 import Clones from './Character/Clones';
+import Market from './Character/Market';
+import Research from './Character/Research';
+import Notifications from './Character/Notifications';
+import Calendar from './Character/Calendar';
+import Standings from './Character/Standings';
+import Contacts from './Character/Contacts';
+import Kills from './Character/Kills';
+import Medals from './Character/Medals';
 import {CloneStateBadge, TokenStatusDot} from '../ui/CharacterBadges';
 import ErrorBoundary from '../ui/ErrorBoundary';
 import AcceleratorBadge from '../ui/AcceleratorBadge';
 
-// two rows of tabs: the pilot first, then ISK and stuff
+// rows of tabs: the pilot, ISK and stuff, then the people and events around them
 const pageRows = [
     [
         {key: 'summary', label: 'Summary', icon: 'assessment'},
@@ -36,12 +44,23 @@ const pageRows = [
     ],
     [
         {key: 'wallet', label: 'Wallet', icon: 'account_balance_wallet'},
+        {key: 'market', label: 'Market', icon: 'storefront'},
         {key: 'contracts', label: 'Contracts', icon: 'assignment'},
         {key: 'assets', label: 'Assets', icon: 'inventory_2'},
         {key: 'industry', label: 'Industry', icon: 'precision_manufacturing'},
+        {key: 'research', label: 'Research', icon: 'science'},
         {key: 'planets', label: 'PI', icon: 'public'},
     ],
+    [
+        {key: 'notifications', label: 'Notifications', icon: 'notifications'},
+        {key: 'calendar', label: 'Calendar', icon: 'event'},
+        {key: 'standings', label: 'Standings', icon: 'handshake'},
+        {key: 'contacts', label: 'Contacts', icon: 'contacts'},
+        {key: 'kills', label: 'Kill Log', icon: 'gps_fixed'},
+        {key: 'medals', label: 'Medals', icon: 'military_tech'},
+    ],
 ];
+
 
 export default class Character extends React.Component {
     constructor(props) {
@@ -158,6 +177,30 @@ export default class Character extends React.Component {
             case 'wallet':
                 component = <Wallet key={characterId} characterId={characterId}/>;
                 break;
+            case 'market':
+                component = <Market key={characterId} characterId={characterId}/>;
+                break;
+            case 'research':
+                component = <Research characterId={characterId}/>;
+                break;
+            case 'notifications':
+                component = <Notifications key={characterId} characterId={characterId}/>;
+                break;
+            case 'calendar':
+                component = <Calendar characterId={characterId}/>;
+                break;
+            case 'standings':
+                component = <Standings characterId={characterId}/>;
+                break;
+            case 'contacts':
+                component = <Contacts key={characterId} characterId={characterId}/>;
+                break;
+            case 'kills':
+                component = <Kills key={characterId} characterId={characterId}/>;
+                break;
+            case 'medals':
+                component = <Medals characterId={characterId}/>;
+                break;
             case 'contracts':
                 component = <Contracts characterId={characterId}/>;
                 break;
@@ -197,6 +240,8 @@ export default class Character extends React.Component {
                                     {page.label}
                                     {page.key === 'mails' && char.getUnreadMailCount() > 0 &&
                                         <span className="tab-badge" title={`${char.getUnreadMailCount()} unread`}>{char.getUnreadMailCount()}</span>}
+                                    {page.key === 'notifications' && char.getUnreadNotificationCount() > 0 &&
+                                        <span className="tab-badge" title={`${char.getUnreadNotificationCount()} unread`}>{char.getUnreadNotificationCount()}</span>}
                                 </button>
                             )}
                         </div>

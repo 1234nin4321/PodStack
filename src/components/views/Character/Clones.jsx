@@ -5,6 +5,7 @@ import React from 'react';
 import CharacterModel from '../../../models/Character';
 import FormatHelper from '../../../helpers/FormatHelper';
 import ImageHelper from '../../../helpers/ImageHelper';
+import MarketHelper, {THE_FORGE, JITA_44} from '../../../helpers/MarketHelper';
 import Panel from '../../ui/Panel';
 import StatTile from '../../ui/StatTile';
 
@@ -32,7 +33,36 @@ function Security({system}) {
     return <span className={`num sec ${sec >= 0.5 ? 'high' : sec > 0 ? 'low' : 'null'}`}>{FormatHelper.number(sec, 1)}</span>;
 }
 
-function ImplantList({implants}) {
+// Estimated value of implants at Jita: {value, unpriced (how many have no sell order there)}, or undefined while
+// prices load.
+function implantsValue(implants, prices) {
+    if (prices === undefined) {
+        return undefined;
+    }
+    let value = 0;
+    let unpriced = 0;
+    for (const implant of implants) {
+        if (typeof prices[implant.id] === 'number') {
+            value += prices[implant.id];
+        } else {
+            unpriced++;
+        }
+    }
+    return {value, unpriced};
+}
+
+function ValueText({value}) {
+    if (value === undefined) {
+        return null;
+    }
+    return (
+        <span className="num" title={value.unpriced > 0 ? `${value.unpriced} without a sell order at Jita 4-4, not counted` : undefined}>
+            ~{FormatHelper.compact(value.value)} ISK{value.unpriced > 0 ? '*' : ''}
+        </span>
+    );
+}
+
+function ImplantList({implants, prices}) {
     if (implants.length === 0) {
         return <p className="faint" style={{margin: 0, padding: '6px 16px 10px 44px'}}>No implants</p>;
     }
@@ -49,6 +79,11 @@ function ImplantList({implants}) {
                                 <span>{implant.name || `Type #${implant.id}`}</span>
                             </span>
                         </td>
+                        <td className="right num muted nowrap">
+                            {prices === undefined ? '' :
+                                typeof prices[implant.id] === 'number' ? `${FormatHelper.compact(prices[implant.id])} ISK` :
+                                    <span className="faint" title="No sell order at Jita 4-4">—</span>}
+                        </td>
                     </tr>
                 )}
             </tbody>
@@ -56,12 +91,39 @@ function ImplantList({implants}) {
     );
 }
 
-// The active clone and every jump clone, grouped by the station or structure they're stored in.
+// The active clone and every jump clone, grouped by the station or structure they're stored in, with the implants'
+// estimated value at Jita 4-4's lowest sell prices.
 export default class Clones extends React.Component {
     constructor(props) {
         super(props);
 
-        this.state = {closed: {}};
+        this.state = {closed: {}, prices: undefined};
+    }
+
+    componentDidMount() {
+        this.loadPrices(false);
+    }
+
+    componentWillUnmount() {
+        this.unmounted = true;
+    }
+
+    implantIds() {
+        const char = CharacterModel.get(this.props.characterId);
+        const implants = [...(char.implants || []), ...(char.jumpClones || []).flatMap(c => c.implants || [])];
+        return [...new Set(implants.map(i => i.id))];
+    }
+
+    loadPrices(force) {
+        const ids = this.implantIds();
+        if (ids.length === 0) {
+            this.setState({prices: {}});
+            return;
+        }
+        this.setState({loadingPrices: true});
+        MarketHelper.getJitaLowestSell(ids, force)
+            .then(prices => !this.unmounted && this.setState({prices, loadingPrices: false}))
+            .catch(() => !this.unmounted && this.setState({prices: {}, loadingPrices: false}));
     }
 
     toggle(id) {
@@ -96,6 +158,11 @@ export default class Clones extends React.Component {
         }
         const sorted = [...groups.values()].sort((a, b) => a.name.localeCompare(b.name));
 
+        const {prices} = this.state;
+        const activeValue = implantsValue(char.implants || [], prices);
+        const totalValue = implantsValue([...(char.implants || []), ...char.jumpClones.flatMap(c => c.implants)], prices);
+        const priceDate = prices !== undefined ? MarketHelper.priceDate(THE_FORGE, this.implantIds(), JITA_44) : undefined;
+
         const currentLocation = char.location !== undefined && char.location.location !== undefined ?
             char.location.location.name :
             (char.location !== undefined && char.location.system !== undefined ? `In space, ${char.location.system.name}` : undefined);
@@ -108,10 +175,23 @@ export default class Clones extends React.Component {
                               foot={cloneJump.relative !== 'Now' ? cloneJump.date.toLocaleString(navigator.language) : undefined}/>
                     <StatTile label="Home Station" icon="home"
                               value={<span className="stat-text">{home !== undefined ? locationName(home.location, home.location_id) : '—'}</span>}/>
+                    <StatTile label="Implants Value" icon="payments"
+                              value={totalValue !== undefined ? FormatHelper.compact(totalValue.value) : '…'} unit="ISK"
+                              foot={
+                                  <span>
+                                      Jita 4-4 sell{priceDate !== undefined && ` · ${priceDate.toLocaleTimeString(navigator.language, {hour: '2-digit', minute: '2-digit'})}`}
+                                      {' · '}
+                                      <button type="button" className="link-button" disabled={this.state.loadingPrices}
+                                              onClick={() => this.loadPrices(true)}>
+                                          {this.state.loadingPrices ? 'Updating…' : 'Update'}
+                                      </button>
+                                  </span>
+                              }/>
                 </div>
 
-                <Panel title="Active Clone" icon="person" flush={true} subtitle={currentLocation}>
-                    <ImplantList implants={char.implants || []}/>
+                <Panel title="Active Clone" icon="person" flush={true}
+                       subtitle={<span>{currentLocation}{currentLocation !== undefined && activeValue !== undefined && ' · '}<ValueText value={activeValue}/></span>}>
+                    <ImplantList implants={char.implants || []} prices={prices}/>
                 </Panel>
 
                 <Panel title="Jump Clones" icon="people_outline" flush={true}
@@ -120,6 +200,7 @@ export default class Clones extends React.Component {
 
                     {sorted.map(group => {
                         const open = this.state.closed[group.id] !== true;
+                        const groupValue = implantsValue(group.clones.flatMap(c => c.implants), prices);
 
                         return (
                             <div key={group.id} className="asset-group">
@@ -128,7 +209,10 @@ export default class Clones extends React.Component {
                                     <Security system={group.system}/>
                                     <span className="asset-group-name">{group.name}</span>
                                     {home !== undefined && home.location_id === group.id && <span className="badge info">Home</span>}
-                                    <span className="muted num">{group.clones.length} {group.clones.length === 1 ? 'clone' : 'clones'}</span>
+                                    <span className="muted num">
+                                        {group.clones.length} {group.clones.length === 1 ? 'clone' : 'clones'}
+                                        {groupValue !== undefined && groupValue.value > 0 && <span> · <ValueText value={groupValue}/></span>}
+                                    </span>
                                 </div>
 
                                 {open && group.clones.map(clone =>
@@ -136,8 +220,10 @@ export default class Clones extends React.Component {
                                         <div className="clone-name">
                                             {clone.name ? clone.name : 'Unnamed Clone'}
                                             <span className="faint"> · {clone.implants.length} {clone.implants.length === 1 ? 'implant' : 'implants'}</span>
+                                            {clone.implants.length > 0 && implantsValue(clone.implants, prices) !== undefined &&
+                                                <span className="muted"> · <ValueText value={implantsValue(clone.implants, prices)}/></span>}
                                         </div>
-                                        <ImplantList implants={clone.implants}/>
+                                        <ImplantList implants={clone.implants} prices={prices}/>
                                     </div>
                                 )}
                             </div>

@@ -26,6 +26,13 @@ export default class FormatHelper {
     }
 
     /**
+     * An EVE notification type as words, e.g. "StructureUnderAttack" -> "Structure Under Attack".
+     */
+    static notificationTitle(type) {
+        return String(type || '').replace(/([a-z])([A-Z])/g, '$1 $2').replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2');
+    }
+
+    /**
      * Fraction (0-1) of a queue entry that has been trained so far.
      */
     static trainingProgress(queueEntry) {

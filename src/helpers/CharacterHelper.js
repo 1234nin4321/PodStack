@@ -10,6 +10,7 @@ import AuthorizedCharacter from '../models/AuthorizedCharacter';
 import FarmCharacter from '../models/FarmCharacter';
 import AccountStore from './AccountStore';
 import SkillPlanStore from './SkillPlanStore';
+import ConfirmHelper from './ConfirmHelper';
 
 import StructureHelper from './StructureHelper';
 
@@ -100,20 +101,20 @@ export default class CharacterHelper {
 
         if (result.error === 'client') {
             status({stage: 'error', message: 'Authorization failed: EVE application misconfigured'});
-            alert("Failed to authorize your character: EVE rejected the application's client ID or callback URL. Check eve_sso_client_id and eve_sso_callback_url in resources/properties.js against the application on the EVE Developers website.");
+            ConfirmHelper.alert("Failed to authorize your character: EVE rejected the application's client ID or callback URL. Check eve_sso_client_id and eve_sso_callback_url in resources/properties.js against the application on the EVE Developers website.");
             return;
         }
 
         if (result.error === 'invalid_scope') {
             status({stage: 'error', message: 'Authorization failed: EVE application is missing scopes'});
-            alert(`Failed to authorize your character: ${result.description || 'EVE rejected a requested permission.'} ` +
+            ConfirmHelper.alert(`Failed to authorize your character: ${result.description || 'EVE rejected a requested permission.'} ` +
                 'The EVE application needs every scope PodStack uses enabled on the EVE Developers website.');
             return;
         }
 
         if (result.error !== undefined) {
             status({stage: 'error', message: 'Authorization failed'});
-            alert("Failed to authorize your character, please try again.");
+            ConfirmHelper.alert("Failed to authorize your character, please try again.");
             return;
         }
 
@@ -125,7 +126,7 @@ export default class CharacterHelper {
         } catch (err) {
             log.error('[SSOv2] Token exchange failed', err);
             status({stage: 'error', message: 'Authorization failed'});
-            alert("Failed to authorize your character, please try again.");
+            ConfirmHelper.alert("Failed to authorize your character, please try again.");
             return;
         }
 

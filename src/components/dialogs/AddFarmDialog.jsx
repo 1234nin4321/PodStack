@@ -8,6 +8,7 @@ import Dialog from 'material-ui/Dialog';
 import FlatButton from 'material-ui/FlatButton';
 import RaisedButton from 'material-ui/RaisedButton';
 import FarmHelper from '../../helpers/FarmHelper';
+import ConfirmHelper from '../../helpers/ConfirmHelper';
 import FontIcon from 'material-ui/FontIcon';
 import SelectField from 'material-ui/SelectField';
 import MenuItem from 'material-ui/MenuItem';
@@ -51,7 +52,7 @@ export default class AddFarmDialog extends React.Component {
 
     handleAdd(e) {
         if ((typeof this.state.characterValue !== 'string') || (this.state.characterValue === '') || (this.state.baseSpValue === '')) {
-            alert("Failed to add/update farm, please ensure you filled out the form correctly and try again");
+            ConfirmHelper.alert({title: 'Couldn\'t save the farm', message: 'Please check you filled out the form correctly and try again.'});
         } else {
             if (typeof this.state.baseSpValue === 'string') {
                 FarmHelper.addFarm(this.state.characterValue, parseInt(this.state.baseSpValue));
@@ -60,7 +61,7 @@ export default class AddFarmDialog extends React.Component {
                 FarmHelper.addFarm(this.state.characterValue, this.state.baseSpValue);
                 this.handleClose(e);
             } else {
-                alert("Failed to add/update farm, please ensure you filled out the form correctly and try again");
+                ConfirmHelper.alert({title: 'Couldn\'t save the farm', message: 'Please check you filled out the form correctly and try again.'});
             }
         }
     };

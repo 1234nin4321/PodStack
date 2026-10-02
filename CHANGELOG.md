@@ -1,3 +1,23 @@
+## 0.2.13 Alpha (0.2.13-alpha)
+* New character tabs, in a third row: Notifications (EVE's in-game notifications, unread count on the tab), Calendar
+  (upcoming events), Standings (factions, corporations and agents, with the effective standing after Connections and
+  Diplomacy, and factional warfare stats when enlisted), Contacts, Kill Log (latest 50 kills and losses, with
+  zKillboard links) and Medals.
+* New Market tab (open orders and the last 90 days' history) and Research tab (research agents and their research
+  points) on the second row.
+* Wallet: a balance chart for the last 30 days.
+* Market Overview in the left menu: every character's market orders on one page; the badge counts open orders with
+  under a day left.
+* Asset Search in the left menu: search every character's assets at once, or see the most valuable items.
+* Loyalty points show roughly what they're worth: the corporation's best LP store offers at Jita sell prices.
+* Clones: estimated value of each clone's implants at Jita 4-4 sell prices.
+* Skill plans export as EVE skill plans (copy to clipboard or a .txt file) to import in EVE's Skill Plans window.
+* Confirmations and messages (deleting a plan, removing a character, …) are shown in PodStack's style instead of
+  Windows dialogs.
+* New desktop alerts: market order finished, calendar event within the hour, new EVE notification (off by default).
+* Needs new permissions: characters must use Add missing scopes on their API tab (or authorize again) for market
+  orders, standings, research agents, notifications, calendar, killmails, medals, contacts and factional warfare.
+
 ## 0.2.12 Alpha (0.2.12-alpha)
 * Fixed: skill plans left out an active cerebral accelerator, so a plan made from the EVE skill queue took longer than
   the queue itself. Plans now count the accelerator for exactly as long as EVE's skill queue does (read from the

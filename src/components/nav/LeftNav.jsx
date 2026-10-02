@@ -9,6 +9,7 @@ import {TokenStatusDot} from '../ui/CharacterBadges';
 import ServerStatus from './ServerStatus';
 import QueueHealthHelper from '../../helpers/QueueHealthHelper';
 import IndustryHelper from '../../helpers/IndustryHelper';
+import MarketOrdersHelper from '../../helpers/MarketOrdersHelper';
 import appProperties from '../../../resources/properties';
 
 const sections = [
@@ -17,6 +18,8 @@ const sections = [
     {path: '/queue-health', label: 'Queue Health', icon: 'monitor_heart', badge: QueueHealthHelper.countProblems},
     {path: '/sp-farming', label: 'SP Farming', icon: 'opacity'},
     {path: '/contracts', label: 'All Contracts', icon: 'assignment'},
+    {path: '/asset-search', label: 'Asset Search', icon: 'manage_search'},
+    {path: '/market-orders', label: 'Market Overview', icon: 'storefront', badge: MarketOrdersHelper.countExpiringSoon},
     {path: '/industry', label: 'Industry Jobs', icon: 'precision_manufacturing', badge: IndustryHelper.countReadyJobs},
     {path: '/planets', label: 'Planetary Industry', icon: 'public', badge: IndustryHelper.countExpiredExtractors},
 ];

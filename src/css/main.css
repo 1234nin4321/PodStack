@@ -1025,7 +1025,7 @@ a:hover {
     margin: 0 0 18px;
 }
 
-/* character tabs come in rows (pilot, then ISK and stuff); each row has its own underline */
+/* character tabs come in rows (pilot, ISK and stuff, people and events); each row has its own underline */
 .tab-row {
     display: flex;
     flex-wrap: wrap;   /* a narrow window wraps the tabs instead of cutting the last ones off */
@@ -3328,4 +3328,143 @@ a:hover {
 .accel-toggle.on .accel-toggle-switch::after {
     transform: translateX(12px);
     background: #fff;
+}
+
+/* ---------------------------------------------------------------- Confirmations (ConfirmDialogHost) */
+
+.confirm-text {
+    margin: 0 0 10px;
+    line-height: 1.5;
+    white-space: pre-line;
+}
+
+.confirm-text:last-child {
+    margin-bottom: 0;
+}
+
+.confirm-danger span {
+    color: var(--danger) !important;
+}
+
+/* ---------------------------------------------------------------- Wallet balance chart */
+
+.balance-chart {
+    display: block;
+    overflow: visible;
+}
+
+.balance-chart .grid {
+    stroke: var(--line);
+    stroke-width: 1;
+    shape-rendering: crispEdges;
+}
+
+.balance-chart .tick {
+    font-size: 11px;
+    fill: var(--text-faint);
+    font-variant-numeric: tabular-nums;
+}
+
+.balance-chart .line {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 2;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+}
+
+.balance-chart .area {
+    fill: var(--accent);
+    fill-opacity: 0.1;
+}
+
+.balance-chart .crosshair {
+    stroke: var(--text-faint);
+    stroke-width: 1;
+    shape-rendering: crispEdges;
+}
+
+.balance-chart .dot {
+    fill: var(--accent);
+    stroke: var(--panel-solid);
+    stroke-width: 2;
+}
+
+.chart-tip {
+    position: absolute;
+    pointer-events: none;
+    min-width: 150px;
+    padding: 8px 10px;
+    font-size: 12px;
+    line-height: 1.45;
+    color: var(--text);
+    background: var(--panel-raised);
+    border: 1px solid var(--line-strong);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+    z-index: 2;
+}
+
+.chart-tip-value {
+    font-size: 14px;
+    color: var(--text-strong);
+}
+
+/* ---------------------------------------------------------------- Standings, notifications, calendar, medals */
+
+.standing.excellent { color: var(--accent); }
+.standing.good { color: color-mix(in srgb, var(--accent) 65%, var(--text)); }
+.standing.neutral { color: var(--text-faint); }
+.standing.bad { color: var(--warn); }
+.standing.terrible { color: var(--danger); }
+
+.unread-dot {
+    width: 7px;
+    height: 7px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: var(--accent);
+}
+
+.notification-text {
+    margin: 0;
+    padding: 4px 16px 12px 44px;
+    font-family: var(--font-mono, ui-monospace, Consolas, monospace);
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--text-dim);
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.important-flag {
+    font-size: 16px;
+    vertical-align: -3px;
+    margin-right: 4px;
+    color: var(--warn);
+}
+
+.inline-icon {
+    font-size: 15px;
+    vertical-align: -3px;
+    margin-left: 6px;
+    color: var(--text-faint);
+}
+
+.list-row.medal {
+    align-items: flex-start;
+    gap: 12px;
+}
+
+/* ---------------------------------------------------------------- Loyalty points */
+
+.lp-worth {
+    min-width: 92px;
+    text-align: right;
+}
+
+.lp-note {
+    margin: 0;
+    padding: 8px 16px;
+    font-size: 11px;
+    border-top: 1px solid var(--line);
 }

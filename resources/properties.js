@@ -101,6 +101,42 @@ export default {
             'name': 'esi-planets.manage_planets.v1',
             'description': 'Read Planetary Colonies'
         },
+        {
+            'name': 'esi-markets.read_character_orders.v1',
+            'description': 'Read Market Orders'
+        },
+        {
+            'name': 'esi-characters.read_standings.v1',
+            'description': 'Read Standings'
+        },
+        {
+            'name': 'esi-characters.read_agents_research.v1',
+            'description': 'Read Research Agents'
+        },
+        {
+            'name': 'esi-characters.read_notifications.v1',
+            'description': 'Read EVE Notifications'
+        },
+        {
+            'name': 'esi-calendar.read_calendar_events.v1',
+            'description': 'Read Calendar Events'
+        },
+        {
+            'name': 'esi-killmails.read_killmails.v1',
+            'description': 'Read Killmails'
+        },
+        {
+            'name': 'esi-characters.read_medals.v1',
+            'description': 'Read Medals'
+        },
+        {
+            'name': 'esi-characters.read_contacts.v1',
+            'description': 'Read Contacts'
+        },
+        {
+            'name': 'esi-characters.read_fw_stats.v1',
+            'description': 'Read Factional Warfare Stats'
+        },
     ],
 
     'eve_esi_url': 'https://esi.evetech.net',
@@ -142,6 +178,16 @@ export default {
         'assets': 3600,
         'industry_jobs': 900,
         'planets': 1800,
+        // ESI caches orders for 20 minutes, notifications for 10, the calendar for 5
+        'market_orders': 1200,
+        'standings': 3600,
+        'research_agents': 3600,
+        'notifications': 600,
+        'calendar': 1800,
+        'killmails': 3600,
+        'medals': 21600,
+        'contacts': 3600,
+        'fw_stats': 3600,
     },
 
     'contract_completed_statuses': [

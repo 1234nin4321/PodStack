@@ -8,6 +8,7 @@ import ImageHelper from '../../../helpers/ImageHelper';
 import Panel from '../../ui/Panel';
 import ScopeNotice from '../../ui/ScopeNotice';
 import StatTile from '../../ui/StatTile';
+import BalanceChart from './BalanceChart';
 
 // rows shown before asking the user to narrow the search, to keep long journals responsive
 const ROW_LIMIT = 300;
@@ -153,6 +154,12 @@ export default class Wallet extends React.Component {
                     <StatTile label="Net (30 days)" icon="balance" value={(income + expenses > 0 ? '+' : '') + FormatHelper.compact(income + expenses)} unit="ISK"
                               warn={income + expenses < 0}/>
                 </div>
+
+                {char.walletJournal !== undefined &&
+                    <Panel title="Balance" icon="show_chart" subtitle="Last 30 days">
+                        <BalanceChart journal={char.walletJournal} balance={char.balance} label={refTypeLabel}/>
+                    </Panel>
+                }
 
                 <Panel
                     title={view === 'journal' ? 'Journal' : 'Transactions'}

@@ -15,6 +15,7 @@ import TrainingQueueTable from '../../tables/TrainingQueueTable';
 import ImportExportHelper from '../../../helpers/ImportExportHelper';
 import SkillPlanHelper from '../../../helpers/SkillPlanHelper';
 import Popover from 'material-ui/Popover';
+import Snackbar from 'material-ui/Snackbar';
 import Menu from 'material-ui/Menu';
 import MenuItem from 'material-ui/MenuItem';
 import RemapHelper from '../../../helpers/RemapHelper';
@@ -30,6 +31,7 @@ import AcceleratorHelper from '../../../helpers/AcceleratorHelper';
 import PlanSkillPopover from '../../popovers/PlanSkillToLevelPopover';
 import RemapDialog from '../../dialogs/RemapDialog';
 import SkillPlanStore from '../../../helpers/SkillPlanStore';
+import ConfirmHelper from '../../../helpers/ConfirmHelper';
 import SkillPlanTable from '../../tables/SkillPlanTable';
 import Panel from '../../ui/Panel';
 
@@ -220,7 +222,8 @@ export default class Plans extends React.Component {
     }
 
     handleCopyQueue() {
-        ImportExportHelper.ExportClipboard(this.state.queue);
+        const count = ImportExportHelper.ExportClipboard(this.state.queue);
+        this.setState({exportMessage: `Copied ${count} skill ${count === 1 ? 'level' : 'levels'} as an EVE skill plan. In EVE, import it from the clipboard in the Skill Plans window.`});
     }
 
     componentWillReceiveProps(nextProps) {
@@ -508,7 +511,7 @@ export default class Plans extends React.Component {
             .filter(entry => entry.finish_date === undefined || new Date(entry.finish_date) > now)
             .sort((a, b) => (a.queue_position || 0) - (b.queue_position || 0));
         if (entries.length === 0) {
-            alert(`${character.getDisplayName()}'s skill queue in EVE is empty, so there's nothing to make a plan from.`);
+            ConfirmHelper.alert({title: 'Nothing to import', message: `${character.getDisplayName()}'s skill queue in EVE is empty, so there's nothing to make a plan from.`});
             return;
         }
 
@@ -572,16 +575,24 @@ export default class Plans extends React.Component {
         }
     }
 
-    handleSkillPlanRemove() {
-        const plan = SkillPlanStore.getSkillPlansForCharacter(this.props.characterId).find(p => p.id === this.state.skillPlanId);
+    async handleSkillPlanRemove() {
+        const planId = this.state.skillPlanId;
+        const plan = SkillPlanStore.getSkillPlansForCharacter(this.props.characterId).find(p => p.id === planId);
         const name = plan !== undefined ? plan.name : this.state.skillPlanName;
         const skills = plan !== undefined ? plan.skillCount : 0;
-        if (!confirm(`Delete the plan "${name}"?\n\n` +
-            (skills > 0 ? `Its ${skills} skill level${skills === 1 ? '' : 's'} will be removed. ` : '') + 'This can\'t be undone.')) {
+        const confirmed = await ConfirmHelper.confirm({
+            title: 'Delete plan',
+            message: `Delete the plan "${name}"?\n\n` +
+                (skills > 0 ? `Its ${skills} skill level${skills === 1 ? '' : 's'} will be removed. ` : '') + 'This can\'t be undone.',
+            confirmLabel: 'Delete',
+            danger: true,
+        });
+        // the plan may have been switched while the question was open
+        if (!confirmed || this.state.skillPlanId !== planId) {
             return;
         }
 
-        SkillPlanStore.deleteSkillPlan(this.props.characterId, this.state.skillPlanId);
+        SkillPlanStore.deleteSkillPlan(this.props.characterId, planId);
         const plans = SkillPlanStore.getSkillPlansForCharacter(this.props.characterId);
 
         this.planCharacter.reset();
@@ -645,8 +656,9 @@ export default class Plans extends React.Component {
         return SkillPlanStore.getSkillPlan(this.props.characterId, planId);
     }
 
-    handleExportClose() {
-        this.setState({ exportFromPlanPopoverOpen: false });
+    // message: what was exported, shown briefly
+    handleExportClose(message) {
+        this.setState({exportFromPlanPopoverOpen: false, exportMessage: message});
     }
 
 
@@ -832,6 +844,12 @@ export default class Plans extends React.Component {
                         }
                     }}
                 />
+                <Snackbar
+                    open={this.state.exportMessage !== undefined}
+                    message={this.state.exportMessage || ''}
+                    autoHideDuration={6000}
+                    onRequestClose={() => this.setState({exportMessage: undefined})}
+                />
                 <ExportFromPlanPopover
                     open={this.state.exportFromPlanPopoverOpen}
                     anchorEl={this.state.exportFromPlanPopoverAnchor}
@@ -988,7 +1006,7 @@ export default class Plans extends React.Component {
                                 onClick={this.handleCopyQueue}
                                 disabled={this.state.queue.length === 0}
                                 label="Copy"
-                                title="Copy as EVE skill list"
+                                title="Copy as an EVE skill plan, to import in EVE's Skill Plans window"
                                 icon={<FontIcon className="material-icons" style={styles.buttonIcon}>content_copy</FontIcon>}
                             />
                         }

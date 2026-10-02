@@ -6,6 +6,7 @@ import CharacterModel from '../../../models/Character';
 import AuthorizedCharacter from '../../../models/AuthorizedCharacter';
 import DateTimeHelper from '../../../helpers/DateTimeHelper';
 import CharacterHelper from '../../../helpers/CharacterHelper';
+import ConfirmHelper from '../../../helpers/ConfirmHelper';
 
 import Panel from '../../ui/Panel';
 
@@ -30,9 +31,12 @@ export default class Api extends React.Component {
 
         if (id !== undefined && id !== char.id) {
             const other = CharacterModel.get(id);
-            alert(`You logged in as ${other !== undefined ? other.name : 'a different character'}, so that character was ` +
-                `updated instead. To grant the missing permissions to ${char.name}, try again and pick ${char.name} on ` +
-                'the EVE login page.');
+            ConfirmHelper.alert({
+                title: 'A different character logged in',
+                message: `You logged in as ${other !== undefined ? other.name : 'a different character'}, so that character was ` +
+                    `updated instead. To grant the missing permissions to ${char.name}, try again and pick ${char.name} on ` +
+                    'the EVE login page.',
+            });
         }
         this.setState({granting: undefined});
     }
@@ -56,9 +60,14 @@ export default class Api extends React.Component {
     }
 
     async handleRemove(char) {
-        const confirmed = confirm(`Remove ${char.name} from PodStack?\n\n` +
-            'This signs the character out of PodStack with EVE and deletes its data, skill plans and SP farm entry ' +
-            'from this computer. You can add it again later with Authorize Character.');
+        const confirmed = await ConfirmHelper.confirm({
+            title: 'Remove character',
+            message: `Remove ${char.name} from PodStack?\n\n` +
+                'This signs the character out of PodStack with EVE and deletes its data, skill plans and SP farm entry ' +
+                'from this computer. You can add it again later with Authorize Character.',
+            confirmLabel: 'Remove',
+            danger: true,
+        });
         if (!confirmed) {
             return;
         }
@@ -68,8 +77,11 @@ export default class Api extends React.Component {
         window.location.hash = '#/';
         const revoked = await CharacterHelper.removeCharacter(char.id);
         if (!revoked) {
-            alert(`${char.name} was removed from PodStack, but EVE couldn't be reached to revoke its login. ` +
-                'To be sure, revoke PodStack under Third Party Applications on the EVE account management website.');
+            ConfirmHelper.alert({
+                title: 'Login not revoked',
+                message: `${char.name} was removed from PodStack, but EVE couldn't be reached to revoke its login. ` +
+                    'To be sure, revoke PodStack under Third Party Applications on the EVE account management website.',
+            });
         }
     }
 

@@ -6,6 +6,8 @@ import log from 'electron-log';
 import EsiClient from './eve/EsiClient';
 
 export const THE_FORGE = 10000002;    // Jita's region, where NPC-seeded skillbooks are sold
+// Jita IV - Moon 4 - Caldari Navy Assembly Plant, the trade hub "Jita prices" usually means
+export const JITA_44 = 60003760;
 // PLEX isn't traded in regions any more: it has one market for all of New Eden, which ESI serves as this region
 export const GLOBAL_PLEX_MARKET = 19000001;
 const MAX_AGE = 6 * 60 * 60 * 1000;   // prices are refetched after 6 hours
@@ -22,13 +24,15 @@ function load() {
     return cache;
 }
 
-// cached lowest sell prices of a region: {[typeId]: {date, price}} (The Forge keeps its older cache key)
-function sellCache(c, regionId) {
-    if (regionId === THE_FORGE) {
+// cached lowest sell prices of a region, or of one station in it: {[typeId]: {date, price}} (The Forge keeps its
+// older cache key)
+function sellCache(c, regionId, locationId) {
+    if (regionId === THE_FORGE && locationId === undefined) {
         return c.forgeSell;
     }
-    c.sell[regionId] = c.sell[regionId] || {};
-    return c.sell[regionId];
+    const key = locationId !== undefined ? `${regionId}:${locationId}` : regionId;
+    c.sell[key] = c.sell[key] || {};
+    return c.sell[key];
 }
 
 function fresh(entry) {
@@ -73,12 +77,22 @@ export default class MarketHelper {
     }
 
     /**
-     * Lowest sell order in a region for each type, or null where nobody is selling. Cached for 6 hours unless forced.
+     * Lowest sell order at Jita 4-4 for each type, or null where nobody is selling there.
      *
      * @returns {Promise<object>} {[typeId]: price|null}; types that failed to load are left out
      */
-    static async getLowestSell(regionId, typeIds, force = false) {
-        const prices = sellCache(load(), regionId);
+    static async getJitaLowestSell(typeIds, force = false) {
+        return MarketHelper.getLowestSell(THE_FORGE, typeIds, force, JITA_44);
+    }
+
+    /**
+     * Lowest sell order in a region (or only at locationId in it) for each type, or null where nobody is selling.
+     * Cached for 6 hours unless forced.
+     *
+     * @returns {Promise<object>} {[typeId]: price|null}; types that failed to load are left out
+     */
+    static async getLowestSell(regionId, typeIds, force = false, locationId = undefined) {
+        const prices = sellCache(load(), regionId, locationId);
         const missing = typeIds.filter(id => force || !fresh(prices[id]));
 
         // a few types at a time; every page of each type's orders
@@ -88,7 +102,9 @@ export default class MarketHelper {
                     const orders = await new EsiClient().getAllPages(`markets/${regionId}/orders`, [], {
                         query: {order_type: 'sell', type_id: typeId},
                     });
-                    const lowest = orders.reduce((min, o) => (min === null || o.price < min ? o.price : min), null);
+                    const lowest = orders
+                        .filter(o => locationId === undefined || o.location_id === locationId)
+                        .reduce((min, o) => (min === null || o.price < min ? o.price : min), null);
                     prices[typeId] = {date: Date.now(), price: lowest};
                 } catch (err) {
                     log.warn(`[Market] Couldn't load orders for #${typeId} in region ${regionId}`, err.message);
@@ -107,8 +123,8 @@ export default class MarketHelper {
     }
 
     // When the oldest of these cached prices was fetched, or undefined if any isn't cached.
-    static priceDate(regionId, typeIds) {
-        const prices = sellCache(load(), regionId);
+    static priceDate(regionId, typeIds, locationId = undefined) {
+        const prices = sellCache(load(), regionId, locationId);
         const dates = typeIds.map(id => prices[id] && prices[id].date);
         return dates.every(d => d !== undefined) ? new Date(Math.min(...dates)) : undefined;
     }

@@ -15,14 +15,6 @@ function skillIdByName(name) {
     return skillsByName.get(name.toLowerCase());
 }
 
-const levelMap = {
-    1: 'I',
-    2: 'II',
-    3: 'III',
-    4: 'IV',
-    5: 'V',
-}
-
 
 export default class ImportExportHelper {
 
@@ -50,18 +42,29 @@ export default class ImportExportHelper {
         }
     }
 
+    /**
+     * A plan as the EVE client writes skill plans ("Copy to clipboard" in the Skills window), which its skill plan
+     * import reads back: one line per level, English name and level number, e.g. "Spaceship Command 1".
+     */
+    static EveSkillPlanText(items) {
+        return (items || [])
+            .filter(item => item.type === 'skill')
+            .map(item => `${item.name} ${item.level}`)
+            .join('\r\n');
+    }
+
+    // Copies a plan to the clipboard for EVE's skill plan import. Returns how many skill levels it holds.
     static ExportClipboard(items) {
-        if (items !== undefined) {
-            let clipboardData = '';
-            items.forEach((item, index) => {
-                if (index <= 50) {
-                    if (item.type === 'skill') {
-                        clipboardData += `${item.name} ${levelMap[item.level]}\r\n`;
-                    }
-                }
-            });
-            NativeHelper.writeClipboard(clipboardData);
-        }
+        const text = ImportExportHelper.EveSkillPlanText(items);
+        NativeHelper.writeClipboard(text);
+        return text === '' ? 0 : text.split('\r\n').length;
+    }
+
+    // Saves a plan as a text file in EVE's skill plan format. Returns how many skill levels it holds.
+    static ExportEveText(filePath, items) {
+        const text = ImportExportHelper.EveSkillPlanText(items);
+        fs.writeFileSync(filePath, text, 'utf8');
+        return text === '' ? 0 : text.split('\r\n').length;
     }
 
     static ImportPlan(filePath) {

@@ -18,6 +18,7 @@ import FarmCharacter from '../models/FarmCharacter';
 import IndustryHelper from './IndustryHelper';
 import SettingsHelper from './SettingsHelper';
 import DateTimeHelper from './DateTimeHelper';
+import FormatHelper from './FormatHelper';
 
 const CHECK_INTERVAL = 60 * 1000;
 const LOG_SIZE = 50;
@@ -37,12 +38,15 @@ export const ALERT_TYPES = [
     {id: 'fatigue_ended', label: 'Jump fatigue ended', description: 'A character\'s jump fatigue has worn off.'},
     {id: 'industry_ready', label: 'Industry job ready', description: 'An industry job has finished and can be delivered.'},
     {id: 'extractor_expired', label: 'PI extractor stopped', description: 'A planetary extractor has finished its cycle.'},
+    {id: 'market_order', label: 'Market order finished', description: 'A buy or sell order is filled or expires.'},
+    {id: 'eve_notification', label: 'New EVE notification', description: 'An unread in-game notification arrives (structure attacks, war declarations, …).'},
+    {id: 'calendar_event', label: 'Calendar event soon', description: 'A calendar event starts within the hour.'},
 ];
 
 const DEFAULT_SETTINGS = {
     enabled: true,
     queueLowHours: 24,
-    types: Object.fromEntries(ALERT_TYPES.map(t => [t.id, t.id !== 'new_mail'])),
+    types: Object.fromEntries(ALERT_TYPES.map(t => [t.id, !['new_mail', 'eve_notification'].includes(t.id)])),
 };
 
 // Conditions that are true now: [{key, type, characterId, title, body}]
@@ -109,6 +113,34 @@ function currentConditions(settings) {
             if (IndustryHelper.isJobReady(job)) {
                 add('industry_ready', job.job_id, character, `${character.name}: industry job ready`,
                     `${IndustryHelper.activityName(job.activity_id)}: ${job.product_name || job.blueprint_name || 'job'} × ${job.runs}`);
+            }
+        }
+
+        // orders that ended in the last week; the first check after an order finishes alerts for it
+        for (const order of character.marketOrders || []) {
+            if (['filled', 'expired'].includes(order.state)) {
+                const ended = new Date(order.issued).getTime() + order.duration * 24 * 3600 * 1000;
+                if (order.state === 'filled' || now - ended < 7 * 24 * 3600 * 1000) {
+                    add('market_order', order.order_id, character,
+                        `${character.name}: ${order.is_buy_order ? 'buy' : 'sell'} order ${order.state}`,
+                        `${order.name}${order.location ? ` in ${order.location}` : ''}`);
+                }
+            }
+        }
+
+        for (const notification of character.eveNotifications || []) {
+            if (!notification.is_read) {
+                add('eve_notification', notification.notification_id, character,
+                    `${character.name}: ${FormatHelper.notificationTitle(notification.type)}`,
+                    notification.sender_name ? `From ${notification.sender_name}` : 'New in-game notification.');
+            }
+        }
+
+        for (const event of character.calendarEvents || []) {
+            const left = new Date(event.event_date).getTime() - now;
+            if (left > 0 && left <= 3600 * 1000 && event.event_response !== 'declined') {
+                add('calendar_event', event.event_id, character, `${character.name}: ${event.title}`,
+                    `Starts in ${DateTimeHelper.niceCountdown(left)}.`);
             }
         }
 

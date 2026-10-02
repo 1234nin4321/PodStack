@@ -10,6 +10,9 @@ import ThemeHelper from '../helpers/ThemeHelper';
 import LeftNav from './nav/LeftNav';
 import UpdateBanner from './ui/UpdateBanner';
 import EsiStatusBanner from './ui/EsiStatusBanner';
+import MarketOrders from './views/MarketOrders';
+import AssetSearch from './views/AssetSearch';
+import ConfirmDialogHost from './dialogs/ConfirmDialogHost';
 import Overview from './views/Overview';
 import SkillBrowser from './views/SkillBrowser';
 import SpFarming from './views/SpFarming';
@@ -56,6 +59,8 @@ export default class App extends React.Component {
                                 <Route path="/queue-health" component={QueueHealth} />
                                 <Route path="/skill-browser" component={SkillBrowser} />
                                 <Route path="/contracts" component={Contracts} />
+                                <Route path="/market-orders" component={MarketOrders} />
+                                <Route path="/asset-search" component={AssetSearch} />
                                 <Route path="/industry" component={Industry} />
                                 <Route path="/planets" component={Planets} />
                                 <Route path="/settings" component={Settings} />
@@ -64,6 +69,8 @@ export default class App extends React.Component {
                             </ErrorBoundary>
                         }/>
                     </main>
+
+                    <ConfirmDialogHost/>
                 </div>
             </MuiThemeProvider>
         );

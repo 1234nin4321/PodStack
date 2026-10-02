@@ -9,6 +9,7 @@ import ImageHelper from '../../../helpers/ImageHelper';
 
 import Panel from '../../ui/Panel';
 import AcceleratorPanel from './AcceleratorPanel';
+import LoyaltyPointsPanel from './LoyaltyPointsPanel';
 import Bar from '../../ui/Bar';
 
 const attributeNames = ['intelligence', 'memory', 'perception', 'willpower', 'charisma'];
@@ -259,25 +260,6 @@ export default class Summary extends React.Component {
         );
     }
 
-    renderLoyaltyPoints(char) {
-        return (
-            <Panel title="Loyalty Points" icon="stars" flush={true}>
-                {char.loyalty_points.length > 0 ?
-                    char.loyalty_points.map(o =>
-                        <div key={o.corporation_id} className="list-row">
-                            <span style={{display: 'flex', alignItems: 'center', gap: 10}}>
-                                <img width={24} height={24} src={ImageHelper.corporationLogo(o.corporation_id, 32)} alt=""/>
-                                {o.corporation.name}
-                            </span>
-                            <span className="num">{FormatHelper.number(o.loyalty_points)} LP</span>
-                        </div>
-                    ) :
-                    <div className="list-row empty">No loyalty points</div>
-                }
-            </Panel>
-        );
-    }
-
     render() {
         const char = CharacterModel.get(this.props.characterId);
         const fatigue = char.getFatigueInfo();
@@ -295,7 +277,7 @@ export default class Summary extends React.Component {
                     {fatigue !== undefined && this.renderFatigue(fatigue)}
                     {this.renderImplants(char)}
                     <AcceleratorPanel character={char}/>
-                    {char.loyalty_points !== undefined && this.renderLoyaltyPoints(char)}
+                    {char.loyalty_points !== undefined && <LoyaltyPointsPanel character={char}/>}
                 </div>
             </div>
         );

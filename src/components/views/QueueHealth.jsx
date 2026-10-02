@@ -16,6 +16,7 @@ import PageHeader from '../ui/PageHeader';
 import NewRenamePlanPopover from '../popovers/NewRenamePlanPopover';
 import Panel from '../ui/Panel';
 import StatTile from '../ui/StatTile';
+import ConfirmHelper from '../../helpers/ConfirmHelper';
 
 const UNASSIGNED = '';
 const BADGE = {[CRITICAL]: 'danger', [WARNING]: 'warn', [INFO]: 'good'};
@@ -71,8 +72,14 @@ export default class QueueHealth extends React.Component {
         }
     }
 
-    handleDelete(account) {
-        if (window.confirm(`Delete "${account.name}"? Its characters become unassigned.`)) {
+    async handleDelete(account) {
+        const confirmed = await ConfirmHelper.confirm({
+            title: 'Delete account',
+            message: `Delete "${account.name}"? Its characters become unassigned.`,
+            confirmLabel: 'Delete',
+            danger: true,
+        });
+        if (confirmed) {
             AccountStore.deleteAccount(account.id);
             this.refreshAccounts();
         }

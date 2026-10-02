@@ -63,16 +63,33 @@ export default class ExportFromPlanPopover extends React.Component {
             ] }).then(this.handlePlanJsonExport);
     }
 
-    handleEVEClipboard(){
-        ImportExportHelper.ExportClipboard(this.props.items);
-        this.setState({
-            open: false,
-        });
-        this.props.onClose();
+    // EVE's skill plan format, for Skills → Skill Plans → import in the EVE client
+    handleEVEClipboard() {
+        const count = ImportExportHelper.ExportClipboard(this.props.items);
+        this.setState({open: false});
+        this.props.onClose(`Copied ${count} skill ${count === 1 ? 'level' : 'levels'} as an EVE skill plan. In EVE, import it from the clipboard in the Skill Plans window.`);
     }
 
-    handleEVEClipboardShoppingList() {
-
+    handleEVEText() {
+        DialogHelper.showSaveDialog({
+            defaultPath: `${this.props.name || 'Skill plan'}.txt`,
+            filters: [
+                { name: 'Text Files', extensions: ['txt'] },
+                { name: 'All Files', extensions: ['*'] },
+            ] }).then(file => {
+                if (file === undefined) {
+                    return;
+                }
+                let message;
+                try {
+                    const count = ImportExportHelper.ExportEveText(file, this.props.items);
+                    message = `Saved ${count} skill ${count === 1 ? 'level' : 'levels'} as an EVE skill plan. Copy the file's text and import it from the clipboard in EVE's Skill Plans window.`;
+                } catch (e) {
+                    message = `Couldn't save the file: ${e.message}`;
+                }
+                this.setState({open: false});
+                this.props.onClose(message);
+            });
     }
 
     render() {
@@ -86,8 +103,8 @@ export default class ExportFromPlanPopover extends React.Component {
             >
                 <Menu style={styles.menu} menuItemStyle={styles.menuItem} listStyle={styles.listItem}>
                     <MenuItem primaryText="PodStack Plan" onClick={() => this.handlePlanJson()} />
-                    <MenuItem primaryText="Clipboard (first 50)" onClick={() => this.handleEVEClipboard()} />
-                    <MenuItem disabled primaryText="Clipboard (Shopping List)" onClick={() => this.handleEVEClipboardShoppingList()} />
+                    <MenuItem primaryText="EVE Skill Plan (copy to clipboard)" onClick={() => this.handleEVEClipboard()} />
+                    <MenuItem primaryText="EVE Skill Plan (.txt file)" onClick={() => this.handleEVEText()} />
                 </Menu>
             </Popover>
         );
