@@ -2432,3 +2432,8 @@ a:hover {
     top: 16px;
     right: 18px;
 }
+
+.skillbook-best {
+    color: var(--good);
+    font-weight: 700;
+}

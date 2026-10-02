@@ -1,7 +1,11 @@
+## 0.1.7 Alpha (0.1.7-alpha)
+* Skillbooks: each plan's cost strip and book list now include the price of buying straight from the in-game skill
+  window (NPC base price + 30%), next to Jita and the EVE average, with the cheaper option highlighted per book.
+
 ## 0.1.6 Alpha (0.1.6-alpha)
 * ESI rate limits: every request now stays within EVE's per-character limits, backs off when ESI asks
   (429/Retry-After, error limit), runs at most 8 at once, and a banner explains any slow-down.
-* Characters refresh automatically about once an hour (character info daily-ish), spread out over time; each
+* Characters refresh automatically about once an hour (character info, portrait and corporation every 6 hours), spread out over time; each
   character page has "Refresh from ESI", usable once every 5 minutes, with a plain explanation of why.
 * Skillbook costs are now shown at the top of each plan and the Training Queue, with a per-book list.
 * Desktop and Start Menu shortcuts always use PodStack's icon, refreshed on every update; the window sets it too.

@@ -92,6 +92,10 @@ export default {
 
     'manual_refresh_cooldown': 300,
 
+    // Buying a skill straight from the in-game skill window costs its NPC base price plus this markup (CCP's
+    // "Skills On Demand": +30%). Base prices are in resources/skill_base_prices.js.
+    'skill_window_markup': 1.3,
+
     // Seconds between automatic ESI refreshes of each kind of character data. Every character is refreshed about
     // hourly (rarely-changing data every 6 hours); the "Refresh from ESI" button allows one manual refresh every
     // manual_refresh_cooldown seconds per character.

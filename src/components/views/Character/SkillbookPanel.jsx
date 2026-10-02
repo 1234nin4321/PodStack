@@ -6,9 +6,16 @@ import log from 'electron-log';
 import FormatHelper from '../../../helpers/FormatHelper';
 import MarketHelper from '../../../helpers/MarketHelper';
 import TrainingProfileHelper from '../../../helpers/TrainingProfileHelper';
+import appProperties from '../../../../resources/properties';
+import SKILL_BASE_PRICES from '../../../../resources/skill_base_prices';
 
 const isk = value => (value === undefined || value === null ? '—' : `${FormatHelper.number(value)} ISK`);
 const shortIsk = value => `${FormatHelper.compact(value)} ISK`;
+
+// Price to buy and inject straight from the skill window, or undefined for skills with no NPC price.
+const skillWindowPrice = id => (SKILL_BASE_PRICES[id] !== undefined ?
+    Math.round(SKILL_BASE_PRICES[id] * appProperties.skill_window_markup) : undefined);
+const markupPercent = Math.round((appProperties.skill_window_markup - 1) * 100);
 
 // Strip at the top of a plan with the ISK cost of the skillbooks it needs that the character hasn't injected yet,
 // expandable to a per-book list.
@@ -75,22 +82,33 @@ export default class SkillbookPanel extends React.Component {
                         <tr>
                             <th>Skillbook</th>
                             <th className="right">Jita lowest sell</th>
+                            <th className="right">Skill window</th>
                             <th className="right">EVE average</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {books.map(b =>
-                            <tr key={b.id}>
-                                <td>{b.name}</td>
-                                <td className="right num">{loading ? '…' : isk(forge[b.id])}</td>
-                                <td className="right num muted">{loading ? '…' : isk(averages[b.id])}</td>
-                            </tr>
-                        )}
+                        {books.map(b => {
+                            const jita = forge[b.id];
+                            const direct = skillWindowPrice(b.id);
+                            // highlight the cheaper way to get the book
+                            const jitaCheaper = !loading && jita !== null && jita !== undefined && (direct === undefined || jita <= direct);
+                            const directCheaper = !loading && direct !== undefined && !jitaCheaper;
+
+                            return (
+                                <tr key={b.id}>
+                                    <td>{b.name}</td>
+                                    <td className={`right num ${jitaCheaper ? 'skillbook-best' : ''}`}>{loading ? '…' : isk(jita)}</td>
+                                    <td className={`right num ${directCheaper ? 'skillbook-best' : ''}`}>{isk(direct)}</td>
+                                    <td className="right num muted">{loading ? '…' : isk(averages[b.id])}</td>
+                                </tr>
+                            );
+                        })}
                     </tbody>
                 </table>
                 <p className="muted analysis-note">
-                    Skills already injected aren't counted. Jita is the lowest sell order in The Forge; prices refresh
-                    every 6 hours.
+                    Skills already injected aren't counted. Jita is the lowest sell order in The Forge (refreshed every 6
+                    hours); Skill window is buying and injecting straight from the in-game skill window, which costs the
+                    NPC price plus {markupPercent}%. The cheaper of the two is highlighted.
                 </p>
             </div>
         );
@@ -114,6 +132,7 @@ export default class SkillbookPanel extends React.Component {
         }
 
         const sum = prices => books.reduce((total, b) => total + (prices[b.id] || 0), 0);
+        const skillWindowTotal = books.reduce((total, b) => total + (skillWindowPrice(b.id) || 0), 0);
         const unpriced = books.filter(b => forge[b.id] === null || forge[b.id] === undefined).length;
 
         return (
@@ -126,6 +145,7 @@ export default class SkillbookPanel extends React.Component {
                             error ? <span className="fit-warning"> · {error}</span> :
                                 <span>
                                     {' · Jita '}<span className="num skillbook-total">{shortIsk(sum(forge))}</span>
+                                    {' · Skill window '}<span className="num skillbook-total">{shortIsk(skillWindowTotal)}</span>
                                     <span className="muted">{' · EVE avg '}<span className="num">{shortIsk(sum(averages))}</span></span>
                                     {unpriced > 0 &&
                                         <span className="fit-warning" title="No sell orders in The Forge right now; left out of the Jita total">
