@@ -6,15 +6,20 @@ import DateTimeHelper from '../../helpers/DateTimeHelper';
 
 // Read-only view of a generated queue: the combined training queue (SkillPlanHelper.buildTrainingQueue) or a
 // fit plan preview. showPlan adds a column with the plan each skill came from.
+// Comparison times rounded to the minute (seconds only under a minute), so they fit their columns.
+function compareTime(ms) {
+    return DateTimeHelper.niceCountdown(ms >= 60000 ? Math.round(ms / 60000) * 60000 : ms);
+}
+
 // Time saved (green, minus) or added (amber, plus) by the compared setup.
 function change(base, compared) {
     const delta = compared - base;
-    if (Math.abs(delta) < 1000) {
+    if (Math.abs(delta) < 30000) {
         return <span style={{color: 'var(--text-faint)'}}>—</span>;
     }
     return (
         <span style={{color: delta < 0 ? 'var(--good)' : 'var(--warn)'}}>
-            {delta < 0 ? '−' : '+'}{DateTimeHelper.niceCountdown(Math.abs(delta))}
+            {delta < 0 ? '−' : '+'}{compareTime(Math.abs(delta))}
         </span>
     );
 }
@@ -40,7 +45,7 @@ export default function TrainingQueueTable({queue, time, showPlan = true, compar
                     <th>Skill</th>
                     {showPlan && <th>Plan</th>}
                     <th className="right">Training time</th>
-                    {compare && <th className="right" title={compare.label}>{compare.label}</th>}
+                    {compare && <th className="right" title={compare.label}>With setup</th>}
                     {compare && <th className="right">Change</th>}
                     <th className="right">Done in</th>
                 </tr>
@@ -65,7 +70,7 @@ export default function TrainingQueueTable({queue, time, showPlan = true, compar
                             <td>{item.title}</td>
                             {showPlan && <td className="muted">{item.planName}</td>}
                             <td className="right num">{DateTimeHelper.niceCountdown(item.time)}</td>
-                            {compare && <td className="right num">{DateTimeHelper.niceCountdown(compare.times[`${item.id}:${item.level}`] || 0)}</td>}
+                            {compare && <td className="right num">{compareTime(compare.times[`${item.id}:${item.level}`] || 0)}</td>}
                             {compare && <td className="right num">{change(item.time, compare.times[`${item.id}:${item.level}`] || 0)}</td>}
                             <td className="right num muted">{DateTimeHelper.niceCountdown(elapsed)}</td>
                         </tr>
@@ -77,7 +82,7 @@ export default function TrainingQueueTable({queue, time, showPlan = true, compar
                     <th>{skills.length} skill{skills.length === 1 ? '' : 's'}</th>
                     {showPlan && <th/>}
                     <th className="right num">{DateTimeHelper.niceCountdown(time)}</th>
-                    {compare && <th className="right num">{DateTimeHelper.niceCountdown(compare.total)}</th>}
+                    {compare && <th className="right num">{compareTime(compare.total)}</th>}
                     {compare && <th className="right num">{change(time, compare.total)}</th>}
                     <th/>
                 </tr>

@@ -42,9 +42,12 @@ const styles = {
         visibility: 'hidden',
         width: 0,
     },
+    // no fixed width: the skill name takes whatever is left (truncated with an ellipsis), so the time, comparison
+    // and action columns always stay visible, even in a narrow window
     planRowColumnSkill: {
+        position: 'relative',   // anchors the hover "+ Level N" button
         height: 20,
-        width: 250,
+        minWidth: 140,
         paddingRight: 6,
         paddingLeft: 6,
     },
@@ -62,9 +65,19 @@ const styles = {
     },
     planRowColumnCompare: {
         height: 20,
-        width: 120,
+        width: 110,
         paddingRight: 6,
         paddingLeft: 6,
+    },
+    // header cells don't clip by default, so long text would run into the next column
+    planRowColumnCompareHeader: {
+        height: 20,
+        width: 110,
+        paddingRight: 6,
+        paddingLeft: 6,
+        overflow: 'hidden',
+        whiteSpace: 'nowrap',
+        textOverflow: 'ellipsis',
     },
     planRowColumnSPh: {
         height: 20,
@@ -89,15 +102,20 @@ const styles = {
 
 const LEVEL_NUMERALS = ['0', 'I', 'II', 'III', 'IV', 'V'];
 
+// Comparison times rounded to the minute (seconds only under a minute), so they fit their columns.
+function compareTime(ms) {
+    return DateHelper.niceCountdown(ms >= 60000 ? Math.round(ms / 60000) * 60000 : ms);
+}
+
 // "Change" column for an implant/accelerator comparison: time saved (green, minus) or added (amber, plus).
 function changeCell(base, compared) {
     const delta = compared - base;
-    if (Math.abs(delta) < 1000) {
+    if (Math.abs(delta) < 30000) {
         return <span style={{color: 'var(--text-faint)'}}>—</span>;
     }
     return (
         <span style={{color: delta < 0 ? 'var(--good)' : 'var(--warn)'}}>
-            {delta < 0 ? '−' : '+'}{DateHelper.niceCountdown(Math.abs(delta))}
+            {delta < 0 ? '−' : '+'}{compareTime(Math.abs(delta))}
         </span>
     );
 }
@@ -147,7 +165,7 @@ const SortableItem = SortableElement(
                             </TableRowColumn>
                             {this.props.compare &&
                                 <TableRowColumn style={styles.planRowColumnCompare}>
-                                    {DateHelper.niceCountdown(this.props.compare.times[`${this.props.value.id}:${this.props.value.level}`] || 0)}
+                                    {compareTime(this.props.compare.times[`${this.props.value.id}:${this.props.value.level}`] || 0)}
                                 </TableRowColumn>
                             }
                             {this.props.compare &&
@@ -421,12 +439,12 @@ export default class SkillPlanTable extends React.Component {
                             <TableHeaderColumn style={styles.planRowColumnSkill}>Skill</TableHeaderColumn>
                             <TableHeaderColumn style={this.state.columnTimeStyle}>Training Time</TableHeaderColumn>
                             {this.props.compare &&
-                                <TableHeaderColumn style={styles.planRowColumnCompare} tooltip={this.props.compare.label}>
-                                    <span className="compare-header">{this.props.compare.label}</span>
+                                <TableHeaderColumn style={styles.planRowColumnCompareHeader} tooltip={this.props.compare.label}>
+                                    <span className="compare-header">With setup</span>
                                 </TableHeaderColumn>
                             }
                             {this.props.compare &&
-                                <TableHeaderColumn style={styles.planRowColumnCompare}>Change</TableHeaderColumn>
+                                <TableHeaderColumn style={styles.planRowColumnCompareHeader}>Change</TableHeaderColumn>
                             }
                             <TableHeaderColumn style={this.state.columnMarketGroupStyle}>Group</TableHeaderColumn>
                             <TableHeaderColumn style={this.state.columnAttributesStyle}>Attributes</TableHeaderColumn>
@@ -481,10 +499,10 @@ export default class SkillPlanTable extends React.Component {
                                 }</TableHeaderColumn>
                             <TableHeaderColumn style={this.state.columnTimeStyle}>{DateHelper.niceCountdown(this.state.totalTime)}</TableHeaderColumn>
                             {this.props.compare &&
-                                <TableHeaderColumn style={styles.planRowColumnCompare}>{DateHelper.niceCountdown(this.props.compare.total)}</TableHeaderColumn>
+                                <TableHeaderColumn style={styles.planRowColumnCompareHeader}>{compareTime(this.props.compare.total)}</TableHeaderColumn>
                             }
                             {this.props.compare &&
-                                <TableHeaderColumn style={styles.planRowColumnCompare}>{changeCell(this.state.totalTime, this.props.compare.total)}</TableHeaderColumn>
+                                <TableHeaderColumn style={styles.planRowColumnCompareHeader}>{changeCell(this.state.totalTime, this.props.compare.total)}</TableHeaderColumn>
                             }
                             <TableHeaderColumn style={this.state.columnMarketGroupStyle} />
                             <TableHeaderColumn style={this.state.columnAttributesStyle} />

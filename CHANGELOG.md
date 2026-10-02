@@ -1,3 +1,9 @@
+## 0.1.10 Alpha (0.1.10-alpha)
+* Fixed overlapping text in skill plans when comparing implants/accelerators: short "With setup" / "Change"
+  headers (the setup is named in the plan's subtitle), times rounded to the minute, and the skill name column gives
+  way so all columns stay visible in narrow windows.
+* The hover "+ Level N" button now overlays the end of the skill name instead of pushing long names onto two lines.
+
 ## 0.1.9 Alpha (0.1.9-alpha)
 * Implants & Boosters: pick an implant set and/or a cerebral accelerator and the open plan (and the Training Queue)
   gains two columns: each skill's time with that setup, and the change from your current clone, plus totals.

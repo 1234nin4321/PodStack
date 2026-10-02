@@ -787,7 +787,8 @@ export default class Plans extends React.Component {
                         title="Training Queue"
                         icon="playlist_play"
                         flush={true}
-                        subtitle="Switched-on plans, highest priority first"
+                        subtitle={this.state.compareProfile ?
+                            `Compared with: ${this.state.compareProfile.label}` : 'Switched-on plans, highest priority first'}
                         actions={
                             <RaisedButton
                                 style={styles.button}
@@ -808,6 +809,7 @@ export default class Plans extends React.Component {
                     <Panel
                         title={this.state.skillPlanName || 'Plan'}
                         icon="format_list_numbered"
+                        subtitle={this.state.compareProfile && `Compared with: ${this.state.compareProfile.label}`}
                         flush={true}
                         actions={
                             <div style={{display: 'flex', gap: 6}}>
