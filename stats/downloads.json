@@ -1,0 +1,52 @@
+{
+  "repository": "1234nin4321/PodStack",
+  "updated": "2026-10-02T14:05:07.356Z",
+  "totals": {
+    "installer": 0,
+    "portable": 0,
+    "updates": 5,
+    "all": 5
+  },
+  "releases": {
+    "v0.2.3-alpha": {
+      "published": "2026-10-02",
+      "installer": 0,
+      "portable": 0,
+      "updates": 1,
+      "removed": false,
+      "lastSeen": "2026-10-02T14:05:07.356Z"
+    },
+    "v0.2.2-alpha": {
+      "published": "2026-10-02",
+      "installer": 0,
+      "portable": 0,
+      "updates": 1,
+      "removed": false,
+      "lastSeen": "2026-10-02T14:05:07.356Z"
+    },
+    "v0.2.1-alpha": {
+      "published": "2026-10-02",
+      "installer": 0,
+      "portable": 0,
+      "updates": 1,
+      "removed": false,
+      "lastSeen": "2026-10-02T14:05:07.356Z"
+    },
+    "v0.2.0-alpha": {
+      "published": "2026-10-02",
+      "installer": 0,
+      "portable": 0,
+      "updates": 1,
+      "removed": false,
+      "lastSeen": "2026-10-02T14:05:07.356Z"
+    },
+    "v0.1.10-alpha": {
+      "published": "2026-10-02",
+      "installer": 0,
+      "portable": 0,
+      "updates": 1,
+      "removed": false,
+      "lastSeen": "2026-10-02T14:05:07.356Z"
+    }
+  }
+}

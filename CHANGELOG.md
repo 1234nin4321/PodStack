@@ -1,3 +1,9 @@
+## 0.2.4 Alpha (0.2.4-alpha)
+* About: ISK donations can now go to 1234nin4321 in game (Copy name copies it for the Give Money window).
+* Download stats: `npm run stats` shows installs, portable downloads and in-app updates per release as a running
+  total, kept in stats/downloads.json and recorded daily by a GitHub workflow, so counts survive releases being
+  deleted. The README's downloads badge shows the all-time total.
+
 ## 0.2.3 Alpha (0.2.3-alpha)
 * PodStack now has its own EVE application, so EVE's login page says PodStack and can grant every permission,
   including assets, industry jobs and planets. Characters you already added keep working; their API tab shows

@@ -1,0 +1,38 @@
+# Records release download counts daily in stats/downloads.json, so the running total survives releases being
+# deleted from GitHub (which forgets their counts). Run it by hand from the Actions tab before deleting a release.
+name: Download stats
+
+on:
+  schedule:
+    - cron: '17 5 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: download-stats
+
+jobs:
+  record:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node scripts/stats.js --save
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Commit if the counts changed
+        run: |
+          # only the timestamp changes when no counts did; don't commit for that
+          if git diff --quiet -I '"updated"' -I '"lastSeen"' -- stats/downloads.json && git ls-files --error-unmatch stats/downloads.json >/dev/null 2>&1; then
+            echo "No new downloads."
+            exit 0
+          fi
+          git config user.name "1234nin4321"
+          git config user.email "203164353+1234nin4321@users.noreply.github.com"
+          git add stats/downloads.json
+          git commit -m "Update download stats [skip ci]"
+          git push
