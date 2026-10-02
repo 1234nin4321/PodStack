@@ -1,3 +1,7 @@
+## 0.1.8 Alpha (0.1.8-alpha)
+* Skill plans: hovering a skill below level V shows "+ Level N" to add the next level straight after it; the plan's
+  training times are recalculated.
+
 ## 0.1.7 Alpha (0.1.7-alpha)
 * Skillbooks: each plan's cost strip and book list now include the price of buying straight from the in-game skill
   window (NPC base price + 30%), next to Jita and the EVE average, with the cheaper option highlighted per book.

@@ -81,6 +81,8 @@ const styles = {
     },
 };
 
+const LEVEL_NUMERALS = ['0', 'I', 'II', 'III', 'IV', 'V'];
+
 const SortableItem = SortableElement(
     class SortableItemA extends React.PureComponent {
         constructor() {
@@ -89,7 +91,11 @@ const SortableItem = SortableElement(
         }
 
         handleMouseDown(e) {
-            if (e.target.innerText !== undefined && e.target.innerText === 'delete') {
+            if (e.target.innerText !== undefined && e.target.innerText === 'add' && this.props.onAddLevel !== undefined) {
+                // the "+ Level N" button shown on hover
+                e.stopPropagation();
+                this.props.onAddLevel(this.props.idx);
+            } else if (e.target.innerText !== undefined && e.target.innerText === 'delete') {
                 this.props.onRemove(this.props.idx, e);
             } else if (e.target.innerText !== undefined && e.target.innerText === 'mode_edit') {
                 this.props.onEdit(this.props.idx, e);
@@ -102,10 +108,20 @@ const SortableItem = SortableElement(
             const style = this.props.highlighted ? styles.planRowHighlight : styles.planRow;
             switch (this.props.value.type) {
                 case 'skill': {
+                    const nextLevel = this.props.value.level + 1;
+
                     return (
-                        <TableRow selectable style={style} onMouseDown={this.handleMouseDown}>
+                        <TableRow selectable style={style} onMouseDown={this.handleMouseDown} className="plan-skill-row">
                             <TableRowColumn style={styles.planRowColumnSkill}>
                                 {this.props.value.title}
+                                {this.props.canAddLevel &&
+                                    // the label comes from CSS (data-label), so the button's text stays "add" for the
+                                    // click and drag checks
+                                    <button type="button" className="plan-add-level" data-label={`Level ${LEVEL_NUMERALS[nextLevel]}`}
+                                            title={`Add next level: ${this.props.value.name} ${LEVEL_NUMERALS[nextLevel]}`}>
+                                        <i className="material-icons">add</i>
+                                    </button>
+                                }
                             </TableRowColumn>
                             <TableRowColumn style={this.props.columnTime}>
                                 {DateHelper.niceCountdown(this.props.value.time)}
@@ -182,6 +198,9 @@ const SortableList = SortableContainer(
                     {this.props.items.map((value, index) => {
                         {
                             const highlighted = this.props.selection !== undefined ? this.props.selection.indexOf(index) > -1 : 0;
+                            // offer the next level unless the skill is at V or that level is already planned
+                            const canAddLevel = this.props.onAddLevel !== undefined && value.type === 'skill' && value.level < 5
+                                && !this.props.items.some(i => i.type === 'skill' && i.id === value.id && i.level === value.level + 1);
                             return (
                                 <SortableItem
                                     key={value.type === 'skill' ? `skill-${value.title}` : `item-${index}`}
@@ -190,6 +209,8 @@ const SortableList = SortableContainer(
                                     onRemove={this.props.onRemove}
                                     onMouseDown={this.props.onMouseDown}
                                     onEdit={this.props.onEdit}
+                                    onAddLevel={this.props.onAddLevel}
+                                    canAddLevel={canAddLevel}
                                     idx={index}
                                     highlighted={highlighted}
                                     columnTime={this.props.columnTime}
@@ -390,6 +411,7 @@ export default class SkillPlanTable extends React.Component {
                         shouldCancelStart={this.shouldCancelStart}
                         selection={this.state.selection}
                         onEdit={this.props.onEdit}
+                        onAddLevel={this.props.onAddLevel}
                         onMouseDown={this.handleMouseDown}
                         onRemove={this.handleDelete}
                         onSortEnd={this.handleSortEnd}

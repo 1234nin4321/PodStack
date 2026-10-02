@@ -96,6 +96,7 @@ export default class Plans extends React.Component {
 
         this.handleItemMove = this.handleItemMove.bind(this);
         this.handleItemRemove = this.handleItemRemove.bind(this);
+        this.handleAddNextLevel = this.handleAddNextLevel.bind(this);
 
         this.handleSkillPlanAdd = this.handleSkillPlanAdd.bind(this);
         this.handleSkillPlanChanged = this.handleSkillPlanChanged.bind(this);
@@ -288,6 +289,38 @@ export default class Plans extends React.Component {
                 this.planCharacter.queue,
             );
         }
+    }
+
+    // "+ Level N" on a skill row: plans the next level straight after it, then recalculates the plan's times.
+    handleAddNextLevel(index) {
+        const item = this.state.items[index];
+        if (item === undefined || item.type !== 'skill' || item.level >= 5) {
+            return;
+        }
+
+        const before = this.planCharacter.queue.length;
+        this.planCharacter.planSkill(item.id, item.level + 1);
+        const added = this.planCharacter.queue.slice(before);
+        if (added.length === 0) {
+            return;
+        }
+
+        const queue = this.planCharacter.queue.slice(0, before);
+        queue.splice(index + 1, 0, ...added);
+        this.planCharacter.reset();
+        queue.forEach(queued => this.planCharacter.addItemToQueue(queued));
+
+        this.setState({
+            items: this.planCharacter.queue,
+            totalTime: this.planCharacter.time,
+            selection: [],
+        });
+        SkillPlanStore.storeSkillPlan(
+            this.props.characterId,
+            this.state.skillPlanId,
+            this.state.skillPlanName,
+            this.planCharacter.queue,
+        );
     }
 
     handleItemRemove(index, e) {
@@ -783,6 +816,7 @@ export default class Plans extends React.Component {
                             onEdit={this.handleItemEdit}
                             onRemove={this.handleItemRemove}
                             onSkillMove={this.handleItemMove}
+                            onAddLevel={this.handleAddNextLevel}
                             items={this.state.items}
                             totalTime={this.state.totalTime}
                             selected={this.state.selected}
