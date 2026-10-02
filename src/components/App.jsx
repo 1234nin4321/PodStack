@@ -16,6 +16,7 @@ import QueueHealth from './views/QueueHealth';
 import Contracts from './views/Contracts';
 import Character from './views/Character';
 import Settings from './views/Settings';
+import About from './views/About';
 
 export default class App extends React.Component {
     constructor(props) {
@@ -46,6 +47,7 @@ export default class App extends React.Component {
                         <Route path="/skill-browser" component={SkillBrowser} />
                         <Route path="/contracts" component={Contracts} />
                         <Route path="/settings" component={Settings} />
+                        <Route path="/about" component={About} />
                         <Route path="/characters/:characterId" component={Character} />
                     </main>
                 </div>

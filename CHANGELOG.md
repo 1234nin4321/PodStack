@@ -1,3 +1,8 @@
+## 0.1.5 Alpha (0.1.5-alpha)
+* New About page: what PodStack does, its heritage as a fork of Cerebral and what was modernised (new ESI versioning,
+  EVE login for modern Electron, Electron 44), and a place to support the project with ISK donations.
+* The sidebar's Contracts link is now "All Contracts".
+
 ## 0.1.4 Alpha (0.1.4-alpha)
 * PodStack's icon now shows in Settings > Apps > Installed apps.
 * Updates no longer bring back a desktop shortcut you deleted; existing shortcuts are kept up to date.

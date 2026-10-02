@@ -17,6 +17,9 @@ export default {
     'version': pkg.version,
     'display_version': displayVersion(pkg.version),
 
+    // In-game character that receives ISK donations (shown on the About page); empty hides the details.
+    'donation_character': '',
+
     'eve_sso_url': 'https://login.eveonline.com/oauth',
     'eve_sso_url_no_oauth': 'https://login.eveonline.com',
 

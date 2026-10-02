@@ -14,7 +14,7 @@ const sections = [
     {path: '/skill-browser', label: 'Skill Browser', icon: 'account_tree'},
     {path: '/queue-health', label: 'Queue Health', icon: 'monitor_heart', badge: QueueHealthHelper.countProblems},
     {path: '/sp-farming', label: 'SP Farming', icon: 'opacity'},
-    {path: '/contracts', label: 'Contracts', icon: 'assignment'},
+    {path: '/contracts', label: 'All Contracts', icon: 'assignment'},
 ];
 
 function formatSp(sp) {
@@ -95,6 +95,10 @@ class LeftNav extends React.Component {
                     <NavLink to="/settings" className="nav-link" activeClassName="active">
                         <i className="material-icons">settings</i>
                         Settings
+                    </NavLink>
+                    <NavLink to="/about" className="nav-link" activeClassName="active">
+                        <i className="material-icons">info</i>
+                        About
                     </NavLink>
                 </div>
             </nav>
