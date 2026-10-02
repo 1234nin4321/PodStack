@@ -358,9 +358,9 @@ if (patternOn[1] > 0.5) {
     areaColor = mix(areaColor, patternDiffuse[1], m); areaSpecular = mix(areaSpecular, patternSpecular[1], m); areaRough = mix(areaRough, patternRough[1], m);
 }
 // the hull's colour texture is greyscale shading (panels, recesses, highlights): the material's colour is multiplied by
-// its raw value, which brought the paint to the game's brightness in side-by-side screenshots
+// its raw value, scaled to the game's paint brightness measured in side-by-side screenshots (top view: 0.073 in game)
 float shading = pow(max(diffuseColor.r, 0.0), 1.0 / 2.2);
-float detail = clamp(shading, 0.0, 1.2);
+float detail = clamp(shading * 0.7, 0.0, 0.85);
 diffuseColor.rgb = mix(diffuseColor.rgb, areaColor * detail, paintAmount);`)
                 .replace('#include <roughnessmap_fragment>', `float roughnessFactor = roughness;
 float hullRough = surfaceSample.g;
