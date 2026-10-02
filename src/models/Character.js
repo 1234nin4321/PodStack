@@ -16,6 +16,7 @@ import BulkIdResolver from '../helpers/BulkIdResolver';
 import LocationHelper from '../helpers/LocationHelper';
 import MailBodyHelper from '../helpers/MailBodyHelper';
 import NameHelper from '../helpers/NameHelper';
+import ImageHelper from '../helpers/ImageHelper';
 
 let subscribedComponents = [];
 let characters;
@@ -61,6 +62,45 @@ class Character {
         this.mails = [];
         this.mailLabels = {};
         this.mailingLists = {};
+    }
+
+    // Lists and maps the UI iterates over must always exist, even if a refresh returned nothing (an empty ESI response
+    // is undefined) or saved data predates them. Called after loading and after each refresh that sets one.
+    normalize() {
+        ['skills', 'skillQueue', 'skillTree', 'mails'].forEach(key => {
+            if (!Array.isArray(this[key])) {
+                this[key] = [];
+            }
+        });
+        ['nextRefreshes', 'mailLabels', 'mailingLists'].forEach(key => {
+            if (this[key] === null || typeof this[key] !== 'object' || Array.isArray(this[key])) {
+                this[key] = {};
+            }
+        });
+        return this;
+    }
+
+    // A character's data loads piece by piece (and a piece can fail), so the UI uses these instead of assuming it's there.
+    getDisplayName() {
+        return this.name || `Character #${this.id}`;
+    }
+
+    portraitUrl(size = 128) {
+        const key = `px${size}x${size}`;
+        return (this.portraits && (this.portraits[key] || this.portraits.px128x128)) || ImageHelper.characterPortrait(this.id, size);
+    }
+
+    getCorporationName() {
+        return this.corporation !== undefined && this.corporation.name !== undefined ? this.corporation.name : 'Loading corporation…';
+    }
+
+    getAllianceName() {
+        return this.alliance !== undefined && this.alliance.name !== undefined ? this.alliance.name : undefined;
+    }
+
+    // basic info (name and corporation) has loaded, so the character's pages can be shown
+    hasBasicInfo() {
+        return this.name !== undefined && this.corporation !== undefined;
     }
 
     getCurrentSkill() {
@@ -421,7 +461,8 @@ class Character {
             await client.authChar(AuthorizedCharacter.get(this.id));
 
             let skillData = await client.get('characters/' + this.id + '/skills');
-            Object.assign(this, skillData);
+            Object.assign(this, skillData || {});
+            this.normalize();
             if (!skillData.hasOwnProperty('unallocated_sp')) {
                 this.unallocated_sp = 0;
             }
@@ -461,6 +502,7 @@ class Character {
             await client.authChar(AuthorizedCharacter.get(this.id));
 
             this.skillQueue = await client.get('characters/' + this.id + '/skillqueue');
+            this.normalize();
 
             let promises = this.skillQueue.map((o) => {
                 return TypeHelper.resolveType(o.skill_id).then(res => {
@@ -815,6 +857,7 @@ class Character {
 
             try {
                 this.mails = await client.get('characters/' + this.id + '/mail', 'esi-mail.read_mail.v1');
+                this.normalize();
 
                 const resolver = new BulkIdResolver();
                 for (const mail of this.mails) {
@@ -1337,6 +1380,7 @@ class Character {
                     newCharacters[id.toString()] = new Character();
                     Object.assign(newCharacters[id.toString()], rawCharacters[id]);
                     newCharacters[id.toString()].id = id.toString();
+                    newCharacters[id.toString()].normalize();
                 });
             }
 

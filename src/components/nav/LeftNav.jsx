@@ -79,11 +79,11 @@ class LeftNav extends React.Component {
                                 activeClassName="active"
                             >
                                 <div className="nav-char-portrait">
-                                    <img src={character.portraits.px64x64 || character.portraits.px128x128} alt=""/>
+                                    <img src={character.portraitUrl(64)} alt=""/>
                                     <TokenStatusDot auth={AuthorizedCharacter.get(character.id)}/>
                                 </div>
                                 <div className="nav-char-text">
-                                    <div className="nav-char-name">{character.name}</div>
+                                    <div className="nav-char-name">{character.getDisplayName()}</div>
                                     <div className="nav-char-meta">
                                         {formatSp(character.getTotalSp())}
                                         {!training && <span style={{color: 'var(--warn)'}}> · Idle</span>}

@@ -2967,3 +2967,54 @@ a:hover {
 .profit-settings .health-account-select {
     width: 220px;
 }
+
+/* ---------------------------------------------------------------- Crash fallback (ErrorBoundary) */
+
+.crash {
+    margin-top: 18px;
+    padding: 18px;
+    border-left: 3px solid var(--danger);
+}
+
+.crash-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--danger);
+    font-size: 15px;
+}
+
+.crash-message {
+    display: block;
+    margin: 10px 0 14px;
+    padding: 8px 10px;
+    font-family: Consolas, 'Cascadia Mono', Menlo, monospace;
+    font-size: 12px;
+    color: var(--text);
+    background: var(--bg-1);
+    border: 1px solid var(--line);
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.crash-actions {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+}
+
+.crash-compact {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+    padding: 12px 16px;
+    font-size: 12px;
+    border-left: 0;
+    color: var(--text-dim);
+}
+
+.crash-compact .material-icons {
+    font-size: 16px;
+    color: var(--danger);
+}

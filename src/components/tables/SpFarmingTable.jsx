@@ -102,7 +102,7 @@ export default class SpFarmingTable extends React.Component {
                     return (
                         <div key={char.id} className="roster-row farm-grid" onClick={e => this.handleClick(e, char.id)}>
                             <div className="portrait">
-                                <img src={char.portraits.px128x128} alt=""/>
+                                <img src={char.portraitUrl(128)} alt=""/>
                             </div>
 
                             <div style={{minWidth: 0}}>
@@ -112,7 +112,7 @@ export default class SpFarmingTable extends React.Component {
                                 </div>
                                 <div className="roster-corp">
                                     <img src={ImageHelper.corporationLogo(char.corporation_id, 32)} alt=""/>
-                                    {char.corporation.name}
+                                    {char.getCorporationName()}
                                 </div>
                             </div>
 

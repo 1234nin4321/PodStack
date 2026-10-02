@@ -20,6 +20,7 @@ import Planets from './views/Planets';
 import Character from './views/Character';
 import Settings from './views/Settings';
 import About from './views/About';
+import ErrorBoundary from './ui/ErrorBoundary';
 
 export default class App extends React.Component {
     constructor(props) {
@@ -40,21 +41,28 @@ export default class App extends React.Component {
         return (
             <MuiThemeProvider muiTheme={this.state.muiTheme}>
                 <div>
-                    <LeftNav/>
+                    <ErrorBoundary nav={true} compact={true} area="Navigation">
+                        <LeftNav/>
+                    </ErrorBoundary>
 
                     <main className="app-main">
                         <UpdateBanner/>
                         <EsiStatusBanner/>
-                        <Route exact path="/" component={Overview} />
-                        <Route path="/sp-farming" component={SpFarming} />
-                        <Route path="/queue-health" component={QueueHealth} />
-                        <Route path="/skill-browser" component={SkillBrowser} />
-                        <Route path="/contracts" component={Contracts} />
-                        <Route path="/industry" component={Industry} />
-                        <Route path="/planets" component={Planets} />
-                        <Route path="/settings" component={Settings} />
-                        <Route path="/about" component={About} />
-                        <Route path="/characters/:characterId" component={Character} />
+                        {/* a new key per page, so going to another page clears a crash */}
+                        <Route render={({location}) =>
+                            <ErrorBoundary key={location.pathname} area="Page">
+                                <Route exact path="/" component={Overview} />
+                                <Route path="/sp-farming" component={SpFarming} />
+                                <Route path="/queue-health" component={QueueHealth} />
+                                <Route path="/skill-browser" component={SkillBrowser} />
+                                <Route path="/contracts" component={Contracts} />
+                                <Route path="/industry" component={Industry} />
+                                <Route path="/planets" component={Planets} />
+                                <Route path="/settings" component={Settings} />
+                                <Route path="/about" component={About} />
+                                <Route path="/characters/:characterId" component={Character} />
+                            </ErrorBoundary>
+                        }/>
                     </main>
                 </div>
             </MuiThemeProvider>

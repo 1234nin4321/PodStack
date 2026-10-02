@@ -3,6 +3,7 @@
 [![license: AGPL v3](https://img.shields.io/badge/license-AGPL%20v3-red.svg)](https://www.gnu.org/licenses/agpl-3.0)
 [![latest release](https://img.shields.io/github/v/release/1234nin4321/PodStack?label=latest)](https://github.com/1234nin4321/PodStack/releases/latest)
 [![downloads](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2F1234nin4321%2FPodStack%2Fmaster%2Fstats%2Fdownloads.json&query=%24.totals.all&label=downloads)](stats/downloads.json)
+[![downloads this month](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2F1234nin4321%2FPodStack%2Fmaster%2Fstats%2Fdownloads.json&query=%24.thisMonth.all&label=this%20month)](stats/downloads.json)
 
 PodStack is a desktop app for monitoring your EVE Online characters. It is built for ease of use and speed, especially for people who manage a lot of characters.
 
@@ -66,7 +67,7 @@ Development
 npm install
 npm start          # run in development mode
 npm run make       # build installers into out/make
-npm run stats      # download counts per release, as a running total (--save updates stats/downloads.json)
+npm run stats      # downloads per release and per month, as a running total (--save updates stats/downloads.json)
 ```
 
 Usage

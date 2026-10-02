@@ -15,8 +15,9 @@ export default class Contracts extends React.Component {
 
     render() {
         const char = CharacterModel.get(this.props.characterId);
-        const contracts = char.contracts;
-        const lastUpdate = char.getDataRefreshInfo().find(c => c.type === 'Contracts').lastRefresh;
+        const contracts = char.contracts || [];
+        const info = char.getDataRefreshInfo().find(c => c.type === 'Contracts');
+        const lastUpdate = info !== undefined ? info.lastRefresh : 'not yet';
 
         return (
             <div className="stack">

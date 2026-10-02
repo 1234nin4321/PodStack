@@ -25,6 +25,7 @@ const REPOSITORY = (pkg.repository || '').replace(/^github:/, '');   // "owner/n
 const FIRST_CHECK_DELAY = 15 * 1000;
 const CHECK_INTERVAL = 4 * 60 * 60 * 1000;
 const PROGRESS_INTERVAL = 250;   // ms between progress messages to the window
+const CLEANUP_DELAY = 30 * 1000;  // removing earlier versions waits until they've surely exited
 
 let getWindow = () => undefined;
 // status: idle | checking | up-to-date | downloading | installing | ready | available | error
@@ -269,6 +270,52 @@ function restartIntoUpdate() {
     app.quit();
 }
 
+/**
+ * Deletes what earlier versions left behind in a Squirrel install: their app-<version> folders (each with its own
+ * PodStack.exe), which Squirrel keeps after updating, and temporary download folders from interrupted updates.
+ * Only versions older than the running one are touched, and only once it has been running for a while, so the
+ * previous version has exited.
+ *
+ * @returns {string[]} the paths removed
+ */
+export function removeOldVersions(installRoot, currentDir, tmpDir) {
+    const current = path.basename(currentDir).replace(/^app-/, '');
+    const removed = [];
+    const remove = target => {
+        try {
+            fs.rmSync(target, {recursive: true, force: true});
+            removed.push(target);
+        } catch (err) {
+            // still in use (e.g. the old version hasn't exited); try again next start
+            log.warn(`[Update] Couldn't remove ${target}`, err.message);
+        }
+    };
+
+    let entries = [];
+    try {
+        entries = fs.readdirSync(installRoot, {withFileTypes: true});
+    } catch (err) {
+        return removed;
+    }
+    entries
+        .filter(e => e.isDirectory() && /^app-\d/.test(e.name))
+        .filter(e => compareVersions(e.name.replace(/^app-/, ''), current) < 0)
+        .forEach(e => remove(path.join(installRoot, e.name)));
+
+    try {
+        fs.readdirSync(tmpDir, {withFileTypes: true})
+            .filter(e => e.isDirectory() && /^podstack-update-/.test(e.name))
+            .forEach(e => remove(path.join(tmpDir, e.name)));
+    } catch (err) {
+        // no temp folder access; nothing to clean
+    }
+
+    if (removed.length > 0) {
+        log.info(`[Update] Removed files from earlier versions: ${removed.join(', ')}`);
+    }
+    return removed;
+}
+
 export function initUpdater(windowGetter) {
     getWindow = windowGetter;
 
@@ -281,6 +328,11 @@ export function initUpdater(windowGetter) {
             shell.openExternal(state.url);
         }
     });
+
+    // clear out earlier versions once this one has settled in (installed copies only)
+    if (canAutoInstall()) {
+        setTimeout(() => removeOldVersions(path.dirname(updateExe()), path.dirname(process.execPath), os.tmpdir()), CLEANUP_DELAY);
+    }
 
     // automatic checks only for packaged builds; in development use "Check for updates" in Settings
     if (app.isPackaged) {

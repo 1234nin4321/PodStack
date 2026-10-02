@@ -24,7 +24,7 @@ export default class Mails extends React.Component {
                 subtitle={
                     <span>
                         {unread > 0 && <span className="badge info" style={{marginRight: 8}}>{unread} unread</span>}
-                        Updated {char.getDataRefreshInfo().find(c => c.type === 'Mails').lastRefresh}
+                        {(info => info !== undefined ? `Updated ${info.lastRefresh}` : 'Not loaded yet')(char.getDataRefreshInfo().find(c => c.type === 'Mails'))}
                     </span>
                 }
             >

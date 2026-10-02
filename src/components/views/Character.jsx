@@ -19,6 +19,7 @@ import Assets from './Character/Assets';
 import Industry from './Character/Industry';
 import Planets from './Character/Planets';
 import {CloneStateBadge, TokenStatusDot} from '../ui/CharacterBadges';
+import ErrorBoundary from '../ui/ErrorBoundary';
 
 const pages = [
     {key: 'summary', label: 'Summary', icon: 'assessment'},
@@ -53,25 +54,25 @@ export default class Character extends React.Component {
         return (
             <div className="panel hero">
                 <div className="hero-portrait">
-                    <img src={char.portraits.px256x256 || char.portraits.px128x128} alt=""/>
+                    <img src={char.portraitUrl(256)} alt=""/>
                 </div>
 
                 <div className="hero-main">
                     <div>
                         <div className="hero-name">
-                            {char.name}
+                            {char.getDisplayName()}
                             <CloneStateBadge character={char}/>
                             <TokenStatusDot auth={AuthorizedCharacter.get(char.id)}/>
                         </div>
                         <div className="hero-affil">
                             <span>
                                 <img src={ImageHelper.corporationLogo(char.corporation_id)} alt=""/>
-                                {char.corporation.name}
+                                {char.getCorporationName()}
                             </span>
-                            {char.alliance_id !== undefined && char.alliance !== undefined &&
+                            {char.alliance_id !== undefined && char.getAllianceName() !== undefined &&
                                 <span>
                                     <img src={ImageHelper.allianceLogo(char.alliance_id)} alt=""/>
-                                    {char.alliance.name}
+                                    {char.getAllianceName()}
                                 </span>
                             }
                         </div>
@@ -109,12 +110,34 @@ export default class Character extends React.Component {
         if (char === undefined) {
             return <p className="empty">This character isn't in PodStack.</p>;
         }
+        // just added, or its first refresh failed: there's nothing to show in the tabs yet
+        if (!char.hasBasicInfo()) {
+            return (
+                <div>
+                    {this.renderHero(char)}
+                    <div className="panel" style={{marginTop: 18, padding: 18}}>
+                        <p className="empty" style={{margin: 0}}>
+                            {char.getDisplayName()}'s data is still loading. If this doesn't change within a few
+                            minutes, use Refresh from ESI above, or check the character's login on the Character Overview.
+                        </p>
+                    </div>
+                </div>
+            );
+        }
 
         let component;
         switch(this.state.currentPage) {
             case 'plans':
-                component = <Plans key={characterId} characterId={characterId}/>;
-            break;
+                // training times are worked out from the attributes
+                component = char.attributes !== undefined ?
+                    <Plans key={characterId} characterId={characterId}/> :
+                    <div className="panel" style={{padding: 18}}>
+                        <p className="empty" style={{margin: 0}}>
+                            Skill plans need {char.getDisplayName()}'s attributes, which haven't loaded yet. They load on the
+                            next refresh; Refresh from ESI above loads them now.
+                        </p>
+                    </div>;
+                break;
             case 'skills':
                 component = <Skills characterId={characterId}/>;
                 break;
@@ -157,7 +180,11 @@ export default class Character extends React.Component {
                     )}
                 </div>
 
-                {component}
+                {/* a broken tab keeps the header and the other tabs usable */}
+                <ErrorBoundary key={`${characterId}-${this.state.currentPage}`} area={`Character ${this.state.currentPage} tab`}
+                               title="This tab couldn't be shown">
+                    {component}
+                </ErrorBoundary>
             </div>
         );
     }

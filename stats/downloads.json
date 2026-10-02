@@ -1,20 +1,56 @@
 {
   "repository": "1234nin4321/PodStack",
-  "updated": "2026-10-02T14:05:07.356Z",
+  "updated": "2026-10-02T14:33:22.455Z",
   "totals": {
-    "installer": 0,
+    "installer": 3,
     "portable": 0,
-    "updates": 5,
-    "all": 5
+    "updates": 7,
+    "all": 10
+  },
+  "thisMonth": {
+    "month": "2026-10",
+    "installer": 3,
+    "portable": 0,
+    "updates": 7,
+    "all": 10
+  },
+  "last30Days": {
+    "installer": 3,
+    "portable": 0,
+    "updates": 7,
+    "all": 10
+  },
+  "monthly": {
+    "2026-10": {
+      "installer": 3,
+      "portable": 0,
+      "updates": 7,
+      "all": 10
+    }
+  },
+  "history": {
+    "2026-10-02": {
+      "installer": 3,
+      "portable": 0,
+      "updates": 7
+    }
   },
   "releases": {
-    "v0.2.3-alpha": {
+    "v0.2.4-alpha": {
       "published": "2026-10-02",
       "installer": 0,
       "portable": 0,
+      "updates": 2,
+      "removed": false,
+      "lastSeen": "2026-10-02T14:33:22.455Z"
+    },
+    "v0.2.3-alpha": {
+      "published": "2026-10-02",
+      "installer": 3,
+      "portable": 0,
       "updates": 1,
       "removed": false,
-      "lastSeen": "2026-10-02T14:05:07.356Z"
+      "lastSeen": "2026-10-02T14:33:22.455Z"
     },
     "v0.2.2-alpha": {
       "published": "2026-10-02",
@@ -22,7 +58,7 @@
       "portable": 0,
       "updates": 1,
       "removed": false,
-      "lastSeen": "2026-10-02T14:05:07.356Z"
+      "lastSeen": "2026-10-02T14:33:22.455Z"
     },
     "v0.2.1-alpha": {
       "published": "2026-10-02",
@@ -30,7 +66,7 @@
       "portable": 0,
       "updates": 1,
       "removed": false,
-      "lastSeen": "2026-10-02T14:05:07.356Z"
+      "lastSeen": "2026-10-02T14:33:22.455Z"
     },
     "v0.2.0-alpha": {
       "published": "2026-10-02",
@@ -38,7 +74,7 @@
       "portable": 0,
       "updates": 1,
       "removed": false,
-      "lastSeen": "2026-10-02T14:05:07.356Z"
+      "lastSeen": "2026-10-02T14:33:22.455Z"
     },
     "v0.1.10-alpha": {
       "published": "2026-10-02",
@@ -46,7 +82,7 @@
       "portable": 0,
       "updates": 1,
       "removed": false,
-      "lastSeen": "2026-10-02T14:05:07.356Z"
+      "lastSeen": "2026-10-02T14:33:22.455Z"
     }
   }
 }

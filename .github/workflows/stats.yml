@@ -1,5 +1,6 @@
 # Records release download counts daily in stats/downloads.json, so the running total survives releases being
-# deleted from GitHub (which forgets their counts). Run it by hand from the Actions tab before deleting a release.
+# deleted from GitHub (which forgets their counts), and the dated snapshots give downloads per month. Run it by hand
+# from the Actions tab before deleting a release.
 name: Download stats
 
 on:

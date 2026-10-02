@@ -16,7 +16,18 @@ const attributeNames = ['intelligence', 'memory', 'perception', 'willpower', 'ch
 const MAX_ATTRIBUTE = 32;
 
 function describeLocation(location) {
-    return location !== undefined ? <span>{location.name} <small>({location.type.name})</small></span> : 'Unknown Structure';
+    return location !== undefined ? <span>{location.name} <small>({location.type ? location.type.name : 'Structure'})</small></span> : 'Unknown Structure';
+}
+
+const notLoaded = <span className="faint">Not loaded yet</span>;
+
+// a panel whose data hasn't loaded (yet, or its refresh failed)
+function NotLoadedPanel({title, icon}) {
+    return (
+        <Panel title={title} icon={icon}>
+            <p className="empty" style={{margin: 0}}>Not loaded yet. It loads on the next refresh.</p>
+        </Panel>
+    );
 }
 
 export default class Summary extends React.Component {
@@ -25,11 +36,13 @@ export default class Summary extends React.Component {
     }
 
     renderDossier(char) {
-        let currentLocation;
-        if (char.location.hasOwnProperty('location')) {
-            currentLocation = describeLocation(char.location.location);
-        } else {
-            currentLocation = char.location.hasOwnProperty('structure_id') ? 'Unknown Structure' : 'In space';
+        let currentLocation = notLoaded;
+        if (char.location !== undefined) {
+            if (char.location.hasOwnProperty('location')) {
+                currentLocation = describeLocation(char.location.location);
+            } else {
+                currentLocation = char.location.hasOwnProperty('structure_id') ? 'Unknown Structure' : 'In space';
+            }
         }
 
         return (
@@ -38,7 +51,7 @@ export default class Summary extends React.Component {
                     <dt>Character ID</dt>
                     <dd className="num">{char.id}</dd>
                     <dt>Date of Birth</dt>
-                    <dd>{char.getDateOfBirth().toLocaleString(navigator.language)}</dd>
+                    <dd>{char.birthday !== undefined ? char.getDateOfBirth().toLocaleString(navigator.language) : notLoaded}</dd>
                     <dt>Security Status</dt>
                     <dd className="num" style={{color: char.security_status < 0 ? 'var(--danger)' : 'var(--accent)'}}>
                         {FormatHelper.number(char.security_status, 2)}
@@ -46,28 +59,32 @@ export default class Summary extends React.Component {
                     <dt>Wallet</dt>
                     <dd className="num">{FormatHelper.number(char.balance, 2)} ISK</dd>
                     <dt>Corporation</dt>
-                    <dd>{char.corporation.name}</dd>
+                    <dd>{char.getCorporationName()}</dd>
                     <dt>Alliance</dt>
-                    <dd>{char.alliance !== undefined ? char.alliance.name : <span className="faint">None</span>}</dd>
+                    <dd>{char.getAllianceName() !== undefined ? char.getAllianceName() : <span className="faint">None</span>}</dd>
                 </dl>
 
                 <div className="divider"/>
 
                 <dl className="kv">
                     <dt>Solar System</dt>
-                    <dd>{char.location.system.name}</dd>
+                    <dd>{char.location !== undefined && char.location.system !== undefined ? char.location.system.name : notLoaded}</dd>
                     <dt>Location</dt>
                     <dd>{currentLocation}</dd>
                     <dt>Active Ship</dt>
-                    <dd>{char.ship.ship_name} <small>({char.ship.type.name})</small></dd>
+                    <dd>{char.ship !== undefined && char.ship.type !== undefined ?
+                        <span>{char.ship.ship_name} <small>({char.ship.type.name})</small></span> : notLoaded}</dd>
                     <dt>Home Station</dt>
-                    <dd>{describeLocation(char.home_location.location)}</dd>
+                    <dd>{char.home_location !== undefined ? describeLocation(char.home_location.location) : notLoaded}</dd>
                 </dl>
             </Panel>
         );
     }
 
     renderAttributes(char) {
+        if (char.attributes === undefined) {
+            return <NotLoadedPanel title="Attributes" icon="tune"/>;
+        }
         const nextRemap = char.getNextYearlyRemapDate();
 
         return (
@@ -95,6 +112,9 @@ export default class Summary extends React.Component {
     }
 
     renderJumpClones(char) {
+        if (char.jumpClones === undefined) {
+            return <NotLoadedPanel title="Jump Clones" icon="people_outline"/>;
+        }
         const cloneJumpAvailable = char.getCloneJumpAvailable();
 
         return (
@@ -220,6 +240,9 @@ export default class Summary extends React.Component {
     }
 
     renderImplants(char) {
+        if (char.implants === undefined) {
+            return <NotLoadedPanel title="Active Implants" icon="memory"/>;
+        }
         return (
             <Panel title="Active Implants" icon="memory" subtitle={`${char.implants.length} / 10`} flush={true}>
                 {char.implants.length > 0 ?

@@ -1,3 +1,13 @@
+## 0.2.5 Alpha (0.2.5-alpha)
+* Fixed: the window could go blank, e.g. when opening a character or importing a plan, if some of a character's data
+  hadn't loaded (just added, a failed refresh, or an empty answer from EVE). Characters still loading show a short
+  message, sections that haven't loaded say so, and missing lists are repaired.
+* If part of the app ever fails to show, you now get a message with Try again, Copy error details and Reload
+  instead of a blank window; the rest keeps working, and the error is written to the log file.
+* Auto-update now removes the previous versions' program folders (and leftover update downloads) after updating.
+  Your characters, plans and settings are stored elsewhere and aren't touched.
+* Download stats: per-month downloads and the last 30 days (`npm run stats`), and a "this month" badge in the README.
+
 ## 0.2.4 Alpha (0.2.4-alpha)
 * About: ISK donations can now go to 1234nin4321 in game (Copy name copies it for the Give Money window).
 * Download stats: `npm run stats` shows installs, portable downloads and in-app updates per release as a running

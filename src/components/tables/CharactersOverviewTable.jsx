@@ -85,7 +85,7 @@ export default class CharactersOverviewTable extends React.Component {
                     return (
                         <div key={char.id} className="roster-row" onClick={(e) => this.handleClick(e, char.id)}>
                             <div className="portrait">
-                                <img src={char.portraits.px128x128} alt=""/>
+                                <img src={char.portraitUrl(128)} alt=""/>
                                 <TokenStatusDot auth={auth}/>
                             </div>
 
@@ -96,9 +96,9 @@ export default class CharactersOverviewTable extends React.Component {
                                 </div>
                                 <div className="roster-corp">
                                     <img src={ImageHelper.corporationLogo(char.corporation_id, 32)} alt=""/>
-                                    {char.corporation.name}
+                                    {char.getCorporationName()}
                                     {char.alliance_id !== undefined && char.alliance !== undefined &&
-                                        <span className="faint">/ {char.alliance.name}</span>
+                                        <span className="faint">/ {char.getAllianceName()}</span>
                                     }
                                 </div>
                             </div>
