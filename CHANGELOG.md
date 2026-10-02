@@ -1,3 +1,12 @@
+## 0.2.15 Alpha (0.2.15-alpha)
+* Optimise asks how: with the current attributes, or with a remap. With a remap, PodStack works out the remap that
+  trains the plan fastest, adds it at the start of the plan (or changes the remap already there), reorders around it
+  and shows the attributes to pick, the time saved and whether a remap is available now.
+* After importing a skill plan (a file, a pasted list, an EVE skill plan or the EVE skill queue), PodStack offers to
+  optimise it.
+* Notes at the top of a plan stay there when it's optimised.
+* Planetary Industry is no longer in the left menu; each character's PI tab is unchanged.
+
 ## 0.2.14 Alpha (0.2.14-alpha)
 * Skill plans: Optimise reorders a plan to finish it sooner, keeping every skill after its prerequisites. Order only
   matters around remaps in the plan (each skill moves after the remap that suits it best) and while a cerebral

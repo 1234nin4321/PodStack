@@ -26,7 +26,18 @@ export default class ConfirmHelper {
     }
 
     /**
-     * @param {object|string} options {title, message} or just the message
+     * A question with several answers.
+     *
+     * @param {object} options {title, message, choices: [{value, label, primary}], cancelLabel}
+     * @returns {Promise<*>} the chosen value, or undefined when cancelled
+     */
+    static choose(options) {
+        return show({cancelLabel: 'Cancel', ...options, kind: 'choose'});
+    }
+
+    /**
+     * @param {object|string} options {title, message, rows: [{label, value}] shown as a small table} or just the
+     *                 message
      * @returns {Promise<void>} when it's dismissed
      */
     static alert(options) {

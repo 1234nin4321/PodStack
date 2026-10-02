@@ -3476,3 +3476,14 @@ a:hover {
     color: var(--text-faint);
     cursor: default;
 }
+
+.confirm-rows {
+    margin: 4px 0 12px;
+    padding: 10px 12px;
+    background: var(--panel-raised);
+    border: 1px solid var(--line);
+}
+
+.confirm-rows dd {
+    color: var(--text-strong);
+}

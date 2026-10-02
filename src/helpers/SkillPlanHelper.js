@@ -106,7 +106,8 @@ export default class SkillPlanHelper {
      *  - remaps in the plan: each skill goes in the remap section that trains it fastest (remaps keep their order);
      *  - an active accelerator: its bonus adds the same SP/hour to every skill, which helps the slowest skills most,
      *    so those go first while it lasts.
-     * Notes move with the item below them. A yearly remap is never pulled to less than a year after the last one.
+     * Notes move with the item below them, except those heading the plan. A yearly remap is never pulled to less
+     * than a year after the last one.
      *
      * @returns {object} {queue (the new order, to add to a reset PlanCharacter), time, before (ms), moved (skills
      *          now in another remap section)}, or undefined when no order is faster
@@ -116,12 +117,14 @@ export default class SkillPlanHelper {
         const original = planCharacter.queue.slice();
         const before = planCharacter.time;
 
-        // units: skills and remaps, each with the notes just above it; notes at the very end stay there
+        // units: skills and remaps, each with the notes just above it; notes heading the plan (e.g. where it was
+        // imported from) and at the very end stay there
         const units = [];
+        const leadingNotes = [];
         let notes = [];
         for (const item of original) {
             if (item.type === 'note') {
-                notes.push(item);
+                (units.length === 0 ? leadingNotes : notes).push(item);
             } else {
                 units.push({item, notes});
                 notes = [];
@@ -200,7 +203,7 @@ export default class SkillPlanHelper {
                     order.push(...units[next].notes, items[next]);
                 }
             }
-            return [...order, ...trailingNotes];
+            return [...leadingNotes, ...order, ...trailingNotes];
         };
 
         // when each remap happens: time since the last one, just before it

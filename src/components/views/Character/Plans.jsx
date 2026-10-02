@@ -207,8 +207,46 @@ export default class Plans extends React.Component {
         this.handleSkillPlanChanged(newId);
     }
 
-    // Reorders the plan to finish sooner, if any order does (see SkillPlanHelper.optimiseOrder), after asking.
-    async handleOptimise() {
+    // Asks how to optimise the open plan (the Optimise button, and after an import): reorder it with the current
+    // attributes, or find the best remap for it and reorder around that.
+    async promptOptimise(afterImport) {
+        if (this.planCharacter.queue.filter(item => item.type === 'skill').length < 2) {
+            return;
+        }
+
+        const planId = this.state.skillPlanId;
+        const choice = await ConfirmHelper.choose({
+            title: afterImport ? 'Optimise the imported plan?' : 'Optimise plan',
+            message: 'Reorder the plan to finish it as soon as possible, keeping every skill after its prerequisites.\n\n' +
+                'With current attributes: the plan keeps the attributes it has. With a remap: PodStack works out the ' +
+                'remap that trains this plan fastest, adds it at the start, and tells you which attributes to pick.',
+            cancelLabel: afterImport ? 'Not now' : 'Cancel',
+            choices: [
+                {value: 'current', label: 'Current attributes'},
+                {value: 'remap', label: 'With a remap', primary: true},
+            ],
+        });
+        // the plan may have been switched while the question was open
+        if (choice === undefined || this.state.skillPlanId !== planId) {
+            return;
+        }
+
+        if (choice === 'remap') {
+            this.optimiseWithRemap();
+        } else {
+            this.optimiseWithCurrentAttributes();
+        }
+    }
+
+    // Rebuilds the open plan from queue items and saves it.
+    applyQueue(queue) {
+        this.planCharacter.reset();
+        queue.forEach(item => this.planCharacter.addItemToQueue(item));
+        this.setState({items: this.planCharacter.queue, totalTime: this.planCharacter.time, selection: []});
+        SkillPlanStore.storeSkillPlan(this.props.characterId, this.state.skillPlanId, this.state.skillPlanName, this.planCharacter.queue);
+    }
+
+    optimiseWithCurrentAttributes() {
         const result = SkillPlanHelper.optimiseOrder(this.planCharacter);
         if (result === undefined) {
             ConfirmHelper.alert({
@@ -217,29 +255,92 @@ export default class Plans extends React.Component {
                     'With the same attributes throughout, every order takes the same total time: each level takes its ' +
                     'skill points over its training speed, wherever it is. Order only saves time around remaps in the ' +
                     'plan (each skill trained after the remap that suits it best) and while a cerebral accelerator is ' +
-                    'active (slowest skills first while it lasts).',
+                    'active (slowest skills first while it lasts). Optimise with a remap to change the attributes too.',
             });
             return;
         }
 
-        const planId = this.state.skillPlanId;
-        const confirmed = await ConfirmHelper.confirm({
-            title: 'Optimise plan order',
-            message: `Reordering saves ${DateTimeHelper.niceCountdown(result.before - result.time)}: ` +
-                `${DateTimeHelper.niceCountdown(result.before)} becomes ${DateTimeHelper.niceCountdown(result.time)}.\n\n` +
-                (result.moved > 0 ? `${result.moved} skill level${result.moved === 1 ? '' : 's'} move to another remap section. Remaps keep their order. ` : '') +
+        this.applyQueue(result.queue);
+        ConfirmHelper.alert({
+            title: 'Plan optimised',
+            message: `The plan now takes ${DateTimeHelper.niceCountdown(result.time)} instead of ` +
+                `${DateTimeHelper.niceCountdown(result.before)}, ${DateTimeHelper.niceCountdown(result.before - result.time)} sooner.\n\n` +
+                (result.moved > 0 ? `${result.moved} skill level${result.moved === 1 ? '' : 's'} moved to another remap section. ` : '') +
                 (this.planCharacter.accelerator !== undefined ? 'The slowest skills train first while the accelerator lasts. ' : '') +
                 'Every skill still comes after its prerequisites.',
-            confirmLabel: 'Reorder',
         });
-        if (!confirmed || this.state.skillPlanId !== planId) {
+    }
+
+    // The fastest remap for the plan, at its start (replacing a remap already there), then the order optimised
+    // around it; a popup says which attributes to pick and whether a remap is available.
+    optimiseWithRemap() {
+        const character = Character.get(this.props.characterId);
+        const before = this.planCharacter.time;
+        const queue = this.planCharacter.queue.slice();
+        const first = queue.findIndex(item => item.type !== 'note');
+        const replacing = first !== -1 && queue[first].type === 'remap';
+
+        // the implant set every attribute has (as the Remap dialog assumes), and the attributes now
+        const implants = Math.min(...Object.values(TrainingProfileHelper.getImplantBonuses(this.props.characterId)));
+        const current = TrainingProfileHelper.getBaseAttributes(this.props.characterId);
+        const skills = RemapHelper.sectionAfter(queue, replacing ? first : undefined);
+        const best = RemapHelper.optimise(skills, implants, this.planCharacter.isOmega, current);
+
+        const unchanged = ['perception', 'memory', 'willpower', 'intelligence', 'charisma'].every(a => best.attributes[a] === current[a]);
+        if (unchanged && !replacing) {
+            ConfirmHelper.alert({
+                title: 'No remap needed',
+                message: 'Your current attributes are already the best remap for this plan, so a remap wouldn\'t save any time. ' +
+                    'The plan is optimised with them instead.',
+            }).then(() => this.optimiseWithCurrentAttributes());
             return;
         }
 
-        this.planCharacter.reset();
-        result.queue.forEach(item => this.planCharacter.addItemToQueue(item));
-        this.setState({items: this.planCharacter.queue, totalTime: this.planCharacter.time, selection: []});
-        SkillPlanStore.storeSkillPlan(this.props.characterId, this.state.skillPlanId, this.state.skillPlanName, this.planCharacter.queue);
+        const remap = {type: 'remap', attributes: best.attributes, implants};
+        if (replacing) {
+            queue[first] = remap;
+        } else {
+            queue.splice(Math.max(0, first), 0, remap);
+        }
+        this.applyQueue(queue);
+
+        // and the best order around it (and any later remaps or an accelerator)
+        const reordered = SkillPlanHelper.optimiseOrder(this.planCharacter);
+        if (reordered !== undefined) {
+            this.applyQueue(reordered.queue);
+        }
+
+        const after = this.planCharacter.time;
+        // skills the reorder kept ahead of the remap, as they train faster with the current attributes
+        const remapAt = this.planCharacter.queue.findIndex(item => item.type === 'remap');
+        const skillsFirst = this.planCharacter.queue.slice(0, remapAt).filter(item => item.type === 'skill').length;
+        const attributes = character.attributes || {};
+        const yearly = character.attributes !== undefined ? character.getNextYearlyRemapDate() : undefined;
+        const availability = yearly === true ? 'Your yearly remap is available now.' :
+            (attributes.bonus_remaps || 0) > 0 ? `You have ${attributes.bonus_remaps} bonus remap${attributes.bonus_remaps === 1 ? '' : 's'} to use now.` :
+                yearly instanceof Date ? `No remap is available yet: the yearly remap comes back on ${yearly.toLocaleDateString(navigator.language)}.` : '';
+
+        ConfirmHelper.alert({
+            title: 'Remap for this plan',
+            message: 'Remap to these attributes in EVE (Character Sheet → Attributes → Remap):\n\n' +
+                (implants > 0 ? `With your +${implants} implants they come to ${best.attributes.perception + implants} / ` +
+                    `${best.attributes.memory + implants} / ${best.attributes.willpower + implants} / ` +
+                    `${best.attributes.intelligence + implants} / ${best.attributes.charisma + implants}. ` : '') +
+                `The plan now takes ${DateTimeHelper.niceCountdown(after)} instead of ${DateTimeHelper.niceCountdown(before)}` +
+                (before > after ? `, ${DateTimeHelper.niceCountdown(before - after)} sooner` : '') + '. ' +
+                (skillsFirst > 0 ?
+                    `Train the first ${skillsFirst} skill level${skillsFirst === 1 ? '' : 's'} of the plan before remapping: ` +
+                    'they train faster with your current attributes. The remap is in the plan after them.' :
+                    (replacing ? 'The remap at the start of the plan was changed to this one.' : 'A remap was added at the start of the plan.')) +
+                (availability !== '' ? `\n\n${availability}` : ''),
+            rows: [
+                {label: 'Perception', value: best.attributes.perception},
+                {label: 'Memory', value: best.attributes.memory},
+                {label: 'Willpower', value: best.attributes.willpower},
+                {label: 'Intelligence', value: best.attributes.intelligence},
+                {label: 'Charisma', value: best.attributes.charisma},
+            ],
+        });
     }
 
     handleSort() {
@@ -566,7 +667,7 @@ export default class Plans extends React.Component {
             skillPlanName: name,
             showQueue: false,
             selection: [],
-        });
+        }, () => this.promptOptimise(true));
     }
 
     handleSkillPlanChanged(skillPlanId) {
@@ -679,7 +780,7 @@ export default class Plans extends React.Component {
                 items: this.planCharacter.queue,
                 totalTime: this.planCharacter.time,
                 skillPlans: SkillPlanStore.getSkillPlansForCharacter(this.props.characterId),
-            });
+            }, () => this.promptOptimise(true));
         }
         this.setState({ importToPlanPopoverOpen: false });
     }
@@ -1074,7 +1175,7 @@ export default class Plans extends React.Component {
                                 <RaisedButton
                                     style={styles.button}
                                     labelStyle={styles.buttonLabel}
-                                    onClick={() => this.handleOptimise()}
+                                    onClick={() => this.promptOptimise(false)}
                                     disabled={this.state.items.length < 2}
                                     label="Optimise"
                                     title="Reorder to finish the whole plan as soon as possible, prerequisites kept in order"

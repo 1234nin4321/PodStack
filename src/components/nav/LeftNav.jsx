@@ -21,7 +21,6 @@ const sections = [
     {path: '/asset-search', label: 'Asset Search', icon: 'manage_search'},
     {path: '/market-orders', label: 'Market Overview', icon: 'storefront', badge: MarketOrdersHelper.countExpiringSoon},
     {path: '/industry', label: 'Industry Jobs', icon: 'precision_manufacturing', badge: IndustryHelper.countReadyJobs},
-    {path: '/planets', label: 'Planetary Industry', icon: 'public', badge: IndustryHelper.countExpiredExtractors},
 ];
 
 function formatSp(sp) {
