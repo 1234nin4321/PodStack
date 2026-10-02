@@ -1,8 +1,9 @@
 'use strict';
 
 import React from 'react';
-import {clipboard} from 'electron';
 import log from 'electron-log';
+
+import NativeHelper from '../../helpers/NativeHelper';
 
 import appProperties from '../../../resources/properties';
 
@@ -39,7 +40,7 @@ export default class ErrorBoundary extends React.Component {
     }
 
     copy() {
-        clipboard.writeText(this.details());
+        NativeHelper.writeClipboard(this.details());
         this.setState({copied: true});
         clearTimeout(this.copiedTimer);
         this.copiedTimer = setTimeout(() => this.setState({copied: false}), 2500);

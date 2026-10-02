@@ -35,6 +35,24 @@ module.exports = [
         },
     },
     {
+        // The window (everything but the main-process files) only gets these from 'electron' in Electron 40+;
+        // anything else is undefined there at runtime. Use helpers/NativeHelper.js (IPC to the main process).
+        files: ['src/**/*.{js,jsx}'],
+        ignores: ['src/index.js', 'src/updater.js', 'src/squirrelStartup.js'],
+        rules: {
+            'no-restricted-syntax': ['error',
+                {
+                    selector: "ImportDeclaration[source.value='electron'] > ImportSpecifier:not([imported.name=/^(ipcRenderer|contextBridge|webFrame|webUtils)$/])",
+                    message: 'Not available in the window in Electron 40+: only ipcRenderer, contextBridge, webFrame and webUtils are. Use helpers/NativeHelper.js.',
+                },
+                {
+                    selector: "CallExpression[callee.name='require'][arguments.0.value='electron']",
+                    message: "Import from 'electron' instead of require(), so the allowed-API check above applies.",
+                },
+            ],
+        },
+    },
+    {
         files: ['*.js', 'scripts/**/*.js'],
         ...js.configs.recommended,
         languageOptions: {ecmaVersion: 2022, sourceType: 'commonjs', globals: globals.node},

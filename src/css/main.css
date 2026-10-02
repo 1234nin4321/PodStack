@@ -3018,3 +3018,34 @@ a:hover {
     font-size: 16px;
     color: var(--danger);
 }
+
+/* ---------------------------------------------------------------- Settings: closing the window */
+
+.close-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 10px;
+}
+
+.close-option {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    cursor: pointer;
+}
+
+.close-option:hover {
+    background: var(--panel-hover);
+}
+
+.close-option.selected {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+}
+
+.close-option input {
+    margin-top: 3px;
+    accent-color: var(--accent);
+}

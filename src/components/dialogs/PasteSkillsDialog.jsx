@@ -1,11 +1,11 @@
 'use strict';
 
 import React from 'react';
-import {clipboard} from 'electron';
 import Dialog from 'material-ui/Dialog';
 import FlatButton from 'material-ui/FlatButton';
 
 import ImportExportHelper from '../../helpers/ImportExportHelper';
+import NativeHelper from '../../helpers/NativeHelper';
 
 // Paste a skill list (one "Skill Name IV" per line) to add to the open plan. Opens with the clipboard's text.
 export default class PasteSkillsDialog extends React.Component {
@@ -17,7 +17,8 @@ export default class PasteSkillsDialog extends React.Component {
 
     componentDidUpdate(prevProps) {
         if (this.props.open && !prevProps.open) {
-            this.setState({text: clipboard.readText() || ''});
+            this.setState({text: ''});
+            NativeHelper.readClipboard().then(text => this.props.open && this.setState({text}));
         }
     }
 

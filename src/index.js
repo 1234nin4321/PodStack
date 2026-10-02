@@ -1,6 +1,6 @@
 'use strict';
 
-import {app, BrowserWindow, Tray, Menu, shell, ipcMain, dialog, screen} from 'electron';
+import {app, BrowserWindow, Tray, Menu, shell, ipcMain, dialog, screen, clipboard} from 'electron';
 import path from 'path';
 import log from 'electron-log/main';
 import Store from 'electron-store';
@@ -44,11 +44,7 @@ Store.initRenderer();
 const windowStore = new Store({name: 'window'});
 
 const lockObtained = app.requestSingleInstanceLock();
-app.on('second-instance', (event, commandLine, workingDirectory) => {
-    if (mainWindow) {
-        mainWindow.show();
-    }
-});
+app.on('second-instance', () => showWindow());
 
 if (!lockObtained) {
     app.quit();
@@ -157,10 +153,18 @@ ipcMain.on('theme:background', (event, color) => {
 });
 ipcMain.handle('dialog:save', (event, options) => dialog.showSaveDialog(mainWindow, options));
 // Clicking a desktop alert brings the window back from the tray.
-ipcMain.on('window:show', () => {
-    if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.show();
-        mainWindow.focus();
+ipcMain.on('window:show', () => showWindow());
+// The window can't use the clipboard or shell modules itself any more (see helpers/NativeHelper.js).
+ipcMain.handle('clipboard:read-text', () => clipboard.readText());
+ipcMain.handle('clipboard:write-text', (event, text) => {
+    if (typeof text === 'string') {
+        clipboard.writeText(text);
+    }
+});
+ipcMain.handle('shell:open-external', (event, url) => {
+    // only web links, like the window's own link handling
+    if (typeof url === 'string' && /^https?:\/\//i.test(url)) {
+        shell.openExternal(url);
     }
 });
 // After restoring a backup: start afresh so no module writes its old in-memory data back over the restored files.
@@ -174,6 +178,87 @@ ipcMain.on('app:relaunch', () => {
 // the 10px scrollbar. Measured page by page; re-measure when adding columns or tabs.
 const MIN_CONTENT_WIDTH = 1210;
 const DEFAULT_CONTENT_WIDTH = 1280;
+
+// Brings the window back whether it's minimised to the taskbar or hidden in the tray.
+function showWindow() {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+        if (mainWindow.isMinimized()) {
+            mainWindow.restore();
+        }
+        mainWindow.show();
+        mainWindow.focus();
+    }
+}
+
+function quitApp() {
+    app.isQuiting = true;
+    app.quit();
+}
+
+// What closing the window does: 'ask' (default), 'minimize' (to the taskbar), 'tray' (keep running in the
+// system tray) or 'quit'. Set from the question below ("Remember my choice") or on the Settings page.
+const CLOSE_ACTIONS = ['ask', 'minimize', 'tray', 'quit'];
+let askingToClose = false;
+
+function doCloseAction(action) {
+    if (action === 'quit') {
+        quitApp();
+    } else if (action === 'tray') {
+        mainWindow.hide();
+    } else {
+        mainWindow.minimize();
+    }
+}
+
+async function handleCloseRequest() {
+    const action = windowStore.get('closeAction', 'ask');
+    if (action !== 'ask') {
+        doCloseAction(action);
+        return;
+    }
+    if (askingToClose) {
+        return;
+    }
+
+    askingToClose = true;
+    try {
+        const {response, checkboxChecked} = await dialog.showMessageBox(mainWindow, {
+            type: 'question',
+            title: 'Close PodStack',
+            message: 'Close PodStack completely, or keep it running?',
+            detail: 'Minimised, PodStack keeps refreshing your characters and can still show alerts. You can change ' +
+                'this later on the Settings page.',
+            buttons: ['Minimise to taskbar', 'Quit PodStack', 'Cancel'],
+            defaultId: 0,
+            cancelId: 2,
+            noLink: true,
+            checkboxLabel: 'Remember my choice',
+            checkboxChecked: false,
+        });
+
+        const chosen = ['minimize', 'quit'][response];
+        if (chosen === undefined) {
+            return;   // cancelled
+        }
+        if (checkboxChecked) {
+            windowStore.set('closeAction', chosen);
+            if (mainWindow && !mainWindow.isDestroyed()) {
+                mainWindow.webContents.send('window:close-action', chosen);
+            }
+        }
+        doCloseAction(chosen);
+    } finally {
+        askingToClose = false;
+    }
+}
+
+ipcMain.handle('window:get-close-action', () => windowStore.get('closeAction', 'ask'));
+ipcMain.handle('window:set-close-action', (event, action) => {
+    if (CLOSE_ACTIONS.includes(action)) {
+        windowStore.set('closeAction', action);
+    }
+    return windowStore.get('closeAction', 'ask');
+});
 
 const createWindow = () => {
     // a screen too small for the minimum gets a window that fills it rather than one that hangs off the edge
@@ -211,28 +296,31 @@ const createWindow = () => {
     trayIcon = new Tray(iconPath);
     trayIcon.setToolTip('PodStack');
     let contextMenu = Menu.buildFromTemplate([
-        {label: 'Show', click: () => {mainWindow.show()}},
-        {label: 'Quit', click: () => {
-            app.isQuiting = true;
-            app.quit()
-        }}
+        {label: 'Show', click: () => showWindow()},
+        {label: 'Quit', click: () => quitApp()}
     ]);
     trayIcon.setContextMenu(contextMenu);
-    trayIcon.on('click', () => {
-        mainWindow.show();
-    });
+    trayIcon.on('click', () => showWindow());
 
-    mainWindow.on('minimize', (e) => {
-        e.preventDefault();
-        mainWindow.hide();
-    });
-    mainWindow.on('close', (e) => {
-        if (!app.isQuiting) {
-            e.preventDefault();
+    // Minimising goes to the taskbar, or to the tray for those who chose that for closing.
+    mainWindow.on('minimize', () => {
+        if (windowStore.get('closeAction', 'ask') === 'tray') {
             mainWindow.hide();
         }
-
-        return false;
+    });
+    mainWindow.on('close', (e) => {
+        if (app.isQuiting) {
+            return;
+        }
+        e.preventDefault();
+        handleCloseRequest();
+    });
+    // Windows is shutting down or logging off: quit without asking, or the question would hold it up
+    mainWindow.on('query-session-end', () => {
+        app.isQuiting = true;
+    });
+    mainWindow.on('session-end', () => {
+        app.isQuiting = true;
     });
     mainWindow.on('page-title-updated', (e) => {
         e.preventDefault();

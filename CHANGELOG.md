@@ -1,3 +1,12 @@
+## 0.2.6 Alpha (0.2.6-alpha)
+* Fixed: "Cannot read properties of undefined (reading 'readText')" when importing a skill plan from EVE or pasting
+  a skill list. The clipboard works again everywhere: plan import and export, the Fit Planner's paste, Copy name on
+  the About page and Copy error details. Links in EVE mails open in your browser again.
+* Closing the window asks whether to minimise PodStack to the taskbar or quit it, with "Remember my choice".
+  Settings → When closing the window changes it later (ask, minimise, hide to the system tray, or quit).
+* The minimise button now minimises to the taskbar instead of hiding PodStack in the system tray (unless you choose
+  the tray in Settings).
+
 ## 0.2.5 Alpha (0.2.5-alpha)
 * Fixed: the window could go blank, e.g. when opening a character or importing a plan, if some of a character's data
   hadn't loaded (just added, a failed refresh, or an empty answer from EVE). Characters still loading show a short

@@ -2,7 +2,6 @@
 
 import React from 'react';
 import fs from 'fs';
-import {clipboard} from 'electron';
 import log from 'electron-log';
 
 import FontIcon from 'material-ui/FontIcon';
@@ -17,6 +16,7 @@ import TrainingQueueTable from '../../tables/TrainingQueueTable';
 
 import DateTimeHelper from '../../../helpers/DateTimeHelper';
 import DialogHelper from '../../../helpers/DialogHelper';
+import NativeHelper from '../../../helpers/NativeHelper';
 import FittingHelper from '../../../helpers/FittingHelper';
 
 const NEW_PLAN = '__new__';
@@ -57,8 +57,9 @@ export default class FitPlanner extends React.Component {
         }
     }
 
-    handlePaste() {
-        this.setState({fitText: clipboard.readText()}, this.handleCheck);
+    async handlePaste() {
+        const fitText = await NativeHelper.readClipboard();
+        this.setState({fitText}, this.handleCheck);
     }
 
     async handleOpenFile() {

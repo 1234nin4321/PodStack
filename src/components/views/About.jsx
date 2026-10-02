@@ -1,13 +1,13 @@
 'use strict';
 
 import React from 'react';
-import {clipboard} from 'electron';
 
 import FontIcon from 'material-ui/FontIcon';
 import RaisedButton from 'material-ui/RaisedButton';
 
 import PageHeader from '../ui/PageHeader';
 import Panel from '../ui/Panel';
+import NativeHelper from '../../helpers/NativeHelper';
 import appProperties from '../../../resources/properties';
 import pkg from '../../../package.json';
 
@@ -41,7 +41,7 @@ export default class About extends React.Component {
     }
 
     copyDonationName() {
-        clipboard.writeText(appProperties.donation_character);
+        NativeHelper.writeClipboard(appProperties.donation_character);
         this.setState({copied: true});
         clearTimeout(this.copiedTimer);
         this.copiedTimer = setTimeout(() => this.setState({copied: false}), 2500);

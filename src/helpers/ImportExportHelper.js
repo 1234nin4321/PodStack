@@ -1,9 +1,9 @@
 import appProperties from './../../resources/properties';
 import AllSkills from '../../resources/all_skills';
+import NativeHelper from './NativeHelper';
 
 const fs = require('fs');
 const xml2js = require('xml2js');
-const {clipboard} = require('electron');
 
 const romanLevels = {I: 1, II: 2, III: 3, IV: 4, V: 5};
 
@@ -60,7 +60,7 @@ export default class ImportExportHelper {
                     }
                 }
             });
-            clipboard.writeText(clipboardData);
+            NativeHelper.writeClipboard(clipboardData);
         }
     }
 

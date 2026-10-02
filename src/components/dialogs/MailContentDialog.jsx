@@ -10,6 +10,7 @@ import Paper from 'material-ui/Paper';
 import {List, ListItem} from 'material-ui/List';
 import {colors} from '../theme';
 import ImageHelper from '../../helpers/ImageHelper';
+import NativeHelper from '../../helpers/NativeHelper';
 
 
 const styles = {
@@ -144,7 +145,7 @@ export default class MainContentDialog extends React.Component {
                                         key={index}
                                         primaryText={`${index + 1} - ${link}`}
                                         rightIcon={<FontIcon className="material-icons">open_in_new</FontIcon>}
-                                        onClick={e => {require("electron").shell.openExternal(link); }}
+                                        onClick={() => NativeHelper.openExternal(link)}
                                     />),
                                     )
                                 }

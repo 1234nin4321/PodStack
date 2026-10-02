@@ -14,6 +14,7 @@ import PageHeader from '../ui/PageHeader';
 import Panel from '../ui/Panel';
 import AlertSettings from '../settings/AlertSettings';
 import BackupSettings from '../settings/BackupSettings';
+import WindowSettings from '../settings/WindowSettings';
 
 export default class Settings extends React.Component {
     constructor(props) {
@@ -126,6 +127,8 @@ export default class Settings extends React.Component {
                         {this.renderUpdateAction()}
                     </div>
                 </Panel>
+
+                <WindowSettings/>
 
                 <AlertSettings/>
 
