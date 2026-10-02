@@ -53,6 +53,8 @@ export default class CharacterHelper {
 
     // onStatus receives {stage, message, done?, total?} as the add progresses. stage is one of
     // 'login', 'token', 'loading', 'done', 'error' or 'idle' (cancelled).
+    // Resolves with the id of the character that logged in (also used to re-authorize one for missing scopes), or
+    // undefined if the login was cancelled or failed.
     static async addCharacter(onStatus) {
         const status = typeof onStatus === 'function' ? onStatus : () => {};
 
@@ -110,5 +112,7 @@ export default class CharacterHelper {
             log.error('[SSOv2] Initial character load failed', err);
             status({stage: 'error', message: 'Character added, but some data failed to load. It will retry shortly.'});
         }
+
+        return character.id;
     }
 }

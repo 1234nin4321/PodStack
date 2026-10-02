@@ -514,9 +514,11 @@ a:hover {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
+    flex-wrap: wrap;   /* in a narrow panel the actions move under the title instead of squashing */
+    gap: 6px 12px;
     min-height: 42px;
-    padding: 0 16px;
+    padding: 6px 16px;
+    box-sizing: border-box;
     border-bottom: 1px solid var(--line);
     background: linear-gradient(180deg, color-mix(in srgb, var(--text-strong) 2.5%, transparent), transparent);
 }
@@ -547,8 +549,16 @@ a:hover {
     font-size: 12px;
     color: var(--text-dim);
     display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
     align-items: center;
     gap: 8px;
+    margin-left: auto;
+}
+
+/* buttons keep their size; text may wrap */
+.panel-subtitle > :not(span) {
+    flex-shrink: 0;
 }
 
 .panel-body {
@@ -633,7 +643,7 @@ a:hover {
 
 .stats {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
     gap: 12px;
     margin-bottom: 18px;
 }
@@ -1013,6 +1023,7 @@ a:hover {
 
 .tabs {
     display: flex;
+    flex-wrap: wrap;   /* a narrow window wraps the tabs instead of cutting the last ones off */
     gap: 2px;
     margin: 0 0 18px;
     border-bottom: 1px solid var(--line);
@@ -1023,11 +1034,11 @@ a:hover {
     align-items: center;
     gap: 8px;
     height: 44px;
-    padding: 0 18px;
+    padding: 0 11px;   /* all nine character tabs fit on one row at the minimum window width */
     font-family: var(--font-display);
     font-weight: 700;
     font-size: 13px;
-    letter-spacing: 0.16em;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
     color: var(--text-dim);
     background: none;
@@ -1298,9 +1309,16 @@ a:hover {
     align-items: start;
 }
 
+/* narrower sidebar in smaller windows, so the plan's columns keep their room */
+@media (max-width: 1400px) {
+    .split {
+        grid-template-columns: 250px minmax(0, 1fr);
+    }
+}
+
 .roster-head.farm-grid,
 .roster-row.farm-grid {
-    grid-template-columns: 56px minmax(200px, 2fr) minmax(130px, 1fr) minmax(190px, 1.4fr) minmax(170px, 1.2fr) 48px;
+    grid-template-columns: 56px minmax(170px, 2fr) minmax(130px, 1fr) minmax(190px, 1.4fr) minmax(170px, 1.2fr) 48px;
 }
 
 .plan-toolbar {
@@ -2428,10 +2446,27 @@ a:hover {
     position: relative;
 }
 
+/* name and affiliations | refresh, with the stats underneath: the refresh info sits beside a long name, not over it */
+.hero-main {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto 1fr;
+    column-gap: 16px;
+}
+
 .hero-main > .char-refresh {
-    position: absolute;
-    top: 16px;
-    right: 18px;
+    grid-column: 2;
+    grid-row: 1;
+}
+
+.hero-main > .hero-stats {
+    grid-column: 1 / -1;
+    align-self: end;
+}
+
+.hero-name,
+.hero-affil {
+    flex-wrap: wrap;
 }
 
 .skillbook-best {
@@ -2701,28 +2736,6 @@ a:hover {
     height: 20px;
 }
 
-/* ---------------------------------------------------------------- SP farm profit */
-
-.profit-prices {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 8px 20px;
-    padding: 12px 16px;
-    color: var(--text-dim);
-    border-bottom: 1px solid var(--line);
-}
-
-.profit-prices b {
-    margin-left: 4px;
-    color: var(--text-strong);
-}
-
-.profit-prices label {
-    display: inline-flex;
-    align-items: center;
-}
-
 /* ---------------------------------------------------------------- Plans: paste skill list */
 
 .paste-summary {
@@ -2832,4 +2845,95 @@ a:hover {
     align-items: center;
     justify-content: space-between;
     gap: 12px;
+}
+
+/* ---------------------------------------------------------------- SP farm profitability */
+
+.profit-settings {
+    border-bottom: 1px solid var(--line);
+}
+
+.profit-settings td {
+    padding-top: 6px;
+    padding-bottom: 6px;
+}
+
+.profit-input {
+    display: inline-flex;
+    align-items: center;
+    white-space: nowrap;
+}
+
+.profit-input .field.small {
+    width: 110px;
+    margin-left: 0;
+}
+
+.profit-result {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    padding: 14px 16px;
+    border-top: 1px solid var(--line);
+}
+
+.profit-result-value {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 26px;
+    line-height: 30px;
+    white-space: nowrap;
+}
+
+.profit-result.good .profit-result-value {
+    color: var(--good);
+}
+
+.profit-result.bad .profit-result-value {
+    color: var(--danger);
+}
+
+.profit-result-value small {
+    font-size: 12px;
+    color: var(--text-dim);
+}
+
+.profit-math {
+    font-size: 12px;
+    line-height: 18px;
+}
+
+.profit-farms th {
+    white-space: nowrap;
+}
+
+/* ---------------------------------------------------------------- API tab: grant missing scopes */
+
+.grant-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--bg-0);
+    background: var(--accent);
+    border: 0;
+    cursor: pointer;
+}
+
+.grant-button:hover {
+    filter: brightness(1.15);
+}
+
+.grant-button .material-icons {
+    font-size: 16px;
+}
+
+.grant-status {
+    max-width: 260px;
+    font-size: 12px;
 }

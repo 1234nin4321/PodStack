@@ -35,9 +35,9 @@ export default class SpFarming extends React.Component {
         const injectors = farms.reduce((sum, o) => sum + o.char.getInjectorsReady(o.farm.baseSp), 0);
         const spPerHour = farms.reduce((sum, o) => sum + o.char.getCurrentSpPerHour(), 0);
         const idle = farms.filter(o => o.char.getCurrentSkill() === undefined).length;
-        const prices = this.state.prices;
-        const profit = prices !== undefined && !Object.values(prices).some(p => p === null) ?
-            farms.reduce((sum, o) => sum + FarmProfitHelper.forFarm(o.char, o.farm, prices, FarmProfitHelper.getSettings()).profit, 0) :
+        const {prices, priceSettings} = this.state;
+        const profit = prices !== undefined && FarmProfitHelper.isComplete(prices) ?
+            farms.reduce((sum, o) => sum + FarmProfitHelper.forFarm(o.char, o.farm, prices, priceSettings).profit, 0) :
             undefined;
 
         return (
@@ -54,13 +54,14 @@ export default class SpFarming extends React.Component {
                               foot={`${FormatHelper.number(spPerHour * 24 * 30 / 500000, 1)} injectors / 30 days`}/>
                     <StatTile label="Idle Farms" icon="warning" value={idle} warn={idle > 0}
                               foot={idle > 0 ? 'Queues need attention' : 'All farms training'}/>
-                    <StatTile label="Profit / 30 Days" icon="savings" value={profit !== undefined ? FormatHelper.compact(profit) : '—'}
+                    <StatTile label={profit !== undefined && profit < 0 ? 'Loss / 30 Days' : 'Profit / 30 Days'} icon="savings"
+                              value={profit !== undefined ? FormatHelper.compact(profit) : '—'}
                               unit={profit !== undefined ? 'ISK' : undefined} warn={profit !== undefined && profit < 0}
                               foot="After fees, extractors and subscriptions"/>
                 </div>
 
                 <SpFarmingTable/>
-                <FarmProfitPanel onPrices={prices => this.setState({prices})}/>
+                <FarmProfitPanel onPrices={(prices, priceSettings) => this.setState({prices, priceSettings})}/>
             </div>
         );
     }

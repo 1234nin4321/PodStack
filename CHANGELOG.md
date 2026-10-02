@@ -1,3 +1,15 @@
+## 0.2.2 Alpha (0.2.2-alpha)
+* SP farm profitability: choose Jita prices or your own for each cost (PLEX in ISK; Omega, MCT, Skill Extractors and
+  Large Skill Injectors in PLEX, e.g. New Eden Store sale prices), with Omega at 500 PLEX a month by default. Each farm
+  shows SP/min, injectors per 30 days, injector sales, extractor and subscription costs, and its profit, with a total
+  monthly profit or loss and the maths behind it.
+* The window can no longer be made so small that pages break: every column, button and tab stays visible. It opens a
+  little wider, and fits small screens.
+* Character pages: all tabs fit on one row, the refresh info no longer covers long character names, and plans keep
+  room for skill names when comparing implants or accelerators.
+* API tab: Add missing scopes logs the character in again with every permission PodStack uses.
+* SP Farming page: fixed a stray horizontal scrollbar and the farm row overflowing in narrow windows.
+
 ## 0.2.1 Alpha (0.2.1-alpha)
 * Skill plans: Import → EVE In-Game Plan imports a skill plan copied from the EVE client (Skills window → Skill
   Plans → ☰ → copy to clipboard), including the localised format non-English clients copy. Paste Skill List reads it

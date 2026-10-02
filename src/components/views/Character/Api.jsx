@@ -13,7 +13,46 @@ export default class Api extends React.Component {
     constructor(props) {
         super(props);
 
-        this.state = {removing: false};
+        this.state = {removing: false, granting: undefined};
+    }
+
+    componentWillUnmount() {
+        this.unmounted = true;
+    }
+
+    // Logs in with EVE again asking for every scope PodStack uses, which replaces this character's token.
+    async handleGrantScopes(char) {
+        this.setState({granting: {stage: 'login', message: 'Log in as ' + char.name + ' in the EVE window…'}});
+        const id = await CharacterHelper.addCharacter(status => !this.unmounted && this.setState({granting: status}));
+        if (this.unmounted) {
+            return;
+        }
+
+        if (id !== undefined && id !== char.id) {
+            const other = CharacterModel.get(id);
+            alert(`You logged in as ${other !== undefined ? other.name : 'a different character'}, so that character was ` +
+                `updated instead. To grant the missing permissions to ${char.name}, try again and pick ${char.name} on ` +
+                'the EVE login page.');
+        }
+        this.setState({granting: undefined});
+    }
+
+    renderGrantButton(char, missing) {
+        const granting = this.state.granting;
+        if (granting !== undefined) {
+            return <span className="muted grant-status">{granting.message || 'Waiting for EVE…'}</span>;
+        }
+        if (missing === 0) {
+            return null;
+        }
+
+        return (
+            <button type="button" className="grant-button" onClick={() => this.handleGrantScopes(char)}
+                    title={`Log in with EVE again as ${char.name} to grant the ${missing} missing permission${missing === 1 ? '' : 's'}`}>
+                <i className="material-icons">add_moderator</i>
+                Add missing scopes
+            </button>
+        );
     }
 
     async handleRemove(char) {
@@ -39,19 +78,23 @@ export default class Api extends React.Component {
         const auth = AuthorizedCharacter.get(this.props.characterId);
         const authStatus = (auth.lastRefresh.success !== false) || (auth.lastRefresh.shouldRetry !== false);
         const scopes = auth.getScopeInfo();
+        const missing = scopes.filter(s => !s.isGranted).length;
 
         return (
             <div className="grid-2">
                 <Panel
                     title="Scopes Granted"
                     icon="verified_user"
-                    subtitle={`${scopes.filter(s => s.isGranted).length} / ${scopes.length}`}
+                    subtitle={`${scopes.length - missing} / ${scopes.length}`}
+                    actions={this.renderGrantButton(char, missing)}
                     flush={true}
                 >
-                    <p className="muted" style={{margin: 0, padding: '12px 16px', borderBottom: '1px solid var(--line)'}}>
-                        If you are missing any scopes, use the Authorize Character button on the character overview and
-                        re-add this character.
-                    </p>
+                    {missing > 0 &&
+                        <p className="muted" style={{margin: 0, padding: '12px 16px', borderBottom: '1px solid var(--line)'}}>
+                            {missing} permission{missing === 1 ? ' is' : 's are'} missing, so some data can't load. Use Add
+                            missing scopes and log in as {char.name} on the EVE page that opens.
+                        </p>
+                    }
 
                     {scopes.map(scope =>
                         <div key={scope.name} className="list-row">

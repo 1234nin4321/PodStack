@@ -1,6 +1,6 @@
 'use strict';
 
-import {app, BrowserWindow, Tray, Menu, shell, ipcMain, dialog} from 'electron';
+import {app, BrowserWindow, Tray, Menu, shell, ipcMain, dialog, screen} from 'electron';
 import path from 'path';
 import log from 'electron-log/main';
 import Store from 'electron-store';
@@ -155,12 +155,27 @@ ipcMain.on('app:relaunch', () => {
     app.exit(0);
 });
 
+// Narrowest page (window content) at which no page of the app breaks: every column shown, no squashed buttons, the
+// character tabs on one row. The widest need is a skill plan with an implant/accelerator comparison (1200px) plus
+// the 10px scrollbar. Measured page by page; re-measure when adding columns or tabs.
+const MIN_CONTENT_WIDTH = 1210;
+const DEFAULT_CONTENT_WIDTH = 1280;
+
 const createWindow = () => {
+    // a screen too small for the minimum gets a window that fills it rather than one that hangs off the edge
+    const workArea = screen.getPrimaryDisplay().workAreaSize;
+    const screenWidth = workArea.width - 16;
+    const minWidth = Math.min(MIN_CONTENT_WIDTH, screenWidth);
+
     mainWindow = new BrowserWindow({
         // same icon as the exe, installer and shortcuts (the taskbar uses the window's icon)
         icon: iconPath,
-        width: 1200,
-        height: 800,
+        // sizes are the page's, not including the window frame
+        useContentSize: true,
+        width: Math.max(minWidth, Math.min(DEFAULT_CONTENT_WIDTH, screenWidth)),
+        height: Math.min(800, workArea.height - 40),
+        minWidth: minWidth,
+        minHeight: 500,
         // Match the app background so the window doesn't flash white while loading.
         backgroundColor: windowStore.get('background', '#05070a'),
         webPreferences: {

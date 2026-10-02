@@ -146,7 +146,7 @@ export default class SpFarmingTable extends React.Component {
                             </div>
 
                             <div style={{textAlign: 'right'}}>
-                                <IconButton tooltip="Remove farm" onClick={e => this.handleDelete(e, char.id)}>
+                                <IconButton tooltip="Remove farm" tooltipPosition="bottom-left" onClick={e => this.handleDelete(e, char.id)}>
                                     <FontIcon className="material-icons" color={colors.textFaint} hoverColor={colors.danger}>delete</FontIcon>
                                 </IconButton>
                             </div>

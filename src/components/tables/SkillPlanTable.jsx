@@ -51,6 +51,24 @@ const styles = {
         paddingRight: 6,
         paddingLeft: 6,
     },
+    // fixed widths for the optional text columns, so the skill name keeps the leftover space
+    planRowColumnGroup: {
+        height: 20,
+        width: 150,
+        paddingRight: 6,
+        paddingLeft: 6,
+        textTransform: 'capitalize',
+        overflow: 'hidden',
+        whiteSpace: 'nowrap',
+        textOverflow: 'ellipsis',
+    },
+    planRowColumnAttributes: {
+        height: 20,
+        width: 80,
+        paddingRight: 6,
+        paddingLeft: 6,
+        textTransform: 'capitalize',
+    },
     planRowColumnTime: {
         height: 20,
         width: 110,
@@ -65,14 +83,14 @@ const styles = {
     },
     planRowColumnCompare: {
         height: 20,
-        width: 110,
+        width: 96,
         paddingRight: 6,
         paddingLeft: 6,
     },
     // header cells don't clip by default, so long text would run into the next column
     planRowColumnCompareHeader: {
         height: 20,
-        width: 110,
+        width: 96,
         paddingRight: 6,
         paddingLeft: 6,
         overflow: 'hidden',
@@ -283,6 +301,11 @@ const SortableList = SortableContainer(
 SortableList.muiName = 'TableBody';
 
 export default class SkillPlanTable extends React.Component {
+    // the Group column makes way for the two comparison columns, so the skill names keep enough room
+    groupColumnStyle() {
+        return this.props.compare ? styles.planRowColumnHidden : this.state.columnMarketGroupStyle;
+    }
+
     constructor(props) {
         super(props);
 
@@ -298,7 +321,7 @@ export default class SkillPlanTable extends React.Component {
             columnSPhsStyleChecked: false,
             columnLastRemapChecked: false,
             columnTimeStyle: styles.planRowColumnTime,
-            columnMarketGroupStyle: styles.planRowColumn,
+            columnMarketGroupStyle: styles.planRowColumnGroup,
             columnAttributesStyle: styles.planRowColumnHidden,
             columnSPhsStyle: styles.planRowColumnHidden,
             columnLastRemapStyle: styles.planRowColumnHidden,
@@ -400,7 +423,7 @@ export default class SkillPlanTable extends React.Component {
                             style={styles.checkbox}
                             checked={this.state.columnMarketGroupChecked}
                             onCheck={(e, c) => this.setState({
-                                columnMarketGroupStyle: c ? styles.planRowColumn : styles.planRowColumnHidden,
+                                columnMarketGroupStyle: c ? styles.planRowColumnGroup : styles.planRowColumnHidden,
                                 columnMarketGroupChecked: c,
                              })}
                         />
@@ -409,7 +432,7 @@ export default class SkillPlanTable extends React.Component {
                             style={styles.checkbox}
                             checked={this.state.columnAttributesChecked}
                             onCheck={(e, c) => this.setState({
-                                columnAttributesStyle: c ? styles.planRowColumn : styles.planRowColumnHidden,
+                                columnAttributesStyle: c ? styles.planRowColumnAttributes : styles.planRowColumnHidden,
                                 columnAttributesChecked: c,
                              })}
                         />
@@ -446,7 +469,7 @@ export default class SkillPlanTable extends React.Component {
                             {this.props.compare &&
                                 <TableHeaderColumn style={styles.planRowColumnCompareHeader}>Change</TableHeaderColumn>
                             }
-                            <TableHeaderColumn style={this.state.columnMarketGroupStyle}>Group</TableHeaderColumn>
+                            <TableHeaderColumn style={this.groupColumnStyle()}>Group</TableHeaderColumn>
                             <TableHeaderColumn style={this.state.columnAttributesStyle}>Attributes</TableHeaderColumn>
                             <TableHeaderColumn style={this.state.columnSPhsStyle}>SP/h</TableHeaderColumn>
                             <TableHeaderColumn style={this.state.columnLastRemapStyle}>Since remap</TableHeaderColumn>
@@ -477,7 +500,7 @@ export default class SkillPlanTable extends React.Component {
                         onRemove={this.handleDelete}
                         onSortEnd={this.handleSortEnd}
                         columnTime={this.state.columnTimeStyle}
-                        columnMarketGroup={this.state.columnMarketGroupStyle}
+                        columnMarketGroup={this.groupColumnStyle()}
                         columnAttributes={this.state.columnAttributesStyle}
                         columnSPhs={this.state.columnSPhsStyle}
                         columnLastRemap={this.state.columnLastRemapStyle}
@@ -504,7 +527,7 @@ export default class SkillPlanTable extends React.Component {
                             {this.props.compare &&
                                 <TableHeaderColumn style={styles.planRowColumnCompareHeader}>{changeCell(this.state.totalTime, this.props.compare.total)}</TableHeaderColumn>
                             }
-                            <TableHeaderColumn style={this.state.columnMarketGroupStyle} />
+                            <TableHeaderColumn style={this.groupColumnStyle()} />
                             <TableHeaderColumn style={this.state.columnAttributesStyle} />
                             <TableHeaderColumn style={this.state.columnSPhsStyle} />
                             <TableHeaderColumn style={this.state.columnLastRemapStyle} />
