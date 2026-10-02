@@ -1,0 +1,55 @@
+{
+  "name": "podstack",
+  "productName": "PodStack",
+  "version": "0.1.0-alpha",
+  "description": "Character Manager for EVE Online",
+  "author": "1234nin4321",
+  "license": "AGPL-3.0-only",
+  "repository": "github:1234nin4321/PodStack",
+  "keywords": [],
+  "main": "dist/main.js",
+  "scripts": {
+    "start": "electron-forge start",
+    "build": "node scripts/build.js",
+    "package": "electron-forge package",
+    "make": "electron-forge make",
+    "publish": "electron-forge publish",
+    "lint": "eslint --cache --color --ext .jsx,.js src"
+  },
+  "dependencies": {
+    "electron-log": "^5.4.4",
+    "electron-squirrel-startup": "^1.0.0",
+    "electron-store": "^8.2.0",
+    "material-ui": "^0.20.2",
+    "react": "^16.7.0",
+    "react-dnd": "^7.0.2",
+    "react-dom": "^16.7.0",
+    "react-router-dom": "^4.3.1",
+    "react-sortable-hoc": "^1.4.0",
+    "react-sortable-tree": "^2.6.0",
+    "react-table": "^6.8.6",
+    "request": "^2.88.0",
+    "request-promise-native": "^1.0.5",
+    "sanitize-html": "^1.20.0",
+    "xml2js": "^0.4.19"
+  },
+  "devDependencies": {
+    "@electron-forge/cli": "^8.0.1",
+    "@electron-forge/maker-deb": "^8.0.1",
+    "@electron-forge/maker-rpm": "^8.0.1",
+    "@electron-forge/maker-squirrel": "^8.0.1",
+    "@electron-forge/maker-zip": "^8.0.1",
+    "@electron-forge/publisher-github": "^8.0.1",
+    "electron": "^44.5.1",
+    "esbuild": "^0.28.2",
+    "eslint": "^5.12.0",
+    "eslint-config-airbnb": "^17.1.0",
+    "eslint-plugin-import": "^2.14.0",
+    "eslint-plugin-jsx-a11y": "^6.1.2",
+    "eslint-plugin-react": "^7.12.3"
+  },
+  "allowScripts": {
+    "esbuild@0.28.2": true,
+    "electron-winstaller@5.4.4": true
+  }
+}

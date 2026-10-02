@@ -1,0 +1,29 @@
+# Builds the Windows installer (Squirrel) and zip, and uploads them to a draft GitHub release.
+# Run it by pushing a tag that matches package.json's version, e.g.:
+#   git tag v0.1.0-alpha && git push origin v0.1.0-alpha
+# Then review the draft release on GitHub and publish it (not as a pre-release) so installed copies update.
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Check the tag matches package.json
+        shell: bash
+        run: test "v$(node -p "require('./package.json').version")" = "$GITHUB_REF_NAME"
+      - run: npm run publish
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

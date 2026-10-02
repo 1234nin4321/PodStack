@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="28%" r="85%">
+      <stop offset="0" stop-color="#1a3b57"/>
+      <stop offset="0.5" stop-color="#0b1826"/>
+      <stop offset="1" stop-color="#04070b"/>
+    </radialGradient>
+    <linearGradient id="hull" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#d9f8ff"/>
+      <stop offset="0.35" stop-color="#5fd2f0"/>
+      <stop offset="1" stop-color="#136f99"/>
+    </linearGradient>
+    <linearGradient id="canopy" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0d2d40"/>
+      <stop offset="1" stop-color="#03121c"/>
+    </linearGradient>
+    <linearGradient id="fin" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3aa9cf"/>
+      <stop offset="1" stop-color="#0f4f6e"/>
+    </linearGradient>
+    <radialGradient id="flare" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#fff4d6"/>
+      <stop offset="0.3" stop-color="#ffb347"/>
+      <stop offset="1" stop-color="#ff7a1a" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="slabTop" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4cc6ea"/>
+      <stop offset="1" stop-color="#2a8db5"/>
+    </linearGradient>
+    <linearGradient id="rim" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8fe6ff" stop-opacity="0.95"/>
+      <stop offset="1" stop-color="#3fb8d9" stop-opacity="0.1"/>
+    </linearGradient>
+    <filter id="blur" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="30"/></filter>
+    <filter id="blurS" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="10"/></filter>
+    <clipPath id="tile"><rect x="32" y="32" width="960" height="960" rx="220"/></clipPath>
+  </defs>
+
+  <rect x="32" y="32" width="960" height="960" rx="220" fill="url(#bg)"/>
+  <g clip-path="url(#tile)">
+    <g fill="#d8f3ff" opacity="0.55">
+      <circle cx="190" cy="210" r="4"/><circle cx="840" cy="170" r="5"/><circle cx="900" cy="430" r="3"/>
+      <circle cx="130" cy="520" r="3"/><circle cx="690" cy="100" r="3"/><circle cx="300" cy="110" r="2.5"/>
+    </g>
+    <!-- stack: three isometric layers -->
+    <g transform="translate(0 -28)">
+      <path d="M170 760 L512 931 L854 760 L854 806 L512 977 L170 806 Z" fill="#0e3448"/>
+      <path d="M170 760 L512 589 L854 760 L512 931 Z" fill="#164a63"/>
+
+      <path d="M170 660 L512 831 L854 660 L854 706 L512 877 L170 706 Z" fill="#135573"/>
+      <path d="M170 660 L512 489 L854 660 L512 831 Z" fill="#1d6f93"/>
+
+      <path d="M170 560 L512 731 L854 560 L854 606 L512 777 L170 606 Z" fill="#1d7aa1"/>
+      <path d="M170 560 L512 389 L854 560 L512 731 Z" fill="url(#slabTop)"/>
+      <path d="M170 560 L512 389 L854 560" fill="none" stroke="#c4f3ff" stroke-width="8" stroke-linejoin="round"/>
+      <path d="M512 731 L854 560" fill="none" stroke="#9fe8ff" stroke-width="5" opacity="0.6"/>
+    </g>
+  </g>
+  <rect x="36" y="36" width="952" height="952" rx="216" fill="none" stroke="url(#rim)" stroke-width="8"/>
+
+  <!-- landing glow -->
+  <ellipse cx="512" cy="512" rx="250" ry="80" fill="#5fe0ff" opacity="0.6" filter="url(#blur)"/>
+
+  <!-- the pod -->
+  <g transform="translate(512 336) rotate(-24)">
+    <!-- engine flare behind -->
+    <ellipse cx="-300" cy="0" rx="150" ry="95" fill="url(#flare)"/>
+    <!-- fins -->
+    <path d="M-170 -88 L-250 -170 L-120 -112 Z" fill="url(#fin)"/>
+    <path d="M-170 88 L-250 170 L-120 112 Z" fill="url(#fin)"/>
+    <!-- hull: egg, blunt rear, rounded nose -->
+    <path d="M-235 -70 C -235 -120, -150 -140, 0 -140 C 180 -140, 270 -80, 270 0 C 270 80, 180 140, 0 140 C -150 140, -235 120, -235 70 Z" fill="url(#hull)"/>
+    <path d="M-235 -70 C -235 -120, -150 -140, 0 -140 C 180 -140, 270 -80, 270 0 C 270 80, 180 140, 0 140 C -150 140, -235 120, -235 70 Z" fill="none" stroke="#effcff" stroke-width="8" opacity="0.7"/>
+    <!-- canopy -->
+    <path d="M90 -96 C 170 -90, 228 -50, 236 0 C 228 50, 170 90, 90 96 C 120 50, 120 -50, 90 -96 Z" fill="url(#canopy)"/>
+    <path d="M118 -70 C 160 -60, 196 -36, 206 -8" fill="none" stroke="#7fe3ff" stroke-width="10" stroke-linecap="round" opacity="0.8"/>
+    <!-- seam and highlight -->
+    <path d="M-120 -128 C -100 -60, -100 60, -120 128" fill="none" stroke="#0e5878" stroke-width="10" opacity="0.6"/>
+    <path d="M-70 -104 C 0 -122, 60 -118, 80 -110" fill="none" stroke="#ffffff" stroke-width="22" stroke-linecap="round" opacity="0.6"/>
+    <!-- engine core -->
+    <ellipse cx="-238" cy="0" rx="22" ry="52" fill="#ffd27a"/>
+    <ellipse cx="-238" cy="0" rx="10" ry="30" fill="#fffbe8"/>
+  </g>
+</svg>

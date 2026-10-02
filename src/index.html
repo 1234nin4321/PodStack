@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <title>PodStack</title>
+    <link rel="stylesheet" href="./../dist/renderer.css">
+    <link rel="stylesheet" type="text/css" href="./css/main.css">
+    <script>
+        // Apply the saved theme before first paint (same key as helpers/ThemeHelper.js).
+        try {
+            document.documentElement.setAttribute('data-theme', localStorage.getItem('podstack.theme') || 'photon');
+        } catch (err) {}
+    </script>
+</head>
+
+<body>
+
+<!-- Shown until React renders; the app's modules take a moment to load on a cold start. -->
+<div id="App">
+    <div class="boot">
+        <img src="./../resources/icon.png" alt="">
+        <div class="boot-name">PODSTACK</div>
+        <div class="boot-bar"><span></span></div>
+        <div class="boot-status">Establishing neural link…</div>
+    </div>
+</div>
+
+</body>
+
+<script src="./../dist/renderer.js"></script>
+
+</html>
