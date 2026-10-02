@@ -159,6 +159,27 @@ export default class ShipSof {
         return (paint !== undefined && paint.faction) || (ship.model && ship.model.faction) || undefined;
     }
 
+    /**
+     * The texture set a look uses (its "resPathInsert"): a SKIN's own where it names one ("none" = the hull's own
+     * textures), else its faction's, e.g. "nefantar", whose textures have clean panels where the hull's own are
+     * weathered. Undefined for none.
+     */
+    static textureSet(ship, skinId) {
+        const paint = skinId !== undefined ? (ShipData.skins || {})[skinId] : undefined;
+        if (paint !== undefined && paint.textures !== undefined && paint.textures !== null) {
+            return /^(none)?$/i.test(paint.textures) ? undefined : paint.textures.toLowerCase();
+        }
+        const faction = ShipSof.factionFor(ship, skinId);
+        const root = faction ? black(`${SOF}factions/${faction.toLowerCase()}.black`) : undefined;
+        return root && root.resPathInsert ? root.resPathInsert.toLowerCase() : undefined;
+    }
+
+    // whether a SKIN names a texture set of its own (rather than its faction's, or the hull's own textures)
+    static namesTextureSet(skinId) {
+        const paint = skinId !== undefined ? (ShipData.skins || {})[skinId] : undefined;
+        return paint !== undefined && typeof paint.textures === 'string' && !/^(none)?$/i.test(paint.textures);
+    }
+
     // the four material names a faction gives a hull's main ("Primary") paint areas
     static factionMaterials(faction) {
         if (!faction) {

@@ -26,6 +26,13 @@ const LIGHTING = {
 // a 1x1 black texture, for pattern layers that aren't in use
 const BLANK = () => dataTexture({width: 1, height: 1, data: new Uint8Array([0, 0, 0, 255])}, THREE.NoColorSpace);
 
+// whether a hull's mask is read with its levels blended: its own (weathered) textures, or the clean set a SKIN names
+// where it was found; a SKIN whose set the client lacks keeps crisp areas, as its colours would otherwise run into
+// each other over the weathering
+function maskBlends(textures) {
+    return !textures.skinSet || textures.inserted;
+}
+
 function dataTexture(t, colorSpace) {
     const texture = new THREE.DataTexture(t.data, t.width, t.height, THREE.RGBAFormat);
     texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
@@ -63,6 +70,7 @@ export default class ShipViewer extends React.Component {
             this.applyLighting();
         }
         if (prevState.skin !== this.state.skin) {
+            this.applyTextureSet();
             this.applyPaint();
             // logos follow the SKIN's faction
             this.addDecals();
@@ -197,7 +205,7 @@ export default class ShipViewer extends React.Component {
     loadShip() {
         let model;
         try {
-            model = ShipModelHelper.load(this.props.ship);
+            model = ShipModelHelper.load(this.props.ship, ShipSof.textureSet(this.props.ship, undefined));
         } catch (err) {
             this.clearShip();
             this.setState({status: 'error', error: err.message});
@@ -223,6 +231,7 @@ export default class ShipViewer extends React.Component {
         this.ship = ship;
         this.scene.add(ship);
         this.model = model;
+        model.typeId = this.props.ship.type_id;
         this.addDecals();
 
         this.radius = sphere.radius;
@@ -230,8 +239,40 @@ export default class ShipViewer extends React.Component {
         this.setState({status: 'ready', textured: model.textures.albedo !== undefined && this.albedoSupported});
     }
 
-    materials(textures) {
-        const hull = new THREE.MeshStandardMaterial({color: 0xffffff, roughness: 0.5, metalness: 0.15});
+    // A look whose texture set differs from the one loaded (a SKIN's clean "nefantar" set over the hull's weathered
+    // own, or back): its textures into the hull material, where the client has them.
+    applyTextureSet() {
+        // (not while another ship is loading: its own look is set as it loads)
+        if (this.model === undefined || this.hull === undefined || this.state.skin === '' || this.model.typeId !== this.props.ship.type_id) {
+            return;
+        }
+        const skin = this.state.skin === 'default' ? undefined : this.state.skin;
+        const wanted = ShipSof.textureSet(this.props.ship, skin);
+        const current = this.model.textures;
+        if (wanted === current.insert && ShipSof.namesTextureSet(skin) === Boolean(current.skinSet)) {
+            return;
+        }
+        let textures;
+        try {
+            textures = ShipModelHelper.texturesFor(this.props.ship, wanted);
+        } catch (err) {
+            textures = undefined;
+        }
+        if (textures === undefined) {
+            return;
+        }
+        textures.skinSet = ShipSof.namesTextureSet(skin);
+        // the same maps as before where the set doesn't have them only costs a reload, so it's done once per set
+        this.setTextures(this.hull, textures);
+        this.model.textures = textures;
+    }
+
+    // the hull's maps into its material, replacing (and freeing) those it had
+    setTextures(hull, textures) {
+        const old = [hull.map, hull.normalMap, hull.emissiveMap, this.paint && this.paint.surfaceMap.value];
+        hull.map = null;
+        hull.normalMap = null;
+        hull.emissiveMap = null;
 
         // the albedo stays block-compressed on the graphics card, where the card supports the format
         const albedo = textures.albedo;
@@ -262,8 +303,27 @@ export default class ShipViewer extends React.Component {
         // (colour, roughness, metalness); G is the hull's roughness detail
         const surface = textures.surface !== undefined ? dataTexture(textures.surface, THREE.NoColorSpace) :
             dataTexture({width: 1, height: 1, data: new Uint8Array([0, 128, 0, 255])}, THREE.NoColorSpace);
+        if (this.paint !== undefined) {
+            this.paint.surfaceMap.value = surface;
+            this.paint.maskBlend.value = maskBlends(textures) ? 1 : 0;
+        }
+        hull.needsUpdate = true;
+        for (const texture of old) {
+            if (texture && !Object.values(hull).includes(texture) && texture !== surface) {
+                texture.dispose();
+            }
+        }
+        return surface;
+    }
+
+    materials(textures) {
+        const hull = new THREE.MeshStandardMaterial({color: 0xffffff, roughness: 0.5, metalness: 0.15});
+        this.paint = undefined;
+        const surface = this.setTextures(hull, textures);
         this.paint = {
             surfaceMap: {value: surface},
+            // 1: blend between the mask's four levels (weathered panels part-way between two materials); 0: crisp areas
+            maskBlend: {value: maskBlends(textures) ? 1 : 0},
             paintAmount: {value: 0},
             mtlDiffuse: {value: [0, 1, 2, 3].map(() => new THREE.Color(0x808080))},
             mtlSpecular: {value: [0, 1, 2, 3].map(() => new THREE.Color(0x0a0a0a))},
@@ -299,6 +359,9 @@ uniform float paintAmount;
 uniform vec3 mtlDiffuse[4];
 uniform vec3 mtlSpecular[4];
 uniform float mtlRough[4];
+uniform float maskBlend;
+vec3 areaVec(vec3 v[4], int i) { return i == 0 ? v[0] : i == 1 ? v[1] : i == 2 ? v[2] : v[3]; }
+float areaFloat(float v[4], int i) { return i == 0 ? v[0] : i == 1 ? v[1] : i == 2 ? v[2] : v[3]; }
 varying vec3 vHullPosition;
 uniform sampler2D patternMask0;
 uniform sampler2D patternMask1;
@@ -336,16 +399,23 @@ vec3 patternCoords(int i) {
 }`)
                 .replace('#include <map_fragment>', `#include <map_fragment>
 vec4 surfaceSample = texture2D(surfaceMap, vMapUv);
-// the mask's areas aren't evenly spaced: about 0 and 85, then the third area's panels, whose values vary cloudily from
-// about 180 up to white (detail within one material, not another one); only solid white is the fourth area
+// the mask's four levels (0, 85, 170, 255) are the four materials; a hull's own textures are weathered, with values
+// part-way between two levels (e.g. the default Rifter's panels, between blued steel and rust), which blend the two.
+// Where a SKIN's clean texture set is missing, its weathering is read as the nearer material instead (crisp).
 float maskValue = surfaceSample.r * 255.0;
-int area = maskValue < 42.0 ? 0 : maskValue < 145.0 ? 1 : maskValue < 254.0 ? 2 : 3;
-vec3 areaColor = mtlDiffuse[0];
-vec3 areaSpecular = mtlSpecular[0];
-float areaRough = mtlRough[0];
-if (area == 1) { areaColor = mtlDiffuse[1]; areaSpecular = mtlSpecular[1]; areaRough = mtlRough[1]; }
-else if (area == 2) { areaColor = mtlDiffuse[2]; areaSpecular = mtlSpecular[2]; areaRough = mtlRough[2]; }
-else if (area >= 3) { areaColor = mtlDiffuse[3]; areaSpecular = mtlSpecular[3]; areaRough = mtlRough[3]; }
+float level = clamp(maskValue / 85.0, 0.0, 3.0);
+int lowArea = int(floor(level));
+int highArea = lowArea < 3 ? lowArea + 1 : 3;
+float between = level - float(lowArea);
+if (maskBlend < 0.5) {
+    lowArea = maskValue < 42.0 ? 0 : maskValue < 145.0 ? 1 : maskValue < 254.0 ? 2 : 3;
+    highArea = lowArea;
+    between = 0.0;
+}
+int area = between < 0.5 ? lowArea : highArea;
+vec3 areaColor = mix(areaVec(mtlDiffuse, lowArea), areaVec(mtlDiffuse, highArea), between);
+vec3 areaSpecular = mix(areaVec(mtlSpecular, lowArea), areaVec(mtlSpecular, highArea), between);
+float areaRough = mix(areaFloat(mtlRough, lowArea), areaFloat(mtlRough, highArea), between);
 // SKIN patterns paint their material over the areas where their mask is set
 if (patternOn[0] > 0.5) {
     vec3 pc = patternCoords(0);

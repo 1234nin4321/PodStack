@@ -259,7 +259,7 @@ export default class ShipModelHelper {
      * DDS), normal, surface (paint area mask in R, roughness in G), glow (in R): each {width, height, data} RGBA}}.
      * Textures that are missing are left out.
      */
-    static load(ship) {
+    static load(ship, insert) {
         const found = ShipModelHelper.locate(ship);
         if (found === undefined) {
             throw new Error('Your EVE client has no model for this ship.');
@@ -338,7 +338,7 @@ export default class ShipModelHelper {
         // textures are a bonus: without them the hull is shown in plain metal
         let textures = {};
         try {
-            textures = ShipModelHelper.textures(files, found, ship.model.hull);
+            textures = ShipModelHelper.textures(files, found, ship.model.hull, insert);
         } catch (err) {
             log.warn(`[Models] Textures for ${found.model} failed`, err);
         }
@@ -352,20 +352,68 @@ export default class ShipModelHelper {
         };
     }
 
-    // The hull's textures, from its own set if it has one (e.g. a navy issue's colours) else the base hull's.
-    static textures(files, found, hull) {
-        const pick = map => {
-            for (const name of [hull, found.hull]) {
-                const res = `${found.folder}/${name}_${map}.dds`;
-                if (files.has(res)) {
-                    try {
-                        return parseDds(readFile(files.get(res)));
-                    } catch (err) {
-                        return undefined;
+    /**
+     * A ship's textures for a SKIN or faction whose look uses its own texture set (its "resPathInsert", e.g. "nefantar":
+     * clean panels where the ship's own textures are weathered); undefined when the client has no model for it.
+     */
+    static texturesFor(ship, insert) {
+        const files = ShipModelHelper.files();
+        const found = ShipModelHelper.locate(ship);
+        if (files === undefined || found === undefined) {
+            return undefined;
+        }
+        return ShipModelHelper.textures(files, found, ship.model.hull, insert);
+    }
+
+    // The client's file for one of a hull's maps (a, n, m, r, g...): from the texture set `insert` names where the client
+    // has one, else the hull's own. Returns {res, inserted}, or undefined.
+    static textureFile(files, folder, names, map, insert) {
+        const wanted = insert !== undefined && !/^(none|base)?$/i.test(insert) ? insert.toLowerCase() : undefined;
+        for (const name of names) {
+            if (wanted !== undefined) {
+                // the set's usual places: a folder of its own beside the hull's, or its name in the file's
+                const candidates = [`${folder}/${wanted}/${name}_${map}.dds`, `${folder}/${name}_${wanted}_${map}.dds`,
+                    `${folder}/${wanted}/${name}_${wanted}_${map}.dds`];
+                let res = candidates.find(c => files.has(c));
+                if (res === undefined) {
+                    const token = new RegExp(`[/_]${wanted.replace(/[^a-z0-9]/g, '.')}[/_.]`);
+                    for (const key of files.keys()) {
+                        if (key.startsWith(`${folder}/`) && key.endsWith(`_${map}.dds`) && key.includes(name) &&
+                            token.test(key.slice(folder.length))) {
+                            res = key;
+                            break;
+                        }
                     }
                 }
+                if (res !== undefined) {
+                    return {res, inserted: true};
+                }
             }
-            return undefined;
+            const res = `${folder}/${name}_${map}.dds`;
+            if (files.has(res)) {
+                return {res, inserted: false};
+            }
+        }
+        return undefined;
+    }
+
+    // The hull's textures, from its own set if it has one (e.g. a navy issue's colours) else the base hull's; and from
+    // the texture set `insert` names (a SKIN's or faction's) where the client has it.
+    static textures(files, found, hull, insert) {
+        const used = [];
+        const pick = map => {
+            const file = ShipModelHelper.textureFile(files, found.folder, [hull, found.hull], map, insert);
+            if (file === undefined) {
+                return undefined;
+            }
+            if (file.inserted) {
+                used.push(file.res);
+            }
+            try {
+                return parseDds(readFile(files.get(file.res)));
+            } catch (err) {
+                return undefined;
+            }
         };
 
         const textures = {};
@@ -418,6 +466,12 @@ export default class ShipModelHelper {
                 rgba[i + 2] = rgba[i];
             }
             textures.glow = {width: mip.width, height: mip.height, data: rgba};
+        }
+        // whether the material mask came from the asked-for set (the viewer paints a weathered hull's mask differently)
+        textures.insert = insert;
+        textures.inserted = used.some(res => res.endsWith('_m.dds'));
+        if (insert !== undefined && !/^(none|base)?$/i.test(insert)) {
+            log.info(`[Models] ${found.model}: texture set "${insert}" ${used.length > 0 ? `found (${used.join(', ')})` : 'not in the client, using the hull\'s own'}`);
         }
         return textures;
     }
