@@ -17,6 +17,7 @@ const COMPRESSED = {
     BC3: {extension: 'WEBGL_compressed_texture_s3tc', format: THREE.RGBA_S3TC_DXT5_Format},
 };
 const LIGHTING = {
+    ingame: {label: 'In-game', background: 0x050506, env: 0.9, key: 3.0, rim: 1.4, ambient: 0.04},
     studio: {label: 'Studio', background: 0x0b0e13, env: 1.6, key: 2.0, rim: 1.2, ambient: 0.15},
     space: {label: 'Deep space', background: 0x020306, env: 0.35, key: 3.2, rim: 0.6, ambient: 0.05},
     bright: {label: 'Bright', background: 0x1a1f27, env: 1.6, key: 1.6, rim: 1.0, ambient: 0.6},
@@ -42,7 +43,7 @@ export default class ShipViewer extends React.Component {
     constructor(props) {
         super(props);
 
-        this.state = {status: 'loading', error: undefined, autoRotate: true, lighting: 'studio', skin: 'default', paintSource: 'none'};
+        this.state = {status: 'loading', error: undefined, autoRotate: true, lighting: 'ingame', skin: 'default', paintSource: 'none'};
         this.mount = React.createRef();
     }
 
@@ -63,6 +64,8 @@ export default class ShipViewer extends React.Component {
         }
         if (prevState.skin !== this.state.skin) {
             this.applyPaint();
+            // logos follow the SKIN's faction
+            this.addDecals();
         }
         if (this.controls !== undefined) {
             this.controls.autoRotate = this.state.autoRotate;
@@ -76,7 +79,7 @@ export default class ShipViewer extends React.Component {
             this.observer.disconnect();
         }
         this.clearShip();
-        for (const texture of (this.masks || new Map()).values()) {
+        for (const texture of [...(this.masks || new Map()).values(), ...(this.decalTextures || new Map()).values()]) {
             if (texture !== undefined) {
                 texture.dispose();
             }
@@ -173,6 +176,7 @@ export default class ShipViewer extends React.Component {
         if (this.ship === undefined) {
             return;
         }
+        this.removeDecals();
         this.scene.remove(this.ship);
         this.ship.geometry.dispose();
         if (this.paint !== undefined) {
@@ -218,6 +222,8 @@ export default class ShipViewer extends React.Component {
         ship.position.copy(sphere.center).multiplyScalar(-1);
         this.ship = ship;
         this.scene.add(ship);
+        this.model = model;
+        this.addDecals();
 
         this.radius = sphere.radius;
         this.resetView();
@@ -315,8 +321,9 @@ vec3 patternCoords(int i) {
     // mirrored patterns are painted on both sides of the hull
     if (patternMirror[i] > 0.5) { p.x = (patternPos[i].x < 0.0 ? -1.0 : 1.0) * abs(p.x); }
     vec3 local = unrotate(patternRot[i], p - patternPos[i]) / max(patternScale[i], vec3(1e-4));
-    vec2 uv = local.xy * 0.5 + 0.5;
-    float inside = step(abs(local.z), 1.0);
+    // projected along the box's x, like the client's decals; its texture spans y and z
+    vec2 uv = local.yz * 0.5 + 0.5;
+    float inside = step(abs(local.x), 1.0);
     if (patternRepeatU[i] > 0.5) { uv.x = fract(uv.x); } else { inside *= step(0.0, uv.x) * step(uv.x, 1.0); }
     if (patternRepeatV[i] > 0.5) { uv.y = fract(uv.y); } else { inside *= step(0.0, uv.y) * step(uv.y, 1.0); }
     return vec3(uv, inside);
@@ -469,6 +476,128 @@ material.specularColorBlended = mix(material.specularColorBlended, areaSpecular,
                 this.paint.patternOn.value[i] = 0;
             }
         });
+    }
+
+    removeDecals() {
+        if (this.decals === undefined) {
+            return;
+        }
+        for (const decal of this.decals) {
+            this.ship.remove(decal);
+            decal.geometry.dispose();
+            decal.material.dispose();
+        }
+        this.decals = undefined;
+    }
+
+    // The hull's decals (markings, lettering, stripes, the faction logo): each a thin mesh on the triangles it covers,
+    // its texture projected through its box (along the box's x), cut out by its transparency map.
+    addDecals() {
+        if (this.ship === undefined || this.model === undefined) {
+            return;
+        }
+        this.removeDecals();
+        if (this.state.skin === '') {
+            return;   // unpainted: just the textures
+        }
+        const ship = this.props.ship;
+        const located = ShipModelHelper.locate(ship);
+        const hull = located !== undefined ? located.hull : ship.model && ship.model.hull;
+        const faction = ShipSof.factionFor(ship, typeof this.state.skin === 'number' ? this.state.skin : undefined);
+        const positions = this.ship.geometry.getAttribute('position');
+        const normals = this.ship.geometry.getAttribute('normal');
+        const p = new THREE.Vector3();
+        const q = new THREE.Quaternion();
+
+        this.decals = [];
+        for (const decal of ShipSof.decals(hull, faction)) {
+            if (decal.meshIndex !== 0) {
+                continue;   // only the main mesh's decals
+            }
+            const albedo = this.decalTexture(decal.textures.DecalAlbedoMap, 'color');
+            if (albedo === undefined) {
+                continue;
+            }
+            const transparency = decal.textures.DecalTransparencyMap !== undefined ?
+                this.decalTexture(decal.textures.DecalTransparencyMap, 'mask') : undefined;
+
+            const count = decal.indices.length - decal.indices.length % 3;
+            const pos = new Float32Array(count * 3);
+            const nor = new Float32Array(count * 3);
+            const uv = new Float32Array(count * 2);
+            q.fromArray(decal.rotation).invert();
+            let used = 0;
+            for (let i = 0; i < count; i++) {
+                const v = decal.indices[i];
+                if (v >= positions.count) {
+                    continue;
+                }
+                p.fromBufferAttribute(positions, v);
+                pos.set([p.x, p.y, p.z], used * 3);
+                nor.set([normals.getX(v), normals.getY(v), normals.getZ(v)], used * 3);
+                // into the decal's box: its texture spans the box's y and z
+                p.sub(new THREE.Vector3().fromArray(decal.position)).applyQuaternion(q);
+                uv.set([p.y / decal.scaling[1] * 0.5 + 0.5, p.z / decal.scaling[2] * 0.5 + 0.5], used * 2);
+                used++;
+            }
+            if (used < 3) {
+                continue;
+            }
+            const geometry = new THREE.BufferGeometry();
+            geometry.setAttribute('position', new THREE.BufferAttribute(pos.subarray(0, used * 3), 3));
+            geometry.setAttribute('normal', new THREE.BufferAttribute(nor.subarray(0, used * 3), 3));
+            geometry.setAttribute('uv', new THREE.BufferAttribute(uv.subarray(0, used * 2), 2));
+
+            const material = new THREE.MeshStandardMaterial({
+                map: albedo, alphaMap: transparency, transparent: true, depthWrite: false,
+                roughness: 0.5, metalness: 0.2,
+                polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2,
+            });
+            // nothing outside the decal's box
+            material.onBeforeCompile = shader => {
+                shader.fragmentShader = shader.fragmentShader.replace('#include <map_fragment>', `if (vMapUv.x < 0.0 || vMapUv.x > 1.0 || vMapUv.y < 0.0 || vMapUv.y > 1.0) discard;
+#include <map_fragment>`);
+            };
+            const mesh = new THREE.Mesh(geometry, material);
+            mesh.renderOrder = 1;
+            this.ship.add(mesh);
+            this.decals.push(mesh);
+        }
+    }
+
+    // a decal texture from the client (kept for the session): 'color' as it is, 'mask' with its one channel in R, G
+    // and B (three.js reads cut-outs from G); undefined when it can't be read
+    decalTexture(res, kind) {
+        this.decalTextures = this.decalTextures || new Map();
+        const key = `${res}:${kind}`;
+        if (!this.decalTextures.has(key)) {
+            let texture;
+            try {
+                const bytes = ShipModelHelper.resource(res);
+                const dds = bytes !== undefined ? parseDds(bytes) : undefined;
+                if (dds !== undefined && kind === 'mask' && dds.format === 'BC4') {
+                    const mip = dds.mips[0];
+                    const rgba = new Uint8Array(mip.width * mip.height * 4).fill(255);
+                    decodeInto(mip, 'BC4', rgba, [0]);
+                    for (let i = 0; i < rgba.length; i += 4) {
+                        rgba[i + 1] = rgba[i + 2] = rgba[i];
+                    }
+                    texture = dataTexture({width: mip.width, height: mip.height, data: rgba}, THREE.NoColorSpace);
+                } else if (dds !== undefined) {
+                    texture = this.ddsTexture(dds);
+                    if (texture !== undefined && kind === 'color') {
+                        texture.colorSpace = THREE.SRGBColorSpace;
+                    }
+                }
+                if (texture !== undefined) {
+                    texture.wrapS = texture.wrapT = THREE.ClampToEdgeWrapping;
+                }
+            } catch (err) {
+                texture = undefined;
+            }
+            this.decalTextures.set(key, texture);
+        }
+        return this.decalTextures.get(key);
     }
 
     // a pattern mask from the client (kept for the session), or undefined when it can't be read

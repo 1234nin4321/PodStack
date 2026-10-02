@@ -94,6 +94,56 @@ export default class ShipSof {
             }));
     }
 
+    /**
+     * The decals the client puts on a hull (markings, registry lettering, caution stripes, the faction's logo):
+     * [{name, meshIndex, indices (the full-detail triangles it covers, as vertex indices), position, rotation,
+     * scaling (its projection box: it projects along the box's x, its texture spans y and z), textures: {DecalAlbedoMap,
+     * DecalTransparencyMap, ...: res paths}}]. Logo decals take their textures from the faction's logo set.
+     */
+    static decals(hull, faction) {
+        const cacheKey = `decals:${hull}:${faction}`;
+        if (cache.has(cacheKey)) {
+            return cache.get(cacheKey);
+        }
+        let decals = [];
+        try {
+            const bytes = hull ? ShipModelHelper.resource(`${SOF}hulls/${hull.toLowerCase()}.black`) : undefined;
+            const sets = bytes !== undefined ? new BlackFile(bytes).findList('decalSets', 'EveSOFDataHullDecalSet') : undefined;
+            const factionRoot = faction ? black(`${SOF}factions/${faction.toLowerCase()}.black`) : undefined;
+            const logos = (factionRoot && factionRoot.logoSet) || {};
+            // the hull's own decals (its first set; the others are for special editions like police or tournaments)
+            const items = sets !== undefined && sets[0] !== undefined ? sets[0].items || [] : [];
+            decals = items
+                .filter(item => item && Array.isArray(item.indexBuffers) && item.indexBuffers[0] && item.position && item.scaling)
+                .map(item => {
+                    let textures = Object.fromEntries((item.textures || [])
+                        .filter(t => t && t.name && t.resFilePath)
+                        .map(t => [t.name, t.resFilePath]));
+                    if (Object.keys(textures).length === 0 && /logo/i.test(item.name || '')) {
+                        const logo = logos.Primary;
+                        textures = Object.fromEntries(((logo && logo.textures) || [])
+                            .filter(t => t && t.name && t.resFilePath)
+                            .map(t => [t.name, t.resFilePath]));
+                    }
+                    return {
+                        name: item.name,
+                        meshIndex: item.meshIndex || 0,
+                        indices: item.indexBuffers[0].indexBuffer,
+                        position: item.position,
+                        rotation: item.rotation || [0, 0, 0, 1],
+                        scaling: item.scaling,
+                        textures,
+                    };
+                })
+                .filter(d => d.textures.DecalAlbedoMap !== undefined);
+        } catch (err) {
+            log.warn(`[SOF] Couldn't read the decals of ${hull}`, err.message);
+            decals = [];
+        }
+        cache.set(cacheKey, decals);
+        return decals;
+    }
+
     // the faction whose look a ship has with a SKIN (its own faction when skinId is undefined)
     static factionFor(ship, skinId) {
         const paint = skinId !== undefined ? (ShipData.skins || {})[skinId] : undefined;

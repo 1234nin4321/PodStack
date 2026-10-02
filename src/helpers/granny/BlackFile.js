@@ -24,6 +24,9 @@ const CLASS_FIELDS = {
     EveSOFDataPatternLayer: {projectionTypeU: 'u32', projectionTypeV: 'u32', materialSource: 'u32'},
     EveSOFDataPatternTransform: {position: 'vec3', scaling: 'vec3', rotation: 'vec4', isMirrored: 'u8'},
     EveSOFDataFactionColorSet: {'*': 'vec4'},
+    EveSOFDataHullDecalSetItem: {usage: 'u32', position: 'vec3', rotation: 'vec4', scaling: 'vec3', boneIndex: 'u32',
+        meshIndex: 'u32', glowColorType: 'u32', logoType: 'u32'},
+    EveSOFDataDecalIndexBuffer: {indexBuffer: 'u32array'},
 };
 const SIZES = {u8: 1, u32: 4, vec3: 12, vec4: 16};
 
@@ -65,6 +68,27 @@ export default class BlackFile {
             }
         }
         return from + 6;
+    }
+
+    /**
+     * A list field found anywhere in the file by its name and its items' class, parsed on its own: for files whose
+     * root has fields before it this parser can't read (hulls, before their decal sets).
+     */
+    findList(field, itemClass) {
+        const name = this.strings.indexOf(field);
+        const cls = this.strings.indexOf(itemClass);
+        if (name < 0 || cls < 0) {
+            return undefined;
+        }
+        for (let p = 0; p + 16 <= this.bytes.length; p++) {
+            if (this.u16(p) === name && this.u16(p + 14) === cls) {
+                const value = this.value(field, p + 2, this.bytes.length, undefined);
+                if (value !== undefined && Array.isArray(value.value)) {
+                    return value.value;
+                }
+            }
+        }
+        return undefined;
     }
 
     u16(o) {
@@ -113,7 +137,20 @@ export default class BlackFile {
     // {value, next} of a field's value at p, or undefined when its type can't be told
     value(name, p, end, cls) {
         const typed = CLASS_FIELDS[cls] && (CLASS_FIELDS[cls][name] || CLASS_FIELDS[cls]['*']);
-        if (typed !== undefined && !this.isObject(p, end)) {
+        if (typed === 'u32array') {
+            // a byte length, then that many bytes of u32s
+            const length = p + 4 <= end ? this.u32(p) : -1;
+            if (length < 0 || length % 4 !== 0 || p + 4 + length > end) {
+                return undefined;
+            }
+            const values = new Uint32Array(length / 4);
+            for (let i = 0; i < values.length; i++) {
+                values[i] = this.u32(p + 4 + i * 4);
+            }
+            return {value: values, next: p + 4 + length};
+        }
+        // a known type wins over guessing: a small number followed by the next field can look like an object header
+        if (typed !== undefined) {
             const size = SIZES[typed];
             if (p + size > end) {
                 return undefined;

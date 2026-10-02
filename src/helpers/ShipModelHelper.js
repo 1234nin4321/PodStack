@@ -28,6 +28,9 @@ const SHIP_PREFIX = 'res:/dx9/model/ship/';
 const SOF_PREFIX = 'res:/dx9/model/spaceobjectfactory/';
 // the masks SKIN patterns project onto hulls
 const PATTERN_PREFIX = 'res:/texture/projection/';
+// decal textures: markings, lettering, logos
+const DECAL_PREFIX = 'res:/dx9/model/decal/';
+const PREFIXES = [SHIP_PREFIX, SOF_PREFIX, PATTERN_PREFIX, DECAL_PREFIX];
 
 let index;      // {folder, files: Map(res path -> absolute file)}
 let detected;   // the auto-detected folder (null when none), found once per session
@@ -211,7 +214,7 @@ export default class ShipModelHelper {
             const files = new Map();
             const text = fs.readFileSync(path.join(folder, 'tq', 'resfileindex.txt'), 'utf8');
             for (const line of text.split('\n')) {
-                if (!line.startsWith(SHIP_PREFIX) && !line.startsWith(SOF_PREFIX) && !line.startsWith(PATTERN_PREFIX)) {
+                if (!PREFIXES.some(prefix => line.startsWith(prefix))) {
                     continue;
                 }
                 const [res, file] = line.split(',');
