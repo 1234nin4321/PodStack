@@ -2806,3 +2806,30 @@ a:hover {
     gap: 8px;
     justify-content: flex-end;
 }
+
+/* ---------------------------------------------------------------- Remap: suggested second remap */
+
+.remap-second {
+    margin: 14px 0 4px;
+    padding: 10px 14px;
+    border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+    background: var(--accent-soft);
+}
+
+.remap-second-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--accent);
+}
+
+.remap-second-head .material-icons {
+    font-size: 20px;
+}
+
+.remap-second-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}

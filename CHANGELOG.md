@@ -1,3 +1,10 @@
+## 0.2.1 Alpha (0.2.1-alpha)
+* Skill plans: Import → EVE In-Game Plan imports a skill plan copied from the EVE client (Skills window → Skill
+  Plans → ☰ → copy to clipboard), including the localised format non-English clients copy. Paste Skill List reads it
+  too.
+* Remap optimiser: when a plan takes over a year even with the best remap, it suggests a second remap once the yearly
+  remap is available again: where to put it, what to remap to and how much time it saves. "Use both remaps" adds both.
+
 ## 0.2 Alpha (0.2.0-alpha)
 * Assets tab on every character: everything it owns grouped by station, structure or system, searchable by item,
   ship/container name or location, with estimated values (EVE average prices).

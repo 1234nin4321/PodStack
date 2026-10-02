@@ -102,7 +102,8 @@ export default class ImportToPlanPopover extends React.Component {
                     <MenuItem primaryText="PodStack Plan" onClick={() => this.handlePlanJson()} />
                     <MenuItem primaryText="EVEMon Plan" onClick={() => this.handleEVEMonXml()} />
                     <MenuItem primaryText="Ship Fitting" onClick={() => this.props.onFitting()} />
-                    <MenuItem primaryText="Paste Skill List" onClick={() => this.props.onPaste()} />
+                    <MenuItem primaryText="EVE In-Game Plan" onClick={() => this.props.onPaste('eve')} />
+                    <MenuItem primaryText="Paste Skill List" onClick={() => this.props.onPaste('text')} />
                 </Menu>
             </Popover>
         );

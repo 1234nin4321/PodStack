@@ -30,19 +30,28 @@ export default class PasteSkillsDialog extends React.Component {
                         disabled={skills.length === 0} onClick={() => this.props.onImport(skills)}/>,
         ];
 
+        const fromEve = this.props.source === 'eve';
+
         return (
             <Dialog
-                title="Paste Skill List"
+                title={fromEve ? 'Import EVE Skill Plan' : 'Paste Skill List'}
                 actions={actions}
                 modal={false}
                 open={this.props.open}
                 onRequestClose={() => this.props.onClose()}
                 contentStyle={{width: 560}}
             >
-                <p className="muted" style={{marginTop: 0}}>
-                    One skill per line, as copied from the EVE client, EVEMon or a forum post, e.g. "Caldari Cruiser IV" or
-                    "Caldari Cruiser 4". Missing prerequisites are added too.
-                </p>
+                {fromEve ?
+                    <p className="muted" style={{marginTop: 0}}>
+                        In EVE, open the Skills window (Alt+X), go to Skill Plans and select the plan, then use the ☰ menu
+                        at its top right and choose to copy it to the clipboard. Paste it below if it isn't shown already.
+                        Skills you've already trained are skipped and missing prerequisites are added.
+                    </p> :
+                    <p className="muted" style={{marginTop: 0}}>
+                        One skill per line, as copied from the EVE client, EVEMon or a forum post, e.g. "Caldari Cruiser IV" or
+                        "Caldari Cruiser 4". Missing prerequisites are added too.
+                    </p>
+                }
                 <textarea
                     className="fit-input"
                     style={{minHeight: 220}}

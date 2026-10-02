@@ -344,8 +344,31 @@ export default class Plans extends React.Component {
         );
     }
 
-    handleRemapAdd(attributes, implants, index) {
-        if (attributes !== undefined) {
+    handleRemapAdd(attributes, implants, index, second) {
+        if (attributes !== undefined && second !== undefined) {
+            // the first remap as usual, then the second one inserted after the skill the optimiser chose
+            const queue = [...this.planCharacter.queue];
+            if (index === undefined) {
+                queue.unshift({type: 'remap', attributes, implants});
+            } else {
+                queue[index] = {type: 'remap', attributes, implants};
+            }
+            const after = queue.findIndex((item, i) => (index === undefined || i > index) &&
+                item.type === 'skill' && item.id === second.afterSkill.id && item.level === second.afterSkill.level);
+            if (after !== -1) {
+                queue.splice(after + 1, 0, {type: 'remap', attributes: second.attributes, implants});
+            }
+
+            this.planCharacter.reset();
+            queue.forEach(item => this.planCharacter.addItemToQueue(item));
+            this.setState({items: this.planCharacter.queue, totalTime: this.planCharacter.time});
+            SkillPlanStore.storeSkillPlan(
+                this.props.characterId,
+                this.state.skillPlanId,
+                this.state.skillPlanName,
+                this.planCharacter.queue,
+            );
+        } else if (attributes !== undefined) {
             if (index === undefined) {
                 // a new remap happens now, so it goes at the start of the plan; times after it are recalculated
                 const queue = [...this.planCharacter.queue];
@@ -644,14 +667,19 @@ export default class Plans extends React.Component {
                     anchorEl={this.state.importToPlanPopoverAnchor}
                     onImport={this.handleImport}
                     onFitting={() => this.setState({importToPlanPopoverOpen: false, fitPlannerOpen: true})}
-                    onPaste={() => this.setState({importToPlanPopoverOpen: false, pasteSkillsOpen: true})}
+                    onPaste={source => this.setState({importToPlanPopoverOpen: false, pasteSkillsOpen: true, pasteSource: source})}
                 />
                 <PasteSkillsDialog
                     open={this.state.pasteSkillsOpen === true}
+                    source={this.state.pasteSource}
                     onClose={() => this.setState({pasteSkillsOpen: false})}
                     onImport={skills => {
                         this.setState({pasteSkillsOpen: false});
-                        this.handleImport('Pasted skill list', 'pasted text', skills);
+                        if (this.state.pasteSource === 'eve') {
+                            this.handleImport('EVE skill plan', 'the EVE client', skills);
+                        } else {
+                            this.handleImport('Pasted skill list', 'pasted text', skills);
+                        }
                     }}
                 />
                 <ExportFromPlanPopover

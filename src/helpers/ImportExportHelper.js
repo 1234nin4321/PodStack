@@ -88,6 +88,10 @@ export default class ImportExportHelper {
      * Reads a pasted skill list: one skill per line, as the EVE client, EVEMon and forums write them, e.g.
      * "Caldari Cruiser IV", "Caldari Cruiser 4", "1. Caldari Cruiser Level 4", "Caldari Cruiser\tIV (2d 3h)".
      *
+     * The EVE client's skill plan export ("Copy to clipboard" in the Skills window) writes one line per level, e.g.
+     * "Spaceship Command 1", and in non-English clients wraps the name in a localisation tag with the English name
+     * marked by an asterisk: '<localized hint="宇宙船操作">Spaceship Command*</localized> 1'.
+     *
      * @returns {object} {skills: [{typeId, level}], unknown: [lines that aren't a skill and level]}
      */
     static ParseSkillText(text) {
@@ -95,6 +99,13 @@ export default class ImportExportHelper {
         const unknown = [];
 
         for (let line of (text || '').split(/\r?\n/)) {
+            // the English name is the tag's text or, in some clients, its hint
+            const names = [];
+            line = line.replace(/<localized\s+hint="([^"]*)"\s*>(.*?)<\/localized>/gi, (m, hint, inner) => {
+                names.push(hint.replace(/\*$/, '').trim());
+                return inner;
+            });
+
             line = line
                 .replace(/\(.*?\)|\[.*?\]/g, ' ')          // "(2d 3h)", "[x]"
                 .replace(/^\s*(\d+[.)]|[-*•])\s+/, '')      // "1. ", "2) ", "- "
@@ -104,8 +115,11 @@ export default class ImportExportHelper {
                 continue;
             }
 
-            const match = line.match(/^(.+?)\s+(?:level\s+)?(I{1,3}|IV|V|[1-5])$/i);
-            const typeId = match ? skillIdByName(match[1].trim()) : undefined;
+            const match = line.match(/^(.+?)\*?\s+(?:level\s+)?(I{1,3}|IV|V|[1-5])$/i);
+            let typeId = match ? skillIdByName(match[1].trim()) : undefined;
+            if (match && typeId === undefined) {
+                typeId = names.map(skillIdByName).find(id => id !== undefined);
+            }
             if (typeId === undefined) {
                 unknown.push(line);
                 continue;

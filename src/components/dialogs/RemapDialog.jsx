@@ -18,7 +18,9 @@ const signed = n => (n > 0 ? `+${n}` : n < 0 ? `−${-n}` : '0');
  *
  * Props: open, editIndex (undefined for a new remap), attributes/implants (the remap being edited), skills (queue
  * items the remap affects), currentAttributes (character's base attributes), currentImplants, isOmega,
- * remapInfo {bonusRemaps, nextYearly: Date|true}, onAddRemap(attributes, implants, editIndex) / onAddRemap(undefined).
+ * remapInfo {bonusRemaps, nextYearly: Date|true}, onAddRemap(attributes, implants, editIndex, second) /
+ * onAddRemap(undefined). second is {attributes, afterSkill: {id, level}} when the user accepts a suggested second
+ * remap for skills that take over a year.
  */
 export default class RemapDialog extends React.Component {
     constructor(props) {
@@ -42,6 +44,50 @@ export default class RemapDialog extends React.Component {
 
             this.setState({attributes, implants});
         }
+    }
+
+    // the second-remap search tries every split, so it's only redone when its inputs change
+    secondRemap(skills, implants, isOmega, currentAttributes) {
+        const key = this.secondRemapKey;
+        if (key === undefined || key.skills !== skills || key.implants !== implants || key.isOmega !== isOmega) {
+            this.secondRemapKey = {skills, implants, isOmega};
+            this.secondRemapResult = RemapHelper.optimiseSecondRemap(skills, implants, isOmega, currentAttributes);
+        }
+        return this.secondRemapResult;
+    }
+
+    renderSecondRemap(skills, implants) {
+        const {isOmega, currentAttributes, editIndex} = this.props;
+        const plan = this.secondRemap(skills, implants, isOmega, currentAttributes);
+        if (plan === undefined) {
+            return null;
+        }
+
+        const after = skills[plan.splitAfter];
+        const split = a => `P${a.perception} M${a.memory} W${a.willpower} I${a.intelligence} C${a.charisma}`;
+        const second = {attributes: plan.second.attributes, afterSkill: {id: after.id, level: after.level}};
+
+        return (
+            <div className="remap-second">
+                <div className="remap-second-head">
+                    <i className="material-icons">event_repeat</i>
+                    <strong>This takes over a year: remap a second time</strong>
+                </div>
+                <p style={{margin: '6px 0'}}>
+                    Your yearly remap is available again after a year. Remap now to <b className="num">{split(plan.first.attributes)}</b>,
+                    then after <b>{after.title || `${after.name} ${after.level}`}</b> (about {DateTimeHelper.niceCountdown(plan.firstDuration).split(' ').slice(0, 2).join(' ')} in)
+                    remap to <b className="num">{split(plan.second.attributes)}</b>.
+                </p>
+                <div className="remap-second-foot">
+                    <span>
+                        Total <b className="num">{DateTimeHelper.niceCountdown(plan.time)}</b>
+                        <span style={{color: 'var(--good)'}}> · saves {DateTimeHelper.niceCountdown(plan.saving)}</span> over one remap
+                    </span>
+                    <FlatButton label="Use both remaps" primary={true}
+                                onClick={() => this.props.onAddRemap(plan.first.attributes, implants, editIndex, second)}/>
+                </div>
+            </div>
+        );
     }
 
     handleSlider(attribute, value) {
@@ -183,6 +229,8 @@ export default class RemapDialog extends React.Component {
                         {unspent > 0 ? `${unspent} point${unspent === 1 ? '' : 's'} left to assign.` : `${-unspent} points too many.`}
                     </p>
                 }
+
+                {skills.length > 0 && this.renderSecondRemap(skills, implants)}
 
                 {skills.length > 0 &&
                     <div className="analysis-totals remap-times">
