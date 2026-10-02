@@ -4,13 +4,53 @@ import {ipcRenderer} from 'electron';
 import log from 'electron-log';
 
 import SsoClientv2 from './eve/SsoClientv2';
+import {httpRequest} from './eve/HttpClient';
 import Character from '../models/Character';
+import AuthorizedCharacter from '../models/AuthorizedCharacter';
+import FarmCharacter from '../models/FarmCharacter';
+import AccountStore from './AccountStore';
+import SkillPlanStore from './SkillPlanStore';
 
 import StructureHelper from './StructureHelper';
 
 import appProperties from '../../resources/properties.js';
 
 export default class CharacterHelper {
+    /**
+     * Removes a character from PodStack: revokes its EVE login (so the stored token stops working even if a copy
+     * exists somewhere), then deletes its tokens, data, skill plans, farm entry and account assignment.
+     *
+     * @returns {Promise<boolean>} whether EVE confirmed the revocation (the character is removed either way)
+     */
+    static async removeCharacter(characterId) {
+        characterId = characterId.toString();
+        const auth = AuthorizedCharacter.get(characterId);
+
+        let revoked = false;
+        if (auth !== undefined && auth.ssoVersion === 2 && auth.refreshToken) {
+            try {
+                await httpRequest({
+                    method: 'POST',
+                    url: appProperties.eve_sso_revoke_url,
+                    form: {token_type_hint: 'refresh_token', token: auth.refreshToken, client_id: appProperties.eve_sso_client_id},
+                    headers: {'User-Agent': `podstack/${appProperties.version}`},
+                });
+                revoked = true;
+            } catch (err) {
+                log.warn(`[SSOv2] Couldn't revoke the token of character #${characterId}`, err.message);
+            }
+        }
+
+        AuthorizedCharacter.delete(characterId);
+        Character.delete(characterId);
+        FarmCharacter.delete(characterId);
+        SkillPlanStore.deleteAllForCharacter(characterId);
+        AccountStore.assign(characterId, undefined);
+
+        log.info(`[Character] Removed character #${characterId}${revoked ? ', token revoked' : ''}`);
+        return revoked;
+    }
+
     // onStatus receives {stage, message, done?, total?} as the add progresses. stage is one of
     // 'login', 'token', 'loading', 'done', 'error' or 'idle' (cancelled).
     static async addCharacter(onStatus) {

@@ -92,6 +92,18 @@ export default class SkillPlanStore {
     }
 
     /**
+     * Deletes all of a character's plans (when the character is removed)
+     *
+     * @param {string}  characterId Character ID
+     */
+    static deleteAllForCharacter(characterId) {
+        SkillPlanStore.require();
+
+        delete skillPlans[characterId.toString()];
+        SkillPlanStore.saveImmediately();
+    }
+
+    /**
      * Checks if a plan exists
      *
      * @param {string}  characterId Character ID

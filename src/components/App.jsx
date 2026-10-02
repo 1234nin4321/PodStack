@@ -15,6 +15,8 @@ import SkillBrowser from './views/SkillBrowser';
 import SpFarming from './views/SpFarming';
 import QueueHealth from './views/QueueHealth';
 import Contracts from './views/Contracts';
+import Industry from './views/Industry';
+import Planets from './views/Planets';
 import Character from './views/Character';
 import Settings from './views/Settings';
 import About from './views/About';
@@ -48,6 +50,8 @@ export default class App extends React.Component {
                         <Route path="/queue-health" component={QueueHealth} />
                         <Route path="/skill-browser" component={SkillBrowser} />
                         <Route path="/contracts" component={Contracts} />
+                        <Route path="/industry" component={Industry} />
+                        <Route path="/planets" component={Planets} />
                         <Route path="/settings" component={Settings} />
                         <Route path="/about" component={About} />
                         <Route path="/characters/:characterId" component={Character} />

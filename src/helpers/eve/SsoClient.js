@@ -1,6 +1,6 @@
 'use strict';
 
-import rp from 'request-promise-native';
+import {httpRequest} from './HttpClient';
 import queryString from 'querystring';
 
 import appProperties from './../../../resources/properties';
@@ -26,25 +26,22 @@ export default class SsoClient {
     }
 
     async refresh(refreshToken) {
-        let options = {
-            method: 'POST',
-            uri: this.constructUrl('token'),
-            formData: {
-                grant_type: 'refresh_token',
-                refresh_token: refreshToken
-            },
-            headers: {
-                'User-Agent': `podstack/${appProperties.version}`,
-                'Authorization': 'Basic ' + Buffer.from(this.clientId + ":" + this.clientSecret).toString('base64')
-            },
-            resolveWithFullResponse: true,
-            simple: false
-        };
-
-        log.verbose("[SSOv1] Sending refresh request, refresh token = " + refreshToken);
+        log.verbose("[SSOv1] Sending refresh request");
         let res;
         try {
-            res = await rp(options);
+            res = await httpRequest({
+                method: 'POST',
+                url: this.constructUrl('token'),
+                form: {
+                    grant_type: 'refresh_token',
+                    refresh_token: refreshToken
+                },
+                headers: {
+                    'User-Agent': `podstack/${appProperties.version}`,
+                    'Authorization': 'Basic ' + Buffer.from(this.clientId + ":" + this.clientSecret).toString('base64')
+                },
+                throwOnError: false
+            });
         } catch(err) {
             throw undefined;
         }
@@ -56,7 +53,7 @@ export default class SsoClient {
 
         switch(res.statusCode) {
             case 200:
-                log.verbose(`[SSOv1] Refresh successful, old refresh token = ${refreshToken}, new access token = ${body.access_token}`);
+                log.verbose('[SSOv1] Refresh successful');
                 return {
                     accessToken: body.access_token,
                     accessTokenExpiry: new Date(new Date().getTime() + (body.expires_in * 1000)),
@@ -65,10 +62,10 @@ export default class SsoClient {
             case 401:
             case 403:
                 if ((body.hasOwnProperty('error')) && (body.error !== undefined) && (body.error !== '')) {
-                    log.verbose(`[SSOv1] Refresh failed, refresh token = ${refreshToken}, error: ${body.error}`);
+                    log.verbose(`[SSOv1] Refresh failed, error: ${body.error}`);
                     throw body;
                 } else {
-                    log.verbose(`[SSOv1] Refresh failed, refresh token = ${refreshToken}, error: ${body.error}`);
+                    log.verbose(`[SSOv1] Refresh failed, error: ${body.error}`);
                     throw undefined;
                 }
             default:

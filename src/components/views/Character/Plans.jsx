@@ -19,6 +19,7 @@ import TrainingProfileHelper from '../../../helpers/TrainingProfileHelper';
 import Character from '../../../models/Character';
 import FilteredSkillList from '../../skillbrowser/FilteredSkillList';
 import ImportToPlanPopover from '../../popovers/ImportToPlanPopover';
+import PasteSkillsDialog from '../../dialogs/PasteSkillsDialog';
 import NewRenamePlanPopover from '../../popovers/NewRenamePlanPopover';
 import NoteDialog from '../../dialogs/NoteDialog';
 import PlanCharacter from '../../../models/PlanCharacter';
@@ -643,6 +644,15 @@ export default class Plans extends React.Component {
                     anchorEl={this.state.importToPlanPopoverAnchor}
                     onImport={this.handleImport}
                     onFitting={() => this.setState({importToPlanPopoverOpen: false, fitPlannerOpen: true})}
+                    onPaste={() => this.setState({importToPlanPopoverOpen: false, pasteSkillsOpen: true})}
+                />
+                <PasteSkillsDialog
+                    open={this.state.pasteSkillsOpen === true}
+                    onClose={() => this.setState({pasteSkillsOpen: false})}
+                    onImport={skills => {
+                        this.setState({pasteSkillsOpen: false});
+                        this.handleImport('Pasted skill list', 'pasted text', skills);
+                    }}
                 />
                 <ExportFromPlanPopover
                     open={this.state.exportFromPlanPopoverOpen}

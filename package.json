@@ -1,7 +1,7 @@
 {
   "name": "podstack",
   "productName": "PodStack",
-  "version": "0.1.10-alpha",
+  "version": "0.2.0-alpha",
   "description": "Character Manager for EVE Online",
   "author": "1234nin4321",
   "license": "AGPL-3.0-only",
@@ -20,17 +20,15 @@
     "electron-log": "^5.4.4",
     "electron-store": "^8.2.0",
     "material-ui": "^0.20.2",
-    "react": "^16.7.0",
-    "react-dnd": "^7.0.2",
-    "react-dom": "^16.7.0",
+    "react": "^16.14.0",
+    "react-dnd": "^7.7.0",
+    "react-dom": "^16.14.0",
     "react-router-dom": "^4.3.1",
-    "react-sortable-hoc": "^1.4.0",
-    "react-sortable-tree": "^2.6.0",
-    "react-table": "^6.8.6",
-    "request": "^2.88.0",
-    "request-promise-native": "^1.0.5",
-    "sanitize-html": "^1.20.0",
-    "xml2js": "^0.4.19"
+    "react-sortable-hoc": "^1.11.0",
+    "react-sortable-tree": "^2.8.0",
+    "react-table": "^6.11.5",
+    "sanitize-html": "^2.18.0",
+    "xml2js": "^0.6.2"
   },
   "devDependencies": {
     "@electron-forge/cli": "^8.0.1",
@@ -50,5 +48,8 @@
   "allowScripts": {
     "esbuild@0.28.2": true,
     "electron-winstaller@5.4.4": true
+  },
+  "overrides": {
+    "node-fetch": "^2.7.0"
   }
 }

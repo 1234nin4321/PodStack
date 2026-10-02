@@ -1,6 +1,6 @@
 'use strict';
 
-import rp from 'request-promise-native';
+import {httpRequest} from './HttpClient';
 import log from 'electron-log';
 
 import appProperties from './../../../resources/properties';
@@ -31,6 +31,19 @@ export default class EsiClient {
         return await this.request('GET', endpoint, requiredScopes, options);
     }
 
+    // GETs every page of a paginated endpoint (ESI reports the page count in X-Pages) and concatenates them.
+    async getAllPages(endpoint, requiredScopes, options) {
+        options = options || {};
+        const first = await this.request('GET', endpoint, requiredScopes, {...options, query: {...options.query, page: 1}, fullResponse: true});
+        const pages = parseInt(first.headers['x-pages'], 10) || 1;
+
+        let results = [...first.body];
+        for (let page = 2; page <= pages; page++) {
+            results = results.concat(await this.request('GET', endpoint, requiredScopes, {...options, query: {...options.query, page}}));
+        }
+        return results;
+    }
+
     async post(endpoint, requiredScopes, options) {
         return await this.request('POST', endpoint, requiredScopes, options);
     }
@@ -57,19 +70,17 @@ export default class EsiClient {
 
         let requestOptions = {
             method: method,
-            uri: this.constructUrl(endpoint),
-            qs: {},
+            url: this.constructUrl(endpoint),
             headers: {
                 'User-Agent': `podstack/${appProperties.version}`,
                 'Accept': 'application/json',
-                'Content-Type': 'application/json',
                 'X-Compatibility-Date': this.compatibilityDate,
                 'X-Tenant': this.tenant
             }
         };
 
         if (options.hasOwnProperty('query')) {
-            requestOptions['qs'] = options['query'];
+            requestOptions['query'] = options['query'];
         }
 
         if (this.token !== undefined) {
@@ -78,24 +89,24 @@ export default class EsiClient {
 
         if (options.hasOwnProperty('body')) {
             requestOptions['body'] = options['body'];
-            requestOptions['json'] = true;
         }
 
-        requestOptions['resolveWithFullResponse'] = true;
-        return EsiClient.send(requestOptions, method, endpoint, this.characterId !== undefined ? String(this.characterId) : 'public');
+        return EsiClient.send(requestOptions, method, endpoint, this.characterId !== undefined ? String(this.characterId) : 'public',
+            options.fullResponse === true);
     }
 
     // Sends a request within ESI's limits (see EsiRateLimiter). Retries once after a server error or a dropped
     // connection, and after the wait ESI asks for on 429/420; other errors (4xx) aren't retried, as they'd only fail
     // again and cost more of the error budget.
-    static async send(requestOptions, method, endpoint, who) {
+    // With fullResponse, resolves with {body, headers} instead of just the parsed body.
+    static async send(requestOptions, method, endpoint, who, fullResponse) {
         for (let attempt = 1; ; attempt++) {
             await EsiRateLimiter.acquire(endpoint, who);
 
             let response;
             try {
                 log.verbose(`[ESI] Firing ${method} ${endpoint}...`);
-                response = await rp(requestOptions);
+                response = await httpRequest(requestOptions);
             } catch (err) {
                 const status = err.statusCode;
                 const retryDelay = EsiRateLimiter.record(endpoint, who, status, err.response && err.response.headers);
@@ -115,8 +126,8 @@ export default class EsiClient {
             EsiRateLimiter.record(endpoint, who, response.statusCode, response.headers);
             EsiRateLimiter.release();
 
-            const body = response.body;
-            return (typeof body === 'string' && body !== '') ? JSON.parse(body) : body;
+            const body = response.body !== '' ? JSON.parse(response.body) : undefined;
+            return fullResponse ? {body, headers: response.headers} : body;
         }
     }
 

@@ -12,6 +12,8 @@ import DateTimeHelper from '../../helpers/DateTimeHelper';
 import appProperties from '../../../resources/properties';
 import PageHeader from '../ui/PageHeader';
 import Panel from '../ui/Panel';
+import AlertSettings from '../settings/AlertSettings';
+import BackupSettings from '../settings/BackupSettings';
 
 export default class Settings extends React.Component {
     constructor(props) {
@@ -124,6 +126,10 @@ export default class Settings extends React.Component {
                         {this.renderUpdateAction()}
                     </div>
                 </Panel>
+
+                <AlertSettings/>
+
+                <BackupSettings/>
 
                 <Panel title="Theme" icon="palette" style={{maxWidth: 960}}>
                     <div className="theme-grid" role="radiogroup" aria-label="Theme">

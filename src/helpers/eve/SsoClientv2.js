@@ -1,6 +1,6 @@
 'use strict';
 
-import rp from 'request-promise-native';
+import {httpRequest} from './HttpClient';
 import queryString from 'querystring';
 import log from 'electron-log';
 
@@ -34,18 +34,19 @@ export default class SsoClientv2 {
     }
 
     async authorize(code, challenge) {
-        let options = {
+        log.verbose("[SSOv2] Sending authorize request");
+        const res = await httpRequest({
             method: 'POST',
-            uri: this.constructUrl('token'),
-            body: `client_id=${this.clientId}&grant_type=authorization_code&code=${code}&code_verifier=${challenge.originalValue}`,
-            headers: {
-                'User-Agent': `podstack/${appProperties.version}`,
-                'Content-Type': 'application/x-www-form-urlencoded'
-            }
-        };
-
-        log.verbose("[SSOv2] Sending authorize request, code = " + code);
-        let body = JSON.parse(await rp(options));
+            url: this.constructUrl('token'),
+            form: {
+                client_id: this.clientId,
+                grant_type: 'authorization_code',
+                code: code,
+                code_verifier: challenge.originalValue
+            },
+            headers: {'User-Agent': `podstack/${appProperties.version}`}
+        });
+        let body = JSON.parse(res.body);
 
         let tokenData = {
             accessToken: body.access_token,
@@ -68,26 +69,20 @@ export default class SsoClientv2 {
     }
 
     async refresh(refreshToken) {
-        let options = {
-            method: 'POST',
-            uri: this.constructUrl('token'),
-            body: queryString.stringify({
-                client_id: this.clientId,
-                grant_type: 'refresh_token',
-                refresh_token: refreshToken
-            }),
-            headers: {
-                'User-Agent': `podstack/${appProperties.version}`,
-                'Content-Type': 'application/x-www-form-urlencoded'
-            },
-            resolveWithFullResponse: true,
-            simple: false
-        };
-
-        log.verbose("[SSOv2] Sending refresh request, refresh token = " + refreshToken);
+        log.verbose("[SSOv2] Sending refresh request");
         let res;
         try {
-            res = await rp(options);
+            res = await httpRequest({
+                method: 'POST',
+                url: this.constructUrl('token'),
+                form: {
+                    client_id: this.clientId,
+                    grant_type: 'refresh_token',
+                    refresh_token: refreshToken
+                },
+                headers: {'User-Agent': `podstack/${appProperties.version}`},
+                throwOnError: false
+            });
         } catch(err) {
             throw undefined;
         }
@@ -100,9 +95,9 @@ export default class SsoClientv2 {
         switch(res.statusCode) {
             case 200:
                 if (refreshToken !== body.refresh_token) {
-                    log.info(`[SSOv2] Refresh successful, token changed, old refresh token = ${refreshToken}, new refresh token = ${body.refresh_token}`);
+                    log.info('[SSOv2] Refresh successful, refresh token changed');
                 } else {
-                    log.verbose(`[SSOv2] Refresh successful, token unchanged, refresh token = ${refreshToken}`);
+                    log.verbose('[SSOv2] Refresh successful, refresh token unchanged');
                 }
                 return {
                     accessToken: body.access_token,
@@ -113,10 +108,10 @@ export default class SsoClientv2 {
             case 401:
             case 403:
                 if ((body.hasOwnProperty('error')) && (body.error !== undefined) && (body.error !== '')) {
-                    log.warn(`[SSOv2] Refresh failed, refresh token = ${refreshToken}, error: ${body.error}`);
+                    log.warn(`[SSOv2] Refresh failed, error: ${body.error}`);
                     throw body;
                 } else {
-                    log.warn(`[SSOv2] Refresh failed, refresh token = ${refreshToken}, unknown error`);
+                    log.warn('[SSOv2] Refresh failed, unknown error');
                     throw undefined;
                 }
             default:

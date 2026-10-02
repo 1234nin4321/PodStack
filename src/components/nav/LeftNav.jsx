@@ -7,6 +7,7 @@ import Character from '../../models/Character';
 import AuthorizedCharacter from '../../models/AuthorizedCharacter';
 import {TokenStatusDot} from '../ui/CharacterBadges';
 import QueueHealthHelper from '../../helpers/QueueHealthHelper';
+import IndustryHelper from '../../helpers/IndustryHelper';
 import appProperties from '../../../resources/properties';
 
 const sections = [
@@ -15,6 +16,8 @@ const sections = [
     {path: '/queue-health', label: 'Queue Health', icon: 'monitor_heart', badge: QueueHealthHelper.countProblems},
     {path: '/sp-farming', label: 'SP Farming', icon: 'opacity'},
     {path: '/contracts', label: 'All Contracts', icon: 'assignment'},
+    {path: '/industry', label: 'Industry Jobs', icon: 'precision_manufacturing', badge: IndustryHelper.countReadyJobs},
+    {path: '/planets', label: 'Planetary Industry', icon: 'public', badge: IndustryHelper.countExpiredExtractors},
 ];
 
 function formatSp(sp) {

@@ -15,6 +15,9 @@ import Plans from './Character/Plans';
 import Contracts from './Character/Contracts';
 import Mails from './Character/Mails';
 import Api from './Character/Api';
+import Assets from './Character/Assets';
+import Industry from './Character/Industry';
+import Planets from './Character/Planets';
 import {CloneStateBadge, TokenStatusDot} from '../ui/CharacterBadges';
 
 const pages = [
@@ -23,6 +26,9 @@ const pages = [
     {key: 'plans', label: 'Plans', icon: 'format_list_numbered'},
     {key: 'mails', label: 'Mails', icon: 'mail'},
     {key: 'contracts', label: 'Contracts', icon: 'assignment'},
+    {key: 'assets', label: 'Assets', icon: 'inventory_2'},
+    {key: 'industry', label: 'Industry', icon: 'precision_manufacturing'},
+    {key: 'planets', label: 'PI', icon: 'public'},
     {key: 'api', label: 'API', icon: 'vpn_key'},
 ];
 
@@ -100,6 +106,9 @@ export default class Character extends React.Component {
     render() {
         const characterId = this.props.match.params.characterId;
         const char = CharacterModel.get(characterId);
+        if (char === undefined) {
+            return <p className="empty">This character isn't in PodStack.</p>;
+        }
 
         let component;
         switch(this.state.currentPage) {
@@ -115,6 +124,15 @@ export default class Character extends React.Component {
             case 'mails':
                 component = <Mails characterId={characterId}/>;
                 break;
+            case 'assets':
+                component = <Assets key={characterId} characterId={characterId}/>;
+                break;
+            case 'industry':
+                component = <Industry characterId={characterId}/>;
+                break;
+            case 'planets':
+                component = <Planets characterId={characterId}/>;
+                break;
             case 'api':
                 component = <Api characterId={characterId}/>;
                 break;
@@ -124,7 +142,7 @@ export default class Character extends React.Component {
 
         return (
             <div>
-                {char !== undefined && this.renderHero(char)}
+                {this.renderHero(char)}
 
                 <div className="tabs">
                     {pages.map(page =>

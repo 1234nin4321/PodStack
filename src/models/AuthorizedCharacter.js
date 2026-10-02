@@ -167,8 +167,18 @@ class AuthorizedCharacter {
         }
     }
 
+    // Forgets the character's tokens. A token refresh still in flight won't save it back.
+    static delete(id) {
+        id = id.toString();
+        if (authorizedCharacters.hasOwnProperty(id)) {
+            authorizedCharacters[id].deleted = true;
+            delete authorizedCharacters[id];
+            authorizedCharactersStore.set('authorizedCharacters', authorizedCharacters);
+        }
+    }
+
     save() {
-        if (authorizedCharacters !== undefined) {
+        if (authorizedCharacters !== undefined && this.deleted !== true) {
             authorizedCharacters[this.id] = this;
             authorizedCharactersStore.set('authorizedCharacters', authorizedCharacters);
         }

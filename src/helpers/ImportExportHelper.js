@@ -1,8 +1,19 @@
 import appProperties from './../../resources/properties';
+import AllSkills from '../../resources/all_skills';
 
 const fs = require('fs');
 const xml2js = require('xml2js');
 const {clipboard} = require('electron');
+
+const romanLevels = {I: 1, II: 2, III: 3, IV: 4, V: 5};
+
+let skillsByName;
+function skillIdByName(name) {
+    if (skillsByName === undefined) {
+        skillsByName = new Map(Object.values(AllSkills.skills).map(skill => [skill.name.toLowerCase(), skill.type_id]));
+    }
+    return skillsByName.get(name.toLowerCase());
+}
 
 const levelMap = {
     1: 'I',
@@ -71,6 +82,40 @@ export default class ImportExportHelper {
             }
         }
         return skills;
+    }
+
+    /**
+     * Reads a pasted skill list: one skill per line, as the EVE client, EVEMon and forums write them, e.g.
+     * "Caldari Cruiser IV", "Caldari Cruiser 4", "1. Caldari Cruiser Level 4", "Caldari Cruiser\tIV (2d 3h)".
+     *
+     * @returns {object} {skills: [{typeId, level}], unknown: [lines that aren't a skill and level]}
+     */
+    static ParseSkillText(text) {
+        const skills = [];
+        const unknown = [];
+
+        for (let line of (text || '').split(/\r?\n/)) {
+            line = line
+                .replace(/\(.*?\)|\[.*?\]/g, ' ')          // "(2d 3h)", "[x]"
+                .replace(/^\s*(\d+[.)]|[-*•])\s+/, '')      // "1. ", "2) ", "- "
+                .replace(/\s+/g, ' ')
+                .trim();
+            if (line === '') {
+                continue;
+            }
+
+            const match = line.match(/^(.+?)\s+(?:level\s+)?(I{1,3}|IV|V|[1-5])$/i);
+            const typeId = match ? skillIdByName(match[1].trim()) : undefined;
+            if (typeId === undefined) {
+                unknown.push(line);
+                continue;
+            }
+
+            const level = romanLevels[match[2].toUpperCase()] || parseInt(match[2], 10);
+            skills.push({typeId, level});
+        }
+
+        return {skills, unknown};
     }
 
     static ImportEVEMonXML(filePath) {

@@ -29,6 +29,7 @@ export default {
     'eve_sso_client_id': 'c9fde897cdfb45208fb5254e3ee98d19',
     // Must match the callback URL registered for the client id on developers.eveonline.com.
     'eve_sso_callback_url': 'https://localhost/callback',
+    'eve_sso_revoke_url': 'https://login.eveonline.com/v2/oauth/revoke',
 
     'scopes': [
         {
@@ -83,6 +84,18 @@ export default {
             'name': 'esi-contracts.read_character_contracts.v1',
             'description': 'Read Contracts'
         },
+        {
+            'name': 'esi-assets.read_assets.v1',
+            'description': 'Read Assets'
+        },
+        {
+            'name': 'esi-industry.read_character_jobs.v1',
+            'description': 'Read Industry Jobs'
+        },
+        {
+            'name': 'esi-planets.manage_planets.v1',
+            'description': 'Read Planetary Colonies'
+        },
     ],
 
     'eve_esi_url': 'https://esi.evetech.net',
@@ -118,6 +131,10 @@ export default {
         'mails': 3600,
         'maillabels': 3600,
         'mailinglists': 3600,
+        // ESI caches assets for an hour, industry jobs for 5 minutes and colonies for 10 minutes
+        'assets': 3600,
+        'industry_jobs': 900,
+        'planets': 1800,
     },
 
     'contract_completed_statuses': [

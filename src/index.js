@@ -32,6 +32,11 @@ if (isDevMode) {
     log.transports.console.level = 'info';
 }
 
+// Windows only shows notifications for an app with an AppUserModelID; this is the one Squirrel's shortcuts carry.
+if (process.platform === 'win32') {
+    app.setAppUserModelId('com.squirrel.podstack.PodStack');
+}
+
 // Lets the renderer open stores; they resolve to the same userData files as before.
 Store.initRenderer();
 
@@ -137,6 +142,18 @@ ipcMain.on('theme:background', (event, color) => {
     }
 });
 ipcMain.handle('dialog:save', (event, options) => dialog.showSaveDialog(mainWindow, options));
+// Clicking a desktop alert brings the window back from the tray.
+ipcMain.on('window:show', () => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.show();
+        mainWindow.focus();
+    }
+});
+// After restoring a backup: start afresh so no module writes its old in-memory data back over the restored files.
+ipcMain.on('app:relaunch', () => {
+    app.relaunch();
+    app.exit(0);
+});
 
 const createWindow = () => {
     mainWindow = new BrowserWindow({

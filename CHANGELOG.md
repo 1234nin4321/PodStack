@@ -1,3 +1,25 @@
+## 0.2 Alpha (0.2.0-alpha)
+* Assets tab on every character: everything it owns grouped by station, structure or system, searchable by item,
+  ship/container name or location, with estimated values (EVE average prices).
+* Industry: an Industry tab per character and an Industry Jobs page for all characters, with progress, time left and
+  jobs ready to deliver (also counted on the nav).
+* Planetary Industry: a PI tab per character and a Planetary Industry page for all characters, with each colony's
+  extractors and when they stop, and its stored goods; stopped extractors are counted on the nav.
+* These need three new EVE permissions (assets, industry jobs, planets): authorize existing characters again to grant
+  them. The API tab shows which are missing.
+* Alerts (Settings): desktop notifications when training stops or runs low, a character lapses to Alpha, an SP farm
+  has an injector ready, a contract completes, mail arrives, jump fatigue ends, an industry job is ready or a PI
+  extractor stops. Each can be switched on or off; each event alerts once, and clicking it opens the character.
+* SP farm profit: ISK per farm per 30 days from Jita prices, after sales fees, Skill Extractors and each farm's
+  subscription (Omega via PLEX, an MCT certificate, or already paid), plus the value of injectors ready now.
+* Skill plans: Import → Paste Skill List adds skills pasted from the EVE client, EVEMon or a forum post.
+* Backup & Restore (Settings): save characters, skill plans, farms, accounts, alerts and settings to one
+  password-encrypted file, and restore it on any computer.
+* Remove a character from its API tab: signs it out with EVE and deletes its data, plans and farm entry.
+* Security: EVE login tokens are no longer written to the log file, and failed requests can no longer log them.
+* Replaced the deprecated `request` library and updated other dependencies; `npm audit` reports no known
+  vulnerabilities.
+
 ## 0.1.10 Alpha (0.1.10-alpha)
 * Fixed overlapping text in skill plans when comparing implants/accelerators: short "With setup" / "Change"
   headers (the setup is named in the plan's subtitle), times rounded to the minute, and the skill name column gives

@@ -15,6 +15,7 @@ import DateTimeHelper from '../helpers/DateTimeHelper';
 import BulkIdResolver from '../helpers/BulkIdResolver';
 import LocationHelper from '../helpers/LocationHelper';
 import MailBodyHelper from '../helpers/MailBodyHelper';
+import NameHelper from '../helpers/NameHelper';
 
 let subscribedComponents = [];
 let characters;
@@ -24,6 +25,25 @@ const charactersStore = new Store({
     name: 'character-data'
 });
 let charactersSaveTimeout;
+// characters removed this session; a refresh still in flight for one of them must not save it back
+const deletedIds = new Set();
+
+// Name of a station, structure or solar system an asset, job or colony is in. Structures need docking access.
+async function resolveLocationName(id, client, characterId, names) {
+    if (names[id] !== undefined) {
+        return names[id];
+    }
+    if (!NameHelper.isStation(id) && !NameHelper.isSystem(id)) {
+        try {
+            const structure = await StructureHelper.resolveStructure(id, client, characterId);
+            if (structure !== undefined && structure.name !== undefined) {
+                return structure.name;
+            }
+        } catch (err) {}
+        return `Structure #${id} (no access)`;
+    }
+    return `Location #${id}`;
+}
 
 class Character {
     constructor(id, name) {
@@ -330,6 +350,9 @@ class Character {
             ['mails', () => this.refreshMails()],
             ['mail labels', () => this.refreshMailLabels()],
             ['mailing lists', () => this.refreshMailingLists()],
+            ['assets', () => this.refreshAssets()],
+            ['industry jobs', () => this.refreshIndustryJobs()],
+            ['planets', () => this.refreshPlanets()],
         ];
 
         // asynchronously fetch all the other information and return a promise which resolves when everything is fetched
@@ -882,6 +905,158 @@ class Character {
         }
     }
 
+    // Every asset with its type name, the container/ship it's in (parent_id) and the station, structure or system
+    // its outermost container is in (root_location_id, named in assetLocations).
+    async refreshAssets() {
+        if (this.shouldRefresh('assets')) {
+            const client = new EsiClient();
+            await client.authChar(AuthorizedCharacter.get(this.id));
+
+            try {
+                const raw = await client.getAllPages('characters/' + this.id + '/assets', 'esi-assets.read_assets.v1');
+                const byId = new Map(raw.map(a => [a.item_id, a]));
+
+                const rootOf = (asset) => {
+                    let current = asset;
+                    for (let depth = 0; depth < 10 && byId.has(current.location_id); depth++) {
+                        current = byId.get(current.location_id);
+                    }
+                    return current.location_id;
+                };
+
+                const roots = [...new Set(raw.map(rootOf))];
+                const names = await NameHelper.resolve([
+                    ...raw.map(a => a.type_id),
+                    ...roots.filter(id => NameHelper.isStation(id) || NameHelper.isSystem(id)),
+                ]);
+
+                const locations = {};
+                for (const id of roots) {
+                    locations[id] = await resolveLocationName(id, client, this.id, names);
+                }
+
+                // custom names of ships and containers (anything assembled that holds other items)
+                const customNames = {};
+                const holders = new Set(raw.map(a => a.location_id));
+                const named = raw.filter(a => a.is_singleton && holders.has(a.item_id)).map(a => a.item_id);
+                for (let i = 0; i < named.length; i += 1000) {
+                    try {
+                        const res = await client.post('characters/' + this.id + '/assets/names', 'esi-assets.read_assets.v1',
+                            {body: named.slice(i, i + 1000)});
+                        res.filter(o => o.name && o.name !== 'None').forEach(o => customNames[o.item_id] = o.name);
+                    } catch (err) {}
+                }
+
+                this.assets = raw.map(a => ({
+                    item_id: a.item_id,
+                    type_id: a.type_id,
+                    name: names[a.type_id] || `Type #${a.type_id}`,
+                    custom_name: customNames[a.item_id],
+                    quantity: a.quantity,
+                    flag: a.location_flag,
+                    parent_id: byId.has(a.location_id) ? a.location_id : undefined,
+                    root_location_id: rootOf(a),
+                    is_blueprint_copy: a.is_blueprint_copy === true,
+                }));
+                this.assetLocations = locations;
+
+                this.markRefreshed('assets');
+            } catch (err) {
+                if (err === 'Scope missing') {
+                    this.markFailedNoScope('assets');
+                }
+            }
+
+            this.save();
+        }
+    }
+
+    async refreshIndustryJobs() {
+        if (this.shouldRefresh('industry_jobs')) {
+            const client = new EsiClient();
+            await client.authChar(AuthorizedCharacter.get(this.id));
+
+            try {
+                const jobs = await client.get('characters/' + this.id + '/industry/jobs', 'esi-industry.read_character_jobs.v1');
+                const names = await NameHelper.resolve([
+                    ...jobs.map(j => j.blueprint_type_id),
+                    ...jobs.map(j => j.product_type_id),
+                    ...jobs.map(j => j.station_id).filter(NameHelper.isStation),
+                ]);
+
+                for (const job of jobs) {
+                    job.blueprint_name = names[job.blueprint_type_id];
+                    job.product_name = names[job.product_type_id];
+                    job.location_name = await resolveLocationName(job.station_id, client, this.id, names);
+                }
+
+                this.industryJobs = jobs;
+                this.markRefreshed('industry_jobs');
+            } catch (err) {
+                if (err === 'Scope missing') {
+                    this.markFailedNoScope('industry_jobs');
+                }
+            }
+
+            this.save();
+        }
+    }
+
+    // Planetary colonies, each with its extractors (and when they stop), factory count and stored goods.
+    async refreshPlanets() {
+        if (this.shouldRefresh('planets')) {
+            const client = new EsiClient();
+            await client.authChar(AuthorizedCharacter.get(this.id));
+
+            try {
+                const colonies = await client.get('characters/' + this.id + '/planets', 'esi-planets.manage_planets.v1');
+
+                for (const colony of colonies) {
+                    const planet = await new EsiClient().get('universe/planets/' + colony.planet_id);
+                    colony.planet_name = planet.name;
+
+                    const layout = await client.get('characters/' + this.id + '/planets/' + colony.planet_id,
+                        'esi-planets.manage_planets.v1');
+                    const pins = layout.pins || [];
+
+                    colony.extractors = pins.filter(p => p.extractor_details !== undefined).map(p => ({
+                        pin_id: p.pin_id,
+                        product_type_id: p.extractor_details.product_type_id,
+                        qty_per_cycle: p.extractor_details.qty_per_cycle,
+                        cycle_time: p.extractor_details.cycle_time,
+                        install_time: p.install_time,
+                        expiry_time: p.expiry_time,
+                    }));
+                    colony.factories = pins.filter(p => p.factory_details !== undefined).length;
+
+                    const stored = {};
+                    pins.forEach(p => (p.contents || []).forEach(c => stored[c.type_id] = (stored[c.type_id] || 0) + c.amount));
+                    colony.storage = Object.entries(stored).map(([typeId, amount]) => ({type_id: parseInt(typeId, 10), amount}));
+                }
+
+                const names = await NameHelper.resolve([
+                    ...colonies.map(c => c.solar_system_id),
+                    ...colonies.flatMap(c => c.extractors.map(e => e.product_type_id)),
+                    ...colonies.flatMap(c => c.storage.map(s => s.type_id)),
+                ]);
+                for (const colony of colonies) {
+                    colony.system_name = names[colony.solar_system_id];
+                    colony.extractors.forEach(e => e.product_name = names[e.product_type_id]);
+                    colony.storage.forEach(s => s.name = names[s.type_id]);
+                }
+
+                this.planets = colonies;
+                this.markRefreshed('planets');
+            } catch (err) {
+                if (err === 'Scope missing') {
+                    this.markFailedNoScope('planets');
+                }
+            }
+
+            this.save();
+        }
+    }
+
     shouldRefresh(type) {
         return (!this.nextRefreshes.hasOwnProperty(type)) || (new Date(this.nextRefreshes[type].do) < new Date());
     }
@@ -974,6 +1149,9 @@ class Character {
             "mails": "Mails",
             "maillabels": "Mail Labels",
             "mailinglists": "Mailing Lists",
+            "assets": "Assets",
+            "industry_jobs": "Industry Jobs",
+            "planets": "Planetary Colonies",
         };
 
         // TODO: clean this up jfc
@@ -1104,6 +1282,19 @@ class Character {
         return characters;
     }
 
+    // Forgets a character's ESI data. See CharacterHelper.removeCharacter for removing a character completely.
+    static delete(id) {
+        id = id.toString();
+        deletedIds.add(id);
+        delete characters[id];
+
+        if (charactersSaveTimeout !== undefined) {
+            clearTimeout(charactersSaveTimeout);
+        }
+        charactersStore.set('characters', characters);
+        Character.pushToSubscribers();
+    }
+
     static getAllContracts(complete) {
         let contracts = [];
         let contractIds = [];
@@ -1154,7 +1345,7 @@ class Character {
     }
 
     save() {
-        if (characters !== undefined) {
+        if (characters !== undefined && !deletedIds.has(this.id)) {
             characters[this.id] = this;
 
             if (charactersSaveTimeout !== undefined) {
@@ -1168,7 +1359,7 @@ class Character {
     }
 
     saveImmediately() {
-        if (characters !== undefined) {
+        if (characters !== undefined && !deletedIds.has(this.id)) {
             characters[this.id] = this;
 
             if (charactersSaveTimeout !== undefined) {

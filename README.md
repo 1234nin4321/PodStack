@@ -25,14 +25,19 @@ Features
     * Skill plans: basic skill planning, with import/export
     * Mail: your EVE mail
     * Contracts: pending/completed contracts involving the character
-    * API: token scopes, data refresh intervals and token health
+    * Assets: everything the character owns, grouped by location, searchable by item, ship name or location, with estimated values
+    * Industry and PI: running industry jobs, and planetary colonies with extractor timers and stored goods
+    * API: token scopes, data refresh intervals and token health, and removing the character
+* Industry Jobs and Planetary Industry pages across all characters, with nav badges for jobs ready to deliver and stopped extractors.
+* SP farm profit: ISK per farm per 30 days from Jita prices, after market fees, extractors and Omega/MCT costs.
+* Desktop alerts (Settings): training stopped or running low, lapsed to Alpha, injector ready, contract completed, new mail,
+  jump fatigue ended, industry job ready, PI extractor stopped.
+* Skill plans: paste a skill list ("Caldari Cruiser IV", one per line) from the EVE client, EVEMon or a forum post.
+* Password-protected backup and restore of characters, skill plans, farms, accounts and settings (Settings).
 
 Planned
 -------------------------
 * Account manager for subscriptions/MPT expiry
-* Configurable alerts (training stopped, lapsed to Alpha, ready for extraction, etc.)
-* Skill extraction planner
-* Deleting characters
 
 Install
 -------------------------
@@ -64,7 +69,9 @@ npm run make       # build installers into out/make
 Usage
 -------------------------
 1. Create an application on the [EVE Developers website](https://developers.eveonline.com/) and enter its client ID on the Settings page.
-2. Add characters with the "Authorize Character" button. Data refreshes automatically.
+   Enable every scope listed in `resources/properties.js` on it, or EVE will refuse the login.
+2. Add characters with the "Authorize Character" button. Data refreshes automatically. Characters added before assets,
+   industry and PI were supported show "Missing" for those scopes on their API tab: authorize them again to grant them.
 3. SP farming:
     * Click "Add Farm", choose a character and enter the SP to always keep on it (for example the 11,000,000 SP a JF pilot needs).
     * To change a farm's base SP, add it again with the new value.

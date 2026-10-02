@@ -5,12 +5,33 @@ import React from 'react';
 import CharacterModel from '../../../models/Character';
 import AuthorizedCharacter from '../../../models/AuthorizedCharacter';
 import DateTimeHelper from '../../../helpers/DateTimeHelper';
+import CharacterHelper from '../../../helpers/CharacterHelper';
 
 import Panel from '../../ui/Panel';
 
 export default class Api extends React.Component {
     constructor(props) {
         super(props);
+
+        this.state = {removing: false};
+    }
+
+    async handleRemove(char) {
+        const confirmed = confirm(`Remove ${char.name} from PodStack?\n\n` +
+            'This signs the character out of PodStack with EVE and deletes its data, skill plans and SP farm entry ' +
+            'from this computer. You can add it again later with Authorize Character.');
+        if (!confirmed) {
+            return;
+        }
+
+        this.setState({removing: true});
+        // leave the character's page first, so nothing renders a character that's gone
+        window.location.hash = '#/';
+        const revoked = await CharacterHelper.removeCharacter(char.id);
+        if (!revoked) {
+            alert(`${char.name} was removed from PodStack, but EVE couldn't be reached to revoke its login. ` +
+                'To be sure, revoke PodStack under Third Party Applications on the EVE account management website.');
+        }
     }
 
     render() {
@@ -72,6 +93,20 @@ export default class Api extends React.Component {
                                 </dd>
                             }
                         </dl>
+                    </Panel>
+
+                    <Panel title="Remove Character" icon="person_remove">
+                        <div className="remove-character">
+                            <p className="muted" style={{margin: 0}}>
+                                Signs this character out of PodStack with EVE and deletes its data, skill plans and SP
+                                farm entry from this computer.
+                            </p>
+                            <button className="danger-button" type="button" disabled={this.state.removing}
+                                    onClick={() => this.handleRemove(char)}>
+                                <i className="material-icons">person_remove</i>
+                                Remove
+                            </button>
+                        </div>
                     </Panel>
 
                     <Panel title="Data Refresh" icon="sync" flush={true}>
