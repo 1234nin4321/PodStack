@@ -121,7 +121,8 @@ export default class TrainingProfileHelper {
 
     // Per-skill training times ([{id, level, time}]) with the given implants and an extra flat bonus, in queue order.
     static itemTimes(characterId, queue, implants, extraBonus) {
-        const planCharacter = new PlanCharacter(characterId);
+        // the accelerator to compare is applied by simulateItems, not the one the plan counts on its own
+        const planCharacter = new PlanCharacter(characterId, {accelerator: false});
         const base = TrainingProfileHelper.getBaseAttributes(characterId);
 
         if (implants === CURRENT_CLONE) {

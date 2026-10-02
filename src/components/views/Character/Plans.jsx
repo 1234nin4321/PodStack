@@ -26,6 +26,7 @@ import PasteSkillsDialog from '../../dialogs/PasteSkillsDialog';
 import NewRenamePlanPopover from '../../popovers/NewRenamePlanPopover';
 import NoteDialog from '../../dialogs/NoteDialog';
 import PlanCharacter from '../../../models/PlanCharacter';
+import AcceleratorHelper from '../../../helpers/AcceleratorHelper';
 import PlanSkillPopover from '../../popovers/PlanSkillToLevelPopover';
 import RemapDialog from '../../dialogs/RemapDialog';
 import SkillPlanStore from '../../../helpers/SkillPlanStore';
@@ -672,6 +673,66 @@ export default class Plans extends React.Component {
         return this.comparison.result;
     }
 
+    // Plans count an active accelerator for as long as EVE's queue does; this switches that off (or on again) for
+    // all of the character's plans, and re-times the open plan and the training queue.
+    handleAcceleratorToggle() {
+        const character = Character.get(this.props.characterId);
+        character.planIgnoreAccelerator = character.planIgnoreAccelerator !== true;
+        character.save();
+
+        const items = this.planCharacter.queue.slice();
+        this.planCharacter = new PlanCharacter(this.props.characterId);
+        items.forEach(item => this.planCharacter.addItemToQueue(item));
+
+        this.setState({items: this.planCharacter.queue, totalTime: this.planCharacter.time});
+        if (this.state.showQueue) {
+            this.showTrainingQueue();
+        } else {
+            this.setState({queueTime: SkillPlanHelper.buildTrainingQueue(this.props.characterId).time});
+        }
+    }
+
+    // The active accelerator's switch in the toolbar, when there is one plans could count.
+    renderAcceleratorToggle() {
+        const character = Character.get(this.props.characterId);
+        const window = AcceleratorHelper.planWindow(character);
+        if (window === undefined) {
+            return null;
+        }
+
+        const on = character.planIgnoreAccelerator !== true;
+        const until = window.end.toLocaleString(navigator.language, {month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'});
+        return (
+            <div className="plan-toolbar-group">
+                <button
+                    type="button"
+                    className={`accel-toggle ${on ? 'on' : ''}`}
+                    onClick={() => this.handleAcceleratorToggle()}
+                    title={on ?
+                        `Plan times include the active +${window.bonus} cerebral accelerator until ${until}, when EVE's skill queue stops counting it. Click to plan without it.` :
+                        `Plan times leave out the active +${window.bonus} cerebral accelerator. Click to include it until ${until}, as EVE's skill queue does.`}
+                >
+                    <i className="material-icons">bolt</i>
+                    <span>+{window.bonus} accelerator</span>
+                    <span className="accel-toggle-switch"/>
+                </button>
+            </div>
+        );
+    }
+
+    // Says on the plan whether its times include the active accelerator.
+    acceleratorNote() {
+        const character = Character.get(this.props.characterId);
+        const window = AcceleratorHelper.planWindow(character);
+        if (window === undefined) {
+            return undefined;
+        }
+        if (character.planIgnoreAccelerator === true) {
+            return `Without the +${window.bonus} accelerator`;
+        }
+        return `With +${window.bonus} accelerator until ${window.end.toLocaleString(navigator.language, {month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'})}`;
+    }
+
     // where "+ Level N" puts the new level
     renderAddLevelMenu() {
         const menu = this.state.addLevelMenu;
@@ -853,6 +914,8 @@ export default class Plans extends React.Component {
                             icon={<FontIcon className="material-icons" style={styles.buttonIcon}>psychology</FontIcon>}
                         />
                     </div>
+
+                    {this.renderAcceleratorToggle()}
                 </div>
 
                 {this.state.fitPlannerOpen &&
@@ -914,8 +977,10 @@ export default class Plans extends React.Component {
                         title="Training Queue"
                         icon="playlist_play"
                         flush={true}
-                        subtitle={this.state.compareProfile ?
-                            `Compared with: ${this.state.compareProfile.label}` : 'Switched-on plans, highest priority first'}
+                        subtitle={[
+                            this.state.compareProfile ? `Compared with: ${this.state.compareProfile.label}` : 'Switched-on plans, highest priority first',
+                            this.acceleratorNote(),
+                        ].filter(Boolean).join(' · ')}
                         actions={
                             <RaisedButton
                                 style={styles.button}
@@ -936,7 +1001,10 @@ export default class Plans extends React.Component {
                     <Panel
                         title={this.state.skillPlanName || 'Plan'}
                         icon="format_list_numbered"
-                        subtitle={this.state.compareProfile && `Compared with: ${this.state.compareProfile.label}`}
+                        subtitle={[
+                            this.state.compareProfile && `Compared with: ${this.state.compareProfile.label}`,
+                            this.acceleratorNote(),
+                        ].filter(Boolean).join(' · ') || undefined}
                         flush={true}
                         actions={
                             <div style={{display: 'flex', gap: 6}}>

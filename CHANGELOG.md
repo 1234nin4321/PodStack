@@ -1,3 +1,11 @@
+## 0.2.12 Alpha (0.2.12-alpha)
+* Fixed: skill plans left out an active cerebral accelerator, so a plan made from the EVE skill queue took longer than
+  the queue itself. Plans now count the accelerator for exactly as long as EVE's skill queue does (read from the
+  queue's training speeds), so the two finish at the same time.
+* Plans say whether their times include the accelerator ("With +12 accelerator until …"), and a switch in the plan
+  toolbar turns it off or on again for all of the character's plans and the training queue.
+* Implants & Accelerators compares against the same accelerator window as the plan.
+
 ## 0.2.11 Alpha (0.2.11-alpha)
 * Character tabs are now in two rows: the pilot (Summary, Skills, Plans, Clones, Mails, API) and ISK and stuff
   (Wallet, Contracts, Assets, Industry, PI).

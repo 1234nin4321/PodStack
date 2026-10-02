@@ -3259,3 +3259,73 @@ a:hover {
 .server-status-players {
     margin-left: auto;
 }
+
+/* ---------------------------------------------------------------- Plans: active accelerator switch */
+
+.accel-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 32px;
+    padding: 0 10px;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 12px;
+    letter-spacing: 0.03em;
+    color: var(--text-dim);
+    background: none;
+    border: 1px solid var(--line-strong);
+    cursor: pointer;
+    outline: none;
+}
+
+.accel-toggle .material-icons {
+    font-size: 17px;
+    color: var(--text-faint);
+}
+
+.accel-toggle:hover {
+    color: var(--text);
+}
+
+.accel-toggle.on {
+    color: var(--text-strong);
+    border-color: color-mix(in srgb, var(--good) 45%, transparent);
+    background: color-mix(in srgb, var(--good) 8%, transparent);
+}
+
+.accel-toggle.on .material-icons {
+    color: var(--good);
+}
+
+/* a small on/off switch */
+.accel-toggle-switch {
+    position: relative;
+    width: 26px;
+    height: 14px;
+    margin-left: 2px;
+    border-radius: 7px;
+    background: var(--line-strong);
+    transition: background 0.15s;
+}
+
+.accel-toggle-switch::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--text-dim);
+    transition: transform 0.15s, background 0.15s;
+}
+
+.accel-toggle.on .accel-toggle-switch {
+    background: color-mix(in srgb, var(--good) 55%, transparent);
+}
+
+.accel-toggle.on .accel-toggle-switch::after {
+    transform: translateX(12px);
+    background: #fff;
+}

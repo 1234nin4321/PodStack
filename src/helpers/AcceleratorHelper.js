@@ -148,6 +148,80 @@ export default class AcceleratorHelper {
         }
     }
 
+    /**
+     * When EVE's skill queue stops counting the accelerator. EVE times every queued skill with the accelerator until
+     * the moment it expects it to run out, and at the normal speed after: the first entry training slower than
+     * boosted marks that moment (inside it, when it straddles the end). This needn't match the accelerator's own
+     * timer, so plans use it to come out at the same time as EVE's queue.
+     *
+     * @returns {Date|undefined} undefined when the queue doesn't show it (nothing queued past the end, or the
+     *          speeds don't fit the attributes)
+     */
+    static queueBoostEnd(character, now = Date.now()) {
+        const state = character.accelerator;
+        if (state === undefined || character.attributes === undefined || character.isOmega() === false) {
+            return undefined;
+        }
+
+        const booster = AcceleratorHelper.attributeBonus(character);
+        const base = a => (character.attributes[a] || 0) - booster;
+        const entries = (character.skillQueue || [])
+            .filter(o => o.start_date !== undefined && o.finish_date !== undefined && new Date(o.finish_date) > now)
+            .sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
+
+        for (const entry of entries) {
+            const info = AllSkills.skills[entry.skill_id];
+            const start = new Date(entry.start_date).getTime();
+            const hours = (new Date(entry.finish_date).getTime() - start) / 3600000;
+            const sp = entry.level_end_sp - entry.training_start_sp;
+            // entries of a few minutes are too short to tell the speeds apart (EVE's times are whole seconds)
+            if (info === undefined || !(hours > 0.25) || !(sp > 0)) {
+                continue;
+            }
+
+            const normal = (base(info.primary_attribute) + base(info.secondary_attribute) / 2) * 60;
+            const boosted = normal + state.bonus * 1.5 * 60;
+            const rate = sp / hours;
+            if (!(normal > 0)) {
+                return undefined;
+            }
+
+            if (rate >= boosted * 0.995) {
+                continue;
+            }
+            if (rate <= normal * 1.005) {
+                return new Date(start);
+            }
+            if (rate < boosted) {
+                // straddles the end: boostedHours at the boosted speed, the rest at the normal one
+                const boostedHours = (sp - normal * hours) / (boosted - normal);
+                return new Date(start + boostedHours * 3600000);
+            }
+            return undefined;
+        }
+
+        return undefined;
+    }
+
+    /**
+     * The active accelerator as plans count it: its bonus, and how long from now it applies (EVE's skill queue's
+     * idea of that when it shows it, else the accelerator's estimated end).
+     *
+     * @returns {object|undefined} {bonus, end: Date, remaining: ms}, or undefined when there's none left
+     */
+    static planWindow(character, now = Date.now()) {
+        const status = AcceleratorHelper.status(character, now);
+        if (status === undefined) {
+            return undefined;
+        }
+
+        const end = AcceleratorHelper.queueBoostEnd(character, now) || status.end;
+        if (end === undefined || end.getTime() <= now) {
+            return undefined;
+        }
+        return {bonus: status.bonus, end, remaining: end.getTime() - now};
+    }
+
     // bonus the accelerator adds to ESI's attributes (when they include it), so base attributes can be worked out
     static attributeBonus(character) {
         const state = character.accelerator;

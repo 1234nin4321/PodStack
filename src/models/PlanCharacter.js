@@ -4,8 +4,8 @@ import AllSkills from '../../resources/all_skills';
 import Character from '../models/Character';
 import AcceleratorHelper from '../helpers/AcceleratorHelper';
 
-// The character's attributes without an active cerebral accelerator, which runs out: plans assume none, and the
-// Implants & Accelerators panel applies one for its remaining time.
+// The character's attributes without an active cerebral accelerator, which runs out: plans add its bonus only for as
+// long as EVE's skill queue counts it (see AcceleratorHelper.planWindow).
 function attributesWithoutAccelerator(character) {
     const attributes = Object.assign({}, character.attributes);
     const booster = AcceleratorHelper.attributeBonus(character);
@@ -19,12 +19,18 @@ function attributesWithoutAccelerator(character) {
 
 class PlanCharacter {
 
-    constructor(id) {
+    /**
+     * @param {string} id
+     * @param {object} [options] {accelerator: false} to plan without the active accelerator (for comparisons that
+     *                           apply one themselves)
+     */
+    constructor(id, options) {
         if (id !== undefined) {
             id = id.toString();
             this.baseCharacter = Character.get(id);
         }
         this.id = id;
+        this.useAccelerator = !(options !== undefined && options.accelerator === false);
         this.load();
     }
 
@@ -37,6 +43,10 @@ class PlanCharacter {
         this.name = this.baseCharacter.name.toString();
         this.attributes = attributesWithoutAccelerator(this.baseCharacter);
         this.isOmega = this.baseCharacter.isOmega();
+        // {bonus, end, remaining (ms from now)} of an active accelerator, applied to the plan's first `remaining` ms,
+        // unless switched off for this character's plans (see Plans' accelerator switch)
+        this.accelerator = this.useAccelerator && this.baseCharacter.planIgnoreAccelerator !== true ?
+            AcceleratorHelper.planWindow(this.baseCharacter) : undefined;
 
         this.skills = {};
         this.queue = [];
@@ -460,10 +470,13 @@ class PlanCharacter {
 
             let spPerHour = (this.attributes[skill.primary_attribute] +
                 (this.attributes[skill.secondary_attribute] / 2)) * 60;
+            // with an active accelerator: its bonus on both attributes
+            let boostedSpPerHour = this.accelerator !== undefined ? spPerHour + this.accelerator.bonus * 1.5 * 60 : spPerHour;
 
             // Alpha clones train at half speed; a character not known to be Alpha is planned at Omega speed
             if (this.isOmega === false) {
                 spPerHour *= 0.5;
+                boostedSpPerHour *= 0.5;
             }
 
             // add each level individually
@@ -478,7 +491,13 @@ class PlanCharacter {
                     const spForLevel = Math.ceil(250 * skill.training_time_multiplier * (32 ** ((i - 1) / 2)));
                     const missingSPforLevel = spForLevel - currentSP;
 
-                    let time = missingSPforLevel * (3600 / spPerHour);
+                    // seconds: at the boosted speed while the accelerator lasts, the normal speed after
+                    const boostLeft = this.accelerator !== undefined ? Math.max(0, (this.accelerator.remaining - this.time) / 1000) : 0;
+                    let time = missingSPforLevel * (3600 / boostedSpPerHour);
+                    if (time > boostLeft) {
+                        const spBoosted = boostLeft * boostedSpPerHour / 3600;
+                        time = boostLeft + (missingSPforLevel - spBoosted) * (3600 / spPerHour);
+                    }
 
                     this.time += time * 1000;
                     this.lastRemap += time * 1000;
@@ -494,7 +513,7 @@ class PlanCharacter {
                         title: `${skill.name} ${i}`,
                         sp: missingSPforLevel,
                         spTotal: spForLevel,
-                        spHour: spPerHour,
+                        spHour: time > 0 ? Math.round(missingSPforLevel / (time / 3600)) : Math.round(spPerHour),
                         time: time * 1000,
                         lastRemap: this.lastRemap,
                         primaryAttribute: skill.primary_attribute,

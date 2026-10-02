@@ -64,10 +64,13 @@ export default class ImplantProfilerPanel extends React.Component {
         };
     }
 
-    // The accelerator the character has active now (see AcceleratorHelper), for as long as it has left.
+    // The accelerator the character has active now (see AcceleratorHelper), for as long as plans count it: as long
+    // as EVE's skill queue does, so the comparison matches the plan's own times.
     activeAccelerator() {
-        const status = AcceleratorHelper.status(Character.get(this.props.characterId));
-        return status !== undefined && status.remaining > 0 ? status : undefined;
+        const character = Character.get(this.props.characterId);
+        const status = AcceleratorHelper.status(character);
+        const window = AcceleratorHelper.planWindow(character);
+        return status !== undefined && window !== undefined ? {...status, remaining: window.remaining} : undefined;
     }
 
     activeAcceleratorState() {
