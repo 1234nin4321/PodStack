@@ -29,11 +29,29 @@ Features
 
 Planned
 -------------------------
-* Automatic updates
 * Account manager for subscriptions/MPT expiry
 * Configurable alerts (training stopped, lapsed to Alpha, ready for extraction, etc.)
 * Skill extraction planner
 * Deleting characters
+
+Install
+-------------------------
+1. Download `PodStack-<version>.Setup.exe` from the [latest release](https://github.com/1234nin4321/PodStack/releases/latest) and run it.
+2. PodStack installs for your Windows user (no admin rights needed), adds a **Desktop shortcut** and a **Start Menu** entry, and starts.
+3. Windows SmartScreen may say the installer is unrecognised, because it isn't code-signed yet. Choose **More info**, then **Run anyway**.
+
+PodStack checks for new versions and tells you when one is available; choose **Update now** to download and install it.
+Removing the desktop shortcut is fine: updates won't put it back.
+
+The `.zip` on the release page is a portable copy: unzip and run `PodStack.exe`. It doesn't install, add shortcuts or update itself.
+
+Uninstall
+-------------------------
+Open **Settings → Apps → Installed apps** (or Control Panel → Programs and Features), find **PodStack** and choose
+**Uninstall**. This removes the app and its shortcuts.
+
+Your characters, plans and settings stay in `%APPDATA%\PodStack` so a reinstall picks them up. Delete that folder as
+well to remove everything, including your EVE login tokens.
 
 Development
 -------------------------

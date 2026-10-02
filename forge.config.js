@@ -28,6 +28,8 @@ module.exports = {
             config: {
                 name: 'podstack',
                 setupIcon: 'resources/icon.ico',
+                // icon for the entry in Settings > Apps > Installed apps (Squirrel needs a URL)
+                iconUrl: `https://raw.githubusercontent.com/${owner}/${name}/master/resources/icon.ico`,
                 loadingGif: 'resources/installing.gif',
             },
         },

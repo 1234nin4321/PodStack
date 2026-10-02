@@ -7,8 +7,11 @@ import Store from 'electron-store';
 
 import appProperties from './../resources/properties';
 import {initUpdater} from './updater';
+import handleSquirrelEvent from './squirrelStartup';
 
-if (require('electron-squirrel-startup')) {
+// Installer events (install/update/uninstall) are handled and the app quits without opening a window.
+const isSquirrelEvent = handleSquirrelEvent();
+if (isSquirrelEvent) {
     app.quit();
 }
 
@@ -198,6 +201,10 @@ const createWindow = () => {
 };
 
 app.on('ready', () => {
+    if (isSquirrelEvent) {
+        return;
+    }
+
     createWindow();
     initUpdater(() => mainWindow);
 });

@@ -1,3 +1,8 @@
+## 0.1.4 Alpha (0.1.4-alpha)
+* PodStack's icon now shows in Settings > Apps > Installed apps.
+* Updates no longer bring back a desktop shortcut you deleted; existing shortcuts are kept up to date.
+* README: install and uninstall instructions.
+
 ## 0.1.3 Alpha (0.1.3-alpha)
 * Updates ask first: PodStack still checks automatically, but only downloads when you choose Update now.
 * Implants & Boosters: implant sets are shown by name (Limited, Limited Beta, Basic, Standard, Improved) and your
