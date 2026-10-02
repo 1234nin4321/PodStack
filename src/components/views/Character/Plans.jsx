@@ -495,6 +495,39 @@ export default class Plans extends React.Component {
         }
     }
 
+    // A new plan holding the character's skill queue in EVE (as last loaded from ESI): the levels not yet trained,
+    // in the queue's order. A paused queue counts too.
+    handleImportEveQueue() {
+        this.setState({importToPlanPopoverOpen: false});
+
+        const character = Character.get(this.props.characterId);
+        const now = new Date();
+        const entries = (character.skillQueue || [])
+            .filter(entry => entry.finish_date === undefined || new Date(entry.finish_date) > now)
+            .sort((a, b) => (a.queue_position || 0) - (b.queue_position || 0));
+        if (entries.length === 0) {
+            alert(`${character.getDisplayName()}'s skill queue in EVE is empty, so there's nothing to make a plan from.`);
+            return;
+        }
+
+        this.planCharacter.reset();
+        this.planCharacter.addNote('EVE skill queue', `Copied from the skill queue in EVE on ${now.toLocaleString(navigator.language)}`);
+        entries.forEach(entry => this.planCharacter.planSkill(entry.skill_id, entry.finished_level));
+
+        const id = crypto.randomUUID();
+        const name = `EVE skill queue ${now.toLocaleDateString(navigator.language)}`;
+        SkillPlanStore.storeSkillPlan(this.props.characterId, id, name, this.planCharacter.queue);
+        this.setState({
+            items: this.planCharacter.queue,
+            totalTime: this.planCharacter.time,
+            skillPlans: SkillPlanStore.getSkillPlansForCharacter(this.props.characterId),
+            skillPlanId: id,
+            skillPlanName: name,
+            showQueue: false,
+            selection: [],
+        });
+    }
+
     handleSkillPlanChanged(skillPlanId) {
         if (skillPlanId !== undefined) {
             const plan = SkillPlanStore.getSkillPlan(this.props.characterId, skillPlanId);
@@ -722,6 +755,7 @@ export default class Plans extends React.Component {
                     onImport={this.handleImport}
                     onFitting={() => this.setState({importToPlanPopoverOpen: false, fitPlannerOpen: true})}
                     onPaste={source => this.setState({importToPlanPopoverOpen: false, pasteSkillsOpen: true, pasteSource: source})}
+                    onEveQueue={() => this.handleImportEveQueue()}
                 />
                 <PasteSkillsDialog
                     open={this.state.pasteSkillsOpen === true}

@@ -17,6 +17,7 @@ import LocationHelper from '../helpers/LocationHelper';
 import MailBodyHelper from '../helpers/MailBodyHelper';
 import NameHelper from '../helpers/NameHelper';
 import ImageHelper from '../helpers/ImageHelper';
+import AcceleratorHelper from '../helpers/AcceleratorHelper';
 
 let subscribedComponents = [];
 let characters;
@@ -125,6 +126,11 @@ class Character {
 
     getMails() {
         return this.mails
+    }
+
+    // unread mail received (label 2 is the outbox, so mail the character sent doesn't count)
+    getUnreadMailCount() {
+        return (this.mails || []).filter(m => !m.is_read && !(m.labels || []).includes(2)).length;
     }
 
     getMailLabels() {
@@ -400,11 +406,17 @@ class Character {
         let done = 0;
         report({label: [...pending].join(', '), done, total: tasks.length});
 
-        return Promise.all(tasks.map(([label, task]) => task().finally(() => {
-            pending.delete(label);
-            done++;
-            report({label: [...pending].join(', '), done, total: tasks.length});
-        })));
+        try {
+            return await Promise.all(tasks.map(([label, task]) => task().finally(() => {
+                pending.delete(label);
+                done++;
+                report({label: [...pending].join(', '), done, total: tasks.length});
+            })));
+        } finally {
+            // with attributes, implants and the skill queue all current, look for a cerebral accelerator
+            AcceleratorHelper.update(this);
+            this.save();
+        }
     }
 
     getDateOfBirth() {

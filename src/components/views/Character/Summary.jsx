@@ -8,6 +8,7 @@ import FormatHelper from '../../../helpers/FormatHelper';
 import ImageHelper from '../../../helpers/ImageHelper';
 
 import Panel from '../../ui/Panel';
+import AcceleratorPanel from './AcceleratorPanel';
 import Bar from '../../ui/Bar';
 
 const attributeNames = ['intelligence', 'memory', 'perception', 'willpower', 'charisma'];
@@ -293,6 +294,7 @@ export default class Summary extends React.Component {
                     {this.renderSkillQueue(char)}
                     {fatigue !== undefined && this.renderFatigue(fatigue)}
                     {this.renderImplants(char)}
+                    <AcceleratorPanel character={char}/>
                     {char.loyalty_points !== undefined && this.renderLoyaltyPoints(char)}
                 </div>
             </div>

@@ -1034,11 +1034,11 @@ a:hover {
     align-items: center;
     gap: 8px;
     height: 44px;
-    padding: 0 11px;   /* all nine character tabs fit on one row at the minimum window width */
+    padding: 0 10px;   /* all nine character tabs (and an unread count) fit on one row at the minimum window width */
     font-family: var(--font-display);
     font-weight: 700;
     font-size: 13px;
-    letter-spacing: 0.12em;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
     color: var(--text-dim);
     background: none;
@@ -3048,4 +3048,52 @@ a:hover {
 .close-option input {
     margin-top: 3px;
     accent-color: var(--accent);
+}
+
+/* ---------------------------------------------------------------- Cerebral accelerator */
+
+.badge.accel {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    color: var(--good);
+    border-color: color-mix(in srgb, var(--good) 50%, transparent);
+    background: color-mix(in srgb, var(--good) 10%, transparent);
+}
+
+.badge.accel .material-icons {
+    font-size: 13px;
+}
+
+.accel-select {
+    width: 100%;
+    max-width: 320px;
+}
+
+.accel-start {
+    width: auto;
+    padding: 3px 6px;
+    color-scheme: dark;
+}
+
+.accel-note {
+    margin: 10px 0 0;
+    font-size: 12px;
+}
+
+/* unread count on a tab (e.g. Mails) */
+.tab-badge {
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    box-sizing: border-box;
+    font-family: var(--font-body, inherit);
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 18px;
+    letter-spacing: 0;
+    text-align: center;
+    color: #fff;
+    background: var(--danger);
+    border-radius: 9px;
 }

@@ -20,6 +20,7 @@ import Industry from './Character/Industry';
 import Planets from './Character/Planets';
 import {CloneStateBadge, TokenStatusDot} from '../ui/CharacterBadges';
 import ErrorBoundary from '../ui/ErrorBoundary';
+import AcceleratorBadge from '../ui/AcceleratorBadge';
 
 const pages = [
     {key: 'summary', label: 'Summary', icon: 'assessment'},
@@ -62,6 +63,7 @@ export default class Character extends React.Component {
                         <div className="hero-name">
                             {char.getDisplayName()}
                             <CloneStateBadge character={char}/>
+                            <AcceleratorBadge character={char}/>
                             <TokenStatusDot auth={AuthorizedCharacter.get(char.id)}/>
                         </div>
                         <div className="hero-affil">
@@ -176,6 +178,8 @@ export default class Character extends React.Component {
                         >
                             <i className="material-icons">{page.icon}</i>
                             {page.label}
+                            {page.key === 'mails' && char.getUnreadMailCount() > 0 &&
+                                <span className="tab-badge" title={`${char.getUnreadMailCount()} unread`}>{char.getUnreadMailCount()}</span>}
                         </button>
                     )}
                 </div>

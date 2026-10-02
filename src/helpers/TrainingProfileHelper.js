@@ -3,6 +3,7 @@
 import Character from '../models/Character';
 import PlanCharacter from '../models/PlanCharacter';
 
+import AcceleratorHelper from './AcceleratorHelper';
 import AllSkills from '../../resources/all_skills';
 
 // Dogma attributes holding an implant's bonus to each character attribute.
@@ -60,11 +61,14 @@ export default class TrainingProfileHelper {
     }
 
     static getBaseAttributes(characterId) {
-        const attributes = Character.get(characterId).attributes;
+        const character = Character.get(characterId);
+        const attributes = character.attributes;
         const bonuses = TrainingProfileHelper.getImplantBonuses(characterId);
+        // and an active accelerator, when ESI's attributes include it
+        const booster = AcceleratorHelper.attributeBonus(character);
 
         const base = {};
-        ATTRIBUTES.forEach(a => base[a] = (attributes[a] || 0) - bonuses[a]);
+        ATTRIBUTES.forEach(a => base[a] = (attributes[a] || 0) - bonuses[a] - booster);
         return base;
     }
 

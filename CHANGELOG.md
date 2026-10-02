@@ -1,3 +1,13 @@
+## 0.2.8 Alpha (0.2.8-alpha)
+* Cerebral accelerators: an active accelerator shows as "+10 · 3d left" next to the character's name, with details
+  on the Summary tab. EVE only reveals the bonus, so pick which accelerator it is and correct the start time if
+  needed; the end time includes Biology's +20% duration per level. The remap optimiser no longer counts an active
+  accelerator as part of your base attributes.
+* Skill plans: Import → Current EVE Skill Queue makes a new plan from the character's skill queue in EVE.
+* Unread EVE mail is counted in red on the character's Mails tab.
+* Added the Heimatar Rise, Onslaught and Totality Day accelerators and the New Eden festival packs to the
+  implants and boosters comparison.
+
 ## 0.2.7 Alpha (0.2.7-alpha)
 * 94 new skills from EVE's latest static data (512 in total), including Precursor and Vorton weapons and ships,
   EDENCOM and Upwell ships, Lancer Dreadnoughts, Breacher Pods, the new ore processing skills and the new

@@ -44,4 +44,11 @@ export const ACCELERATORS = [
     {typeId: 57253, name: "Festival-only Marshal Cerebral Accelerator VII", bonus: 10, days: 7},
     {typeId: 72242, name: "Expert 'Boost' Cerebral Accelerator", bonus: 10, days: 10},
     {typeId: 77919, name: "Genius 'Boost' Cerebral Accelerator", bonus: 12, days: 12},
+    // event accelerators (EVE's static data, build 3569502)
+    {typeId: 56659, name: "Festival-only New Eden Vanguard Pack", bonus: 3, days: 7},
+    {typeId: 77934, name: "Heimatar Rise Accelerator", bonus: 6, days: 2},
+    {typeId: 49753, name: "Onslaught Accelerator", bonus: 10, days: 3},
+    {typeId: 56661, name: "Festival-only New Eden Commander Pack", bonus: 10, days: 7},
+    {typeId: 85279, name: "Totality Day Accelerator", bonus: 13, days: 3},
+    {typeId: 56662, name: "Festival-only New Eden Marshal Pack", bonus: 15, days: 7},
 ];
