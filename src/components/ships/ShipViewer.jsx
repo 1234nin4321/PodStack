@@ -323,10 +323,10 @@ vec3 patternCoords(int i) {
 }`)
                 .replace('#include <map_fragment>', `#include <map_fragment>
 vec4 surfaceSample = texture2D(surfaceMap, vMapUv);
-// the mask's areas aren't evenly spaced: they sit at about 0, 85, 205 and 252 (of 255), and the third is spread out by
-// compression, so they're split halfway between those
+// the mask's areas aren't evenly spaced: about 0 and 85, then the third area's panels, whose values vary cloudily from
+// about 180 up to white (detail within one material, not another one); only solid white is the fourth area
 float maskValue = surfaceSample.r * 255.0;
-int area = maskValue < 42.0 ? 0 : maskValue < 145.0 ? 1 : maskValue < 232.0 ? 2 : 3;
+int area = maskValue < 42.0 ? 0 : maskValue < 145.0 ? 1 : maskValue < 254.0 ? 2 : 3;
 vec3 areaColor = mtlDiffuse[0];
 vec3 areaSpecular = mtlSpecular[0];
 float areaRough = mtlRough[0];
@@ -350,7 +350,8 @@ float detail = clamp(mix(1.0, dot(diffuseColor.rgb, vec3(0.299, 0.587, 0.114)) *
 diffuseColor.rgb = mix(diffuseColor.rgb, areaColor * detail, paintAmount);`)
                 .replace('#include <roughnessmap_fragment>', `float roughnessFactor = roughness;
 float hullRough = surfaceSample.g;
-roughnessFactor = mix(hullRough, clamp(areaRough + (hullRough - 0.5) * 0.4, 0.04, 1.0), paintAmount);`)
+// the roughness map carries the default look's wear too, so only a little of it shows under paint
+roughnessFactor = mix(hullRough, clamp(areaRough + (hullRough - 0.5) * 0.12, 0.04, 1.0), paintAmount);`)
                 .replace('#include <metalnessmap_fragment>', `float metalnessFactor = mix(metalness, 0.0, paintAmount);`)
                 // painted: the material's own specular colour, as the client's shaders use it
                 .replace('#include <lights_physical_fragment>', `#include <lights_physical_fragment>
