@@ -17,7 +17,7 @@ const COMPRESSED = {
     BC3: {extension: 'WEBGL_compressed_texture_s3tc', format: THREE.RGBA_S3TC_DXT5_Format},
 };
 const LIGHTING = {
-    studio: {label: 'Studio', background: 0x0b0e13, env: 1.0, key: 2.2, rim: 1.2, ambient: 0.25},
+    studio: {label: 'Studio', background: 0x0b0e13, env: 1.6, key: 2.0, rim: 1.2, ambient: 0.15},
     space: {label: 'Deep space', background: 0x020306, env: 0.35, key: 3.2, rim: 0.6, ambient: 0.05},
     bright: {label: 'Bright', background: 0x1a1f27, env: 1.6, key: 1.6, rim: 1.0, ambient: 0.6},
 };
@@ -344,8 +344,9 @@ if (patternOn[1] > 0.5) {
     float m = texture2D(patternMask1, pc.xy).r * pc.z;
     areaColor = mix(areaColor, patternDiffuse[1], m); areaSpecular = mix(areaSpecular, patternSpecular[1], m); areaRough = mix(areaRough, patternRough[1], m);
 }
-// keep some of the texture's detail (its brightness) under the paint, without washing out the material's colour
-float detail = clamp(mix(1.0, dot(diffuseColor.rgb, vec3(0.299, 0.587, 0.114)) * 2.0, 0.5), 0.6, 1.15);
+// only a trace of the colour texture under paint: it carries the default look's wear (rust, chipped paint), which a
+// SKIN paints over; the panel detail comes from the normal and roughness maps
+float detail = clamp(mix(1.0, dot(diffuseColor.rgb, vec3(0.299, 0.587, 0.114)) * 2.0, 0.12), 0.9, 1.05);
 diffuseColor.rgb = mix(diffuseColor.rgb, areaColor * detail, paintAmount);`)
                 .replace('#include <roughnessmap_fragment>', `float roughnessFactor = roughness;
 float hullRough = surfaceSample.g;
