@@ -17,7 +17,7 @@ const COMPRESSED = {
     BC3: {extension: 'WEBGL_compressed_texture_s3tc', format: THREE.RGBA_S3TC_DXT5_Format},
 };
 const LIGHTING = {
-    ingame: {label: 'In-game', background: 0x050506, env: 1.5, key: 3.0, rim: 1.4, ambient: 0.04},
+    ingame: {label: 'In-game', background: 0x050506, env: 1.1, key: 3.0, rim: 1.4, ambient: 0.04},
     studio: {label: 'Studio', background: 0x0b0e13, env: 1.6, key: 2.0, rim: 1.2, ambient: 0.15},
     space: {label: 'Deep space', background: 0x020306, env: 0.35, key: 3.2, rim: 0.6, ambient: 0.05},
     bright: {label: 'Bright', background: 0x1a1f27, env: 1.6, key: 1.6, rim: 1.0, ambient: 0.6},
@@ -358,9 +358,9 @@ if (patternOn[1] > 0.5) {
     areaColor = mix(areaColor, patternDiffuse[1], m); areaSpecular = mix(areaSpecular, patternSpecular[1], m); areaRough = mix(areaRough, patternRough[1], m);
 }
 // the hull's colour texture is greyscale shading (panels, recesses, highlights): the material's colour is multiplied by
-// its raw value times two (it averages about a third, so paint comes out about two thirds as bright, as in the game)
+// its raw value, which brought the paint to the game's brightness in side-by-side screenshots
 float shading = pow(max(diffuseColor.r, 0.0), 1.0 / 2.2);
-float detail = clamp(shading * 2.0, 0.0, 2.0);
+float detail = clamp(shading, 0.0, 1.2);
 diffuseColor.rgb = mix(diffuseColor.rgb, areaColor * detail, paintAmount);`)
                 .replace('#include <roughnessmap_fragment>', `float roughnessFactor = roughness;
 float hullRough = surfaceSample.g;
