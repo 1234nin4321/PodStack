@@ -7,6 +7,7 @@ import FarmCharacter from '../../models/FarmCharacter';
 import FarmHelper from '../../helpers/FarmHelper';
 import FarmProfitHelper, {SUBSCRIPTIONS, PRICED_ITEMS, MINUTES_PER_MONTH, INJECTOR_SP} from '../../helpers/FarmProfitHelper';
 import FormatHelper from '../../helpers/FormatHelper';
+import DateTimeHelper from '../../helpers/DateTimeHelper';
 import Panel from '../ui/Panel';
 
 function isk(value) {
@@ -22,27 +23,55 @@ function parse(value) {
     return isNaN(n) || n < 0 ? undefined : n;
 }
 
-// Monthly profit or loss of every SP farm, from Jita prices or the player's own (e.g. New Eden Store sale prices in
-// PLEX). Settings are kept between sessions.
+// Monthly profit or loss of every SP farm, from market prices (PLEX on New Eden's PLEX market, injectors and
+// extractors in Jita) or the player's own (e.g. New Eden Store sale prices in PLEX; MCT is only sold there).
+// Settings are kept between sessions.
 export default class FarmProfitPanel extends React.Component {
     constructor(props) {
         super(props);
 
-        this.state = {market: undefined, error: false, settings: FarmProfitHelper.getSettings()};
+        this.state = {market: undefined, error: false, updating: false, priceDate: undefined, settings: FarmProfitHelper.getSettings()};
     }
 
     componentDidMount() {
         this.subscriberId = FarmCharacter.subscribe(this);
-        FarmProfitHelper.getMarketPrices()
-            .then(market => !this.unmounted && this.setState({market}, () => this.reportPrices()))
+        this.loadPrices(false);
+        // keeps "updated … ago" current
+        this.timer = setInterval(() => this.forceUpdate(), 60000);
+    }
+
+    // force: fetch fresh prices now instead of using the ones cached in the last 6 hours
+    loadPrices(force) {
+        this.setState({updating: true});
+        FarmProfitHelper.getMarketPrices(force)
+            .then(market => !this.unmounted && this.setState({market, error: false}))
             // your own prices still work without the market
-            .catch(() => !this.unmounted && this.setState({error: true, market: {injector: null, extractor: null, plex: null, mct: null}},
-                () => this.reportPrices()));
+            .catch(() => !this.unmounted && this.state.market === undefined &&
+                this.setState({error: true, market: {injector: null, extractor: null, plex: null}}))
+            .finally(() => !this.unmounted &&
+                this.setState({updating: false, priceDate: FarmProfitHelper.marketPriceDate()}, () => this.reportPrices()));
+    }
+
+    renderUpdateButton() {
+        const {updating, priceDate} = this.state;
+
+        return (
+            <span className="profit-update">
+                {priceDate !== undefined && !updating &&
+                    <span className="muted">Prices from {DateTimeHelper.timeSince(priceDate) || '0s'} ago</span>}
+                <button type="button" className="link-button profit-update-button" disabled={updating}
+                        onClick={() => this.loadPrices(true)} title="Fetch the latest market prices now">
+                    <i className={`material-icons ${updating ? 'spin' : ''}`}>sync</i>
+                    {updating ? 'Updating…' : 'Update prices'}
+                </button>
+            </span>
+        );
     }
 
     componentWillUnmount() {
         this.unmounted = true;
         FarmCharacter.unsubscribe(this.subscriberId);
+        clearInterval(this.timer);
     }
 
     // the page's "Profit / 30 days" tile uses the same prices
@@ -73,7 +102,7 @@ export default class FarmProfitPanel extends React.Component {
 
     renderPrices(prices) {
         const {market, settings} = this.state;
-        const marketText = id => market === undefined ? 'loading…' : market[id] === null ? 'no Jita sellers' : `${isk(market[id])} ISK`;
+        const marketText = id => market === undefined ? 'loading…' : market[id] === null ? 'no sellers' : `${isk(market[id])} ISK`;
 
         return (
             <table className="data-table profit-settings">
@@ -90,7 +119,7 @@ export default class FarmProfitPanel extends React.Component {
                         <td>PLEX</td>
                         <td>
                             <select className="health-account-select" value={settings.plex.source} onChange={e => this.setSource('plex', e.target.value)}>
-                                <option value="market">Jita ({marketText('plex')})</option>
+                                <option value="market">New Eden market ({marketText('plex')})</option>
                                 <option value="custom">My price</option>
                             </select>
                         </td>
@@ -116,6 +145,19 @@ export default class FarmProfitPanel extends React.Component {
                             </span>
                         </td>
                         <td className="right num">{isk(prices.omega)}</td>
+                    </tr>
+                    <tr>
+                        <td>MCT (30 days) <span className="muted">· training on another character</span></td>
+                        <td className="muted">New Eden Store</td>
+                        <td>
+                            <span className="profit-input">
+                                <input className="field small" type="number" min={0} placeholder="store price"
+                                       value={settings.mct.plex === undefined ? '' : settings.mct.plex}
+                                       onChange={e => this.updateSettings({mct: {plex: parse(e.target.value)}})}/>
+                                PLEX
+                            </span>
+                        </td>
+                        <td className="right num">{isk(prices.mct)}</td>
                     </tr>
                     {PRICED_ITEMS.map(item =>
                         <tr key={item.id}>
@@ -236,21 +278,24 @@ export default class FarmProfitPanel extends React.Component {
     render() {
         const {market, error, settings} = this.state;
         const prices = market !== undefined ? FarmProfitHelper.resolvePrices(market, settings) : undefined;
+        const needsMct = FarmProfitHelper.needsMct(FarmCharacter.getAll());
 
         let farms;
         if (prices === undefined) {
-            farms = <p className="empty" style={{margin: 0, padding: 16}}>Loading Jita prices…</p>;
-        } else if (!FarmProfitHelper.isComplete(prices) && error) {
-            farms = <p className="empty" style={{margin: 0, padding: 16}}>Couldn't load Jita prices. Set your own prices above, or try again later.</p>;
+            farms = <p className="empty" style={{margin: 0, padding: 16}}>Loading market prices…</p>;
+        } else if (!FarmProfitHelper.isComplete(prices, needsMct) && error) {
+            farms = <p className="empty" style={{margin: 0, padding: 16}}>Couldn't load market prices. Set your own prices above, or use Update prices to try again.</p>;
         } else if (!FarmProfitHelper.isComplete(prices)) {
             farms = <p className="empty" style={{margin: 0, padding: 16}}>Some prices are missing. Enter your own for the ones marked "—".</p>;
+        } else if (!FarmProfitHelper.isComplete(prices, needsMct)) {
+            farms = <p className="empty" style={{margin: 0, padding: 16}}>A farm pays for MCT: enter the MCT price in PLEX above (from the New Eden Store).</p>;
         } else {
             farms = this.renderFarms(prices);
         }
 
         return (
             <Panel title="Profitability" icon="savings" flush={true} style={{marginTop: 16}}
-                   subtitle="Per 30 days at each farm's current training speed">
+                   subtitle="Per 30 days at each farm's current training speed" actions={this.renderUpdateButton()}>
                 {this.renderPrices(prices || {plex: null, omega: null, injector: null, extractor: null, mct: null})}
                 {farms}
             </Panel>

@@ -79,6 +79,7 @@ export default class Api extends React.Component {
         const authStatus = (auth.lastRefresh.success !== false) || (auth.lastRefresh.shouldRetry !== false);
         const scopes = auth.getScopeInfo();
         const missing = scopes.filter(s => !s.isGranted).length;
+        const unavailable = scopes.filter(s => !s.isGranted && CharacterHelper.unavailableScopes.includes(s.name));
 
         return (
             <div className="grid-2">
@@ -86,13 +87,20 @@ export default class Api extends React.Component {
                     title="Scopes Granted"
                     icon="verified_user"
                     subtitle={`${scopes.length - missing} / ${scopes.length}`}
-                    actions={this.renderGrantButton(char, missing)}
+                    actions={this.renderGrantButton(char, missing - unavailable.length)}
                     flush={true}
                 >
-                    {missing > 0 &&
+                    {missing > 0 && unavailable.length === 0 &&
                         <p className="muted" style={{margin: 0, padding: '12px 16px', borderBottom: '1px solid var(--line)'}}>
-                            {missing} permission{missing === 1 ? ' is' : 's are'} missing, so some data can't load. Use Add
-                            missing scopes and log in as {char.name} on the EVE page that opens.
+                            {missing} permission{missing === 1 ? ' is' : 's are'} missing, so some data can't load
+                            {auth.usesLegacyClient() ? ' (this character was added with the older Cerebral login)' : ''}. Use
+                            Add missing scopes and log in as {char.name} on the EVE page that opens.
+                        </p>
+                    }
+                    {unavailable.length > 0 &&
+                        <p style={{margin: 0, padding: '12px 16px', borderBottom: '1px solid var(--line)', color: 'var(--warn)'}}>
+                            EVE's application for PodStack doesn't allow {unavailable.map(s => s.description).join(', ')} yet,
+                            so {unavailable.length === 1 ? 'it' : 'they'} can't be granted. The rest work normally.
                         </p>
                     }
 
@@ -112,6 +120,17 @@ export default class Api extends React.Component {
                         <dl className="kv">
                             <dt>SSO Version</dt>
                             <dd>v{auth.ssoVersion}</dd>
+                            {auth.ssoVersion === 2 && <dt>EVE App</dt>}
+                            {auth.ssoVersion === 2 &&
+                                <dd>
+                                    {auth.usesLegacyClient() ?
+                                        <span title="Authorized before PodStack had its own EVE application. Use Add missing scopes to move it over.">
+                                            <span className="badge warn">Cerebral (older login)</span>
+                                        </span> :
+                                        <span className="badge good">PodStack</span>
+                                    }
+                                </dd>
+                            }
                             <dt>Token Status</dt>
                             <dd>
                                 {authStatus ?

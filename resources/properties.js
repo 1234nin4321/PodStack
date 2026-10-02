@@ -26,7 +26,12 @@ export default {
     'eve_sso_v2_url': 'https://login.eveonline.com/v2/oauth',
     'eve_sso_url_v2_no_oauth': 'https://login.eveonline.com/v2',
 
-    'eve_sso_client_id': 'c9fde897cdfb45208fb5254e3ee98d19',
+    // PodStack's application on developers.eveonline.com (no secret: the login uses PKCE). It must have every scope
+    // below enabled, or EVE rejects them (see CharacterHelper.addCharacter).
+    'eve_sso_client_id': '113d91f366b143b482676d8dcf517d1f',
+    // The application inherited from Cerebral, which characters added before 0.2.3 were authorized with. Their refresh
+    // tokens only work with it, so they keep using it until they're authorized again.
+    'eve_sso_legacy_client_id': 'c9fde897cdfb45208fb5254e3ee98d19',
     // Must match the callback URL registered for the client id on developers.eveonline.com.
     'eve_sso_callback_url': 'https://localhost/callback',
     'eve_sso_revoke_url': 'https://login.eveonline.com/v2/oauth/revoke',

@@ -30,6 +30,15 @@ class AuthorizedCharacter {
         this.ssoVersion = (ssoVersion !== undefined) ? ssoVersion : 1;
     }
 
+    // The EVE application that issued this character's tokens; refreshing and revoking must use the same one.
+    getClientId() {
+        return this.clientId || appProperties.eve_sso_legacy_client_id;
+    }
+
+    usesLegacyClient() {
+        return this.ssoVersion === 2 && this.getClientId() !== appProperties.eve_sso_client_id;
+    }
+
     async getAccessToken(minimumValidity) {
         if (minimumValidity === undefined) {
             minimumValidity = 30;
@@ -62,7 +71,7 @@ class AuthorizedCharacter {
         let client;
         try {
             if (this.ssoVersion === 2) {
-                client = new SsoClientv2();
+                client = new SsoClientv2({clientId: this.getClientId()});
             } else {
                 client = new SsoClient();
             }

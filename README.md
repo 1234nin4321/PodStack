@@ -68,10 +68,14 @@ npm run make       # build installers into out/make
 
 Usage
 -------------------------
-1. Create an application on the [EVE Developers website](https://developers.eveonline.com/) and enter its client ID on the Settings page.
-   Enable every scope listed in `resources/properties.js` on it, or EVE will refuse the login.
-2. Add characters with the "Authorize Character" button. Data refreshes automatically. Characters added before assets,
-   industry and PI were supported show "Missing" for those scopes on their API tab: authorize them again to grant them.
+1. Add characters with the "Authorize Character" button and log in with EVE. Data refreshes automatically.
+2. Characters added before 0.2.3 used the EVE login inherited from Cerebral, which can't grant the assets, industry and
+   PI permissions. Their API tab shows those as missing: use "Add missing scopes" to log in again with PodStack's own
+   EVE application.
+
+Building your own copy? PodStack's EVE application id is `eve_sso_client_id` in `resources/properties.js`. For a fork,
+create an application on the [EVE Developers website](https://developers.eveonline.com/) with the callback URL
+`https://localhost/callback` and every scope listed in that file, and put its client ID there (no secret is needed).
 3. SP farming:
     * Click "Add Farm", choose a character and enter the SP to always keep on it (for example the 11,000,000 SP a JF pilot needs).
     * To change a farm's base SP, add it again with the new value.

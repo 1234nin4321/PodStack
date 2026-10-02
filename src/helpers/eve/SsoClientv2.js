@@ -57,7 +57,7 @@ export default class SsoClientv2 {
         let charData = SsoClientv2.validate(body.access_token);
 
         log.verbose(`[SSOv2] Authorization successful, adding/updating character #${charData.characterId}, name: ${charData.characterName}`);
-        return new AuthorizedCharacter(
+        const character = new AuthorizedCharacter(
             charData.characterId,
             tokenData.accessToken,
             tokenData.accessTokenExpiry,
@@ -66,6 +66,8 @@ export default class SsoClientv2 {
             charData.scopes,
             2
         );
+        character.clientId = this.clientId;
+        return character;
     }
 
     async refresh(refreshToken) {

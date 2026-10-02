@@ -1,3 +1,14 @@
+## 0.2.3 Alpha (0.2.3-alpha)
+* PodStack now has its own EVE application, so EVE's login page says PodStack and can grant every permission,
+  including assets, industry jobs and planets. Characters you already added keep working; their API tab shows
+  "Cerebral (older login)": use Add missing scopes to move them over and turn on Assets, Industry and PI.
+* Fixed: adding or re-authorizing characters failed with "invalid_scope" since 0.2.0. If EVE ever rejects a
+  permission again, PodStack logs in without it and explains on the API tab.
+* SP farm profitability: an Update prices button fetches the latest market prices now.
+* Fixed: PLEX prices are read from New Eden's single PLEX market (Jita has no PLEX orders, so the PLEX price was
+  missing). MCT is priced from the New Eden Store in PLEX, as the certificate can no longer be traded, and is only
+  needed for farms that pay for MCT.
+
 ## 0.2.2 Alpha (0.2.2-alpha)
 * SP farm profitability: choose Jita prices or your own for each cost (PLEX in ISK; Omega, MCT, Skill Extractors and
   Large Skill Injectors in PLEX, e.g. New Eden Store sale prices), with Omega at 500 PLEX a month by default. Each farm

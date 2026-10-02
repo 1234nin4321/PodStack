@@ -6,19 +6,19 @@
 //   SP per month ÷ 500,000        = Large Skill Injectors per month (one Skill Extractor each)
 //   injectors × injector price × (1 − sell fees)   income
 //   − injectors × extractor price                  extractors
-//   − subscription (Omega in PLEX, or an MCT)      = profit (negative is a loss)
+//   − subscription (Omega or MCT, in PLEX)         = profit (negative is a loss)
 //
-// Each price is either the lowest Jita sell order, or the player's own: PLEX in ISK, everything else in PLEX (as
-// sold in the New Eden Store, whose prices drop during sales) and converted to ISK at the PLEX price.
+// Each price is either the market's lowest sell order (PLEX on New Eden's single PLEX market, the rest in Jita), or
+// the player's own: PLEX in ISK, everything else in PLEX (as sold in the New Eden Store, whose prices drop during
+// sales) and converted to ISK at the PLEX price.
 
 import SettingsHelper from './SettingsHelper';
-import MarketHelper from './MarketHelper';
+import MarketHelper, {THE_FORGE, GLOBAL_PLEX_MARKET} from './MarketHelper';
 
 export const TYPES = {
     injector: 40520,     // Large Skill Injector
     extractor: 40519,    // Skill Extractor
     plex: 44992,
-    mct: 34133,          // Multiple Pilot Training Certificate: 30 days of training on one more character
 };
 
 export const INJECTOR_SP = 500000;
@@ -34,7 +34,6 @@ export const SUBSCRIPTIONS = [
 export const PRICED_ITEMS = [
     {id: 'injector', label: 'Large Skill Injector', note: 'sold'},
     {id: 'extractor', label: 'Skill Extractor', note: 'one per injector'},
-    {id: 'mct', label: 'MCT (30 days)', note: 'Multiple Pilot Training Certificate'},
 ];
 
 const DEFAULT_SETTINGS = {
@@ -43,7 +42,8 @@ const DEFAULT_SETTINGS = {
     plex: {source: 'market', isk: undefined},
     injector: {source: 'market', plex: undefined},
     extractor: {source: 'market', plex: undefined},
-    mct: {source: 'market', plex: undefined},
+    // MCT is only sold in the New Eden Store (the certificate can't be traded any more), so its price is in PLEX
+    mct: {plex: undefined},
 };
 
 export default class FarmProfitHelper {
@@ -59,13 +59,29 @@ export default class FarmProfitHelper {
     }
 
     /**
-     * @returns {Promise<object>} {injector, extractor, plex, mct}: lowest Jita sell price of each, or null
+     * Lowest sell prices: PLEX on New Eden's single PLEX market, the rest in Jita (The Forge). Cached for 6 hours
+     * unless forced.
+     *
+     * @returns {Promise<object>} {injector, extractor, plex} (null where nobody sells or it failed to load)
      */
-    static async getMarketPrices() {
-        const prices = await MarketHelper.getForgeLowestSell(Object.values(TYPES));
+    static async getMarketPrices(force = false) {
+        const regional = [TYPES.injector, TYPES.extractor];
+        const [forge, global] = await Promise.all([
+            MarketHelper.getLowestSell(THE_FORGE, regional, force),
+            MarketHelper.getLowestSell(GLOBAL_PLEX_MARKET, [TYPES.plex], force),
+        ]);
+        const prices = {...forge, ...global};
+
         const result = {};
         Object.entries(TYPES).forEach(([key, typeId]) => result[key] = prices[typeId] !== undefined ? prices[typeId] : null);
         return result;
+    }
+
+    // when the market prices in use were fetched (the oldest of them), or undefined
+    static marketPriceDate() {
+        const forge = MarketHelper.priceDate(THE_FORGE, [TYPES.injector, TYPES.extractor]);
+        const global = MarketHelper.priceDate(GLOBAL_PLEX_MARKET, [TYPES.plex]);
+        return forge !== undefined && global !== undefined ? new Date(Math.min(forge, global)) : undefined;
     }
 
     /**
@@ -85,11 +101,18 @@ export default class FarmProfitHelper {
                 market[id];
         });
         resolved.omega = plex === null ? null : settings.omegaPlex * plex;
+        resolved.mct = plex !== null && known(settings.mct.plex) ? settings.mct.plex * plex : null;
         return resolved;
     }
 
-    static isComplete(prices) {
-        return Object.values(prices).every(p => p !== null && p !== undefined && !isNaN(p));
+    // Whether every price the calculation needs is known; the MCT price only matters if a farm pays for MCT.
+    static isComplete(prices, needsMct = false) {
+        const known = p => p !== null && p !== undefined && !isNaN(p);
+        return ['plex', 'injector', 'extractor', 'omega'].every(k => known(prices[k])) && (!needsMct || known(prices.mct));
+    }
+
+    static needsMct(farms) {
+        return farms.some(farm => farm.subscription === 'mct');
     }
 
     static subscriptionCost(subscription, prices) {

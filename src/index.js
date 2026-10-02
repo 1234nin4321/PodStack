@@ -92,16 +92,30 @@ function authorizeWithEve(url) {
             if (params.get('code')) {
                 finish({code: params.get('code')});
             } else {
-                finish({error: params.get('error') || 'unknown'});
+                finish({error: params.get('error') || 'unknown', description: params.get('error_description') || undefined});
             }
         };
 
         authWindow.webContents.on('will-redirect', handleNavigation);
         authWindow.webContents.on('will-navigate', handleNavigation);
 
-        // EVE shows a plain "error" page when the client id or callback is misconfigured.
-        authWindow.webContents.on('did-finish-load', () => {
-            authWindow.webContents.findInPage('error');
+        // EVE answers some bad requests with a JSON error page, e.g. {"error":"invalid_scope","error_description":...}
+        // when the application doesn't have a requested scope enabled; otherwise it shows a plain "error" page when
+        // the client id or callback is misconfigured.
+        authWindow.webContents.on('did-finish-load', async () => {
+            try {
+                const text = await authWindow.webContents.executeJavaScript('document.body ? document.body.innerText : ""');
+                const body = JSON.parse(text);
+                if (body && typeof body.error === 'string') {
+                    finish({error: body.error, description: typeof body.error_description === 'string' ? body.error_description : undefined});
+                    return;
+                }
+            } catch (err) {
+                // not a JSON page
+            }
+            if (!settled) {
+                authWindow.webContents.findInPage('error');
+            }
         });
         authWindow.webContents.on('found-in-page', (event, res) => {
             authWindow.webContents.stopFindInPage('clearSelection');

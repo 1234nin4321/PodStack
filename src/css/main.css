@@ -2937,3 +2937,33 @@ a:hover {
     max-width: 260px;
     font-size: 12px;
 }
+
+.profit-update {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.profit-update-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+}
+
+.profit-update-button:disabled {
+    color: var(--text-dim);
+    cursor: default;
+}
+
+.profit-update-button .material-icons {
+    font-size: 16px;
+}
+
+.profit-update-button .spin {
+    animation: char-refresh-spin 1s linear infinite;
+}
+
+.profit-settings .health-account-select {
+    width: 220px;
+}

@@ -36,7 +36,7 @@ export default class SpFarming extends React.Component {
         const spPerHour = farms.reduce((sum, o) => sum + o.char.getCurrentSpPerHour(), 0);
         const idle = farms.filter(o => o.char.getCurrentSkill() === undefined).length;
         const {prices, priceSettings} = this.state;
-        const profit = prices !== undefined && FarmProfitHelper.isComplete(prices) ?
+        const profit = prices !== undefined && FarmProfitHelper.isComplete(prices, FarmProfitHelper.needsMct(farms.map(o => o.farm))) ?
             farms.reduce((sum, o) => sum + FarmProfitHelper.forFarm(o.char, o.farm, prices, priceSettings).profit, 0) :
             undefined;
 
