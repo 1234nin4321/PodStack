@@ -21,7 +21,10 @@ const STRING_FIELDS = new Set([
 const VEC4_FIELDS = new Set(['value', 'color', 'coneColor', 'spriteColor', 'flareColor']);
 // fields whose type depends on the class they're in: {class: {field: type}}, '*' for every field of the class
 const CLASS_FIELDS = {
-    EveSOFDataPatternLayer: {projectionTypeU: 'u32', projectionTypeV: 'u32', materialSource: 'u32'},
+    EveSOFDataPatternLayer: {projectionTypeU: 'u32', projectionTypeV: 'u32', materialSource: 'u32',
+        isTargetMtl1: 'u8', isTargetMtl2: 'u8', isTargetMtl3: 'u8', isTargetMtl4: 'u8'},
+    EveSOFDataFaction: {materialUsageMtl1: 'u32', materialUsageMtl2: 'u32', materialUsageMtl3: 'u32', materialUsageMtl4: 'u32'},
+    EveSOFDataAreaMaterial: {colorType: 'u32'},
     EveSOFDataPatternTransform: {position: 'vec3', scaling: 'vec3', rotation: 'vec4', isMirrored: 'u8'},
     EveSOFDataFactionColorSet: {'*': 'vec4'},
     EveSOFDataHullDecalSetItem: {usage: 'u32', position: 'vec3', rotation: 'vec4', scaling: 'vec3', boneIndex: 'u32',
@@ -29,6 +32,12 @@ const CLASS_FIELDS = {
     EveSOFDataDecalIndexBuffer: {indexBuffer: 'u32array'},
 };
 const SIZES = {u8: 1, u32: 4, vec3: 12, vec4: 16};
+// fields that are always lists of objects: tried as a list first, as a count and the first item's id can look like an
+// object header
+const LIST_FIELDS = new Set([
+    'items', 'parameters', 'textures', 'indexBuffers', 'projections', 'visibilityGroups', 'decalSets', 'opaqueAreas',
+    'transparentAreas', 'additiveAreas', 'decalAreas', 'spriteSets', 'planeSets', 'children', 'booster', 'locatorSets',
+]);
 
 export default class BlackFile {
     /**
@@ -174,30 +183,39 @@ export default class BlackFile {
             const f = i => this.view.getFloat32(p + i * 4, true);
             return {value: [f(0), f(1), f(2), f(3)], next: p + 16};
         }
+        if (LIST_FIELDS.has(name)) {
+            const list = this.list(p, end);
+            if (list !== undefined) {
+                return list;
+            }
+        }
         // an object
         if (this.isObject(p, end)) {
             const obj = this.object(p, end);
             return {value: obj, next: obj._end};
         }
-        // a list: a count, then that many objects
-        if (p + 4 <= end) {
-            const count = this.u32(p);
-            let q = p + 4;
-            if (count === 0) {
-                return {value: [], next: q};
-            }
-            if (count < 100000 && this.isObject(q, end)) {
-                const items = [];
-                for (let i = 0; i < count && this.isObject(q, end); i++) {
-                    const item = this.object(q, end);
-                    items.push(item);
-                    q = item._end;
-                }
-                if (items.length === count) {
-                    return {value: items, next: q};
-                }
-            }
+        return this.list(p, end);
+    }
+
+    // {value, next} of a list at p (a count, then that many objects), or undefined when it isn't one
+    list(p, end) {
+        if (p + 4 > end) {
+            return undefined;
         }
-        return undefined;
+        const count = this.u32(p);
+        let q = p + 4;
+        if (count === 0) {
+            return {value: [], next: q};
+        }
+        if (count >= 100000 || !this.isObject(q, end)) {
+            return undefined;
+        }
+        const items = [];
+        for (let i = 0; i < count && this.isObject(q, end); i++) {
+            const item = this.object(q, end);
+            items.push(item);
+            q = item._end;
+        }
+        return items.length === count ? {value: items, next: q} : undefined;
     }
 }

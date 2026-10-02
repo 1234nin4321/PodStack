@@ -281,6 +281,8 @@ export default class ShipViewer extends React.Component {
             patternDiffuse: {value: [new THREE.Color(), new THREE.Color()]},
             patternSpecular: {value: [new THREE.Color(), new THREE.Color()]},
             patternRough: {value: [0.5, 0.5]},
+            // the paint areas each layer paints: 1 or 0 for areas 1-4
+            patternTarget: {value: [new THREE.Vector4(1, 1, 1, 1), new THREE.Vector4(1, 1, 1, 1)]},
         };
         hull.onBeforeCompile = shader => {
             Object.assign(shader.uniforms, this.paint);
@@ -310,6 +312,10 @@ uniform float patternRepeatV[2];
 uniform vec3 patternDiffuse[2];
 uniform vec3 patternSpecular[2];
 uniform float patternRough[2];
+uniform vec4 patternTarget[2];
+float targetsArea(vec4 targets, int area) {
+    return area == 0 ? targets.x : area == 1 ? targets.y : area == 2 ? targets.z : targets.w;
+}
 // rotates v by the inverse of the unit quaternion q
 vec3 unrotate(vec4 q, vec3 v) {
     vec3 u = -q.xyz;
@@ -343,12 +349,12 @@ else if (area >= 3) { areaColor = mtlDiffuse[3]; areaSpecular = mtlSpecular[3]; 
 // SKIN patterns paint their material over the areas where their mask is set
 if (patternOn[0] > 0.5) {
     vec3 pc = patternCoords(0);
-    float m = texture2D(patternMask0, pc.xy).r * pc.z;
+    float m = texture2D(patternMask0, pc.xy).r * pc.z * targetsArea(patternTarget[0], area);
     areaColor = mix(areaColor, patternDiffuse[0], m); areaSpecular = mix(areaSpecular, patternSpecular[0], m); areaRough = mix(areaRough, patternRough[0], m);
 }
 if (patternOn[1] > 0.5) {
     vec3 pc = patternCoords(1);
-    float m = texture2D(patternMask1, pc.xy).r * pc.z;
+    float m = texture2D(patternMask1, pc.xy).r * pc.z * targetsArea(patternTarget[1], area);
     areaColor = mix(areaColor, patternDiffuse[1], m); areaSpecular = mix(areaSpecular, patternSpecular[1], m); areaRough = mix(areaRough, patternRough[1], m);
 }
 // the hull's colour texture is greyscale shading (panels, recesses, highlights): the material's colour is multiplied by
@@ -455,6 +461,7 @@ material.specularColorBlended = mix(material.specularColorBlended, areaSpecular,
             this.paint.patternMirror.value[i] = layer.mirrored ? 1 : 0;
             this.paint.patternRepeatU.value[i] = layer.projectionU === 2 ? 1 : 0;
             this.paint.patternRepeatV.value[i] = layer.projectionV === 2 ? 1 : 0;
+            this.paint.patternTarget.value[i].set(...layer.targets.map(t => (t ? 1 : 0)));
 
             // 4 and 5: the SKIN's custom materials; 0-3: the hull's own
             const source = layer.materialSource;

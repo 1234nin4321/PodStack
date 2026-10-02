@@ -69,7 +69,8 @@ export default class ShipSof {
     /**
      * A SKIN pattern's layers on a hull: [{mask (res path of the mask texture), projectionU, projectionV,
      * materialSource (0-3: the hull's materials, 4-5: the SKIN's custom materials), position, scaling, rotation
-     * (quaternion), mirrored}], only the layers placed on this hull; [] when the pattern isn't placed on it.
+     * (quaternion), mirrored, targets: [4 booleans: the paint areas it paints]}], only the layers placed on this hull;
+     * [] when the pattern isn't placed on it.
      */
     static pattern(name, hull) {
         const root = name ? black(`${SOF}patterns/${name.toLowerCase()}.black`) : undefined;
@@ -91,6 +92,8 @@ export default class ShipSof {
                 scaling: transform.scaling || [1, 1, 1],
                 rotation: transform.rotation || [0, 0, 0, 1],
                 mirrored: transform.isMirrored === 1,
+                // which of the hull's four paint areas the layer paints (stored only when off)
+                targets: [1, 2, 3, 4].map(i => layer[`isTargetMtl${i}`] !== 0),
             }));
     }
 
