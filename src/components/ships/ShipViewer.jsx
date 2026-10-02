@@ -6,6 +6,8 @@ import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls.js';
 import {RoomEnvironment} from 'three/examples/jsm/environments/RoomEnvironment.js';
 
 import ShipModelHelper from '../../helpers/ShipModelHelper';
+import ShipPaint from '../../helpers/ShipPaint';
+import ShipSof from '../../helpers/ShipSof';
 
 const HEIGHT = 460;
 const COMPRESSED = {
@@ -36,7 +38,7 @@ export default class ShipViewer extends React.Component {
     constructor(props) {
         super(props);
 
-        this.state = {status: 'loading', error: undefined, autoRotate: true, lighting: 'studio'};
+        this.state = {status: 'loading', error: undefined, autoRotate: true, lighting: 'studio', skin: 'default', paintSource: 'none'};
         this.mount = React.createRef();
     }
 
@@ -48,12 +50,15 @@ export default class ShipViewer extends React.Component {
 
     componentDidUpdate(prevProps, prevState) {
         if (prevProps.ship.type_id !== this.props.ship.type_id) {
-            this.setState({status: 'loading', error: undefined});
+            this.setState({status: 'loading', error: undefined, skin: 'default'});
             clearTimeout(this.loadTimer);
             this.loadTimer = setTimeout(() => this.loadShip(), 30);
         }
         if (prevState.lighting !== this.state.lighting) {
             this.applyLighting();
+        }
+        if (prevState.skin !== this.state.skin) {
+            this.applyPaint();
         }
         if (this.controls !== undefined) {
             this.controls.autoRotate = this.state.autoRotate;
@@ -161,6 +166,10 @@ export default class ShipViewer extends React.Component {
         }
         this.scene.remove(this.ship);
         this.ship.geometry.dispose();
+        if (this.paint !== undefined) {
+            this.paint.surfaceMap.value.dispose();
+            this.paint = undefined;
+        }
         for (const material of this.ship.material) {
             for (const key of ['map', 'normalMap', 'roughnessMap', 'emissiveMap']) {
                 if (material[key]) {
@@ -207,7 +216,7 @@ export default class ShipViewer extends React.Component {
     }
 
     materials(textures) {
-        const hull = new THREE.MeshStandardMaterial({color: 0xffffff, roughness: 1, metalness: 1});
+        const hull = new THREE.MeshStandardMaterial({color: 0xffffff, roughness: 0.5, metalness: 0.15});
 
         // the albedo stays block-compressed on the graphics card, where the card supports the format
         const albedo = textures.albedo;
@@ -222,16 +231,11 @@ export default class ShipViewer extends React.Component {
             map.needsUpdate = true;
             hull.map = map;
         } else {
-            hull.color = new THREE.Color(0x8d939b);
+            // a plain map, so the shader still has the hull's texture coordinates for the masks
+            hull.map = dataTexture({width: 1, height: 1, data: new Uint8Array([141, 147, 155, 255])}, THREE.SRGBColorSpace);
         }
         if (textures.normal !== undefined) {
             hull.normalMap = dataTexture(textures.normal, THREE.NoColorSpace);
-        }
-        if (textures.surface !== undefined) {
-            hull.roughnessMap = hull.metalnessMap = dataTexture(textures.surface, THREE.NoColorSpace);
-        } else {
-            hull.roughness = 0.6;
-            hull.metalness = 0.4;
         }
         if (textures.glow !== undefined) {
             hull.emissiveMap = dataTexture(textures.glow, THREE.NoColorSpace);
@@ -239,13 +243,117 @@ export default class ShipViewer extends React.Component {
             hull.emissiveIntensity = 3;
         }
 
+        // SKIN paint: the surface map's R says which of four areas a pixel is in, each painted with its own material
+        // (colour, roughness, metalness); G is the hull's roughness detail
+        const surface = textures.surface !== undefined ? dataTexture(textures.surface, THREE.NoColorSpace) :
+            dataTexture({width: 1, height: 1, data: new Uint8Array([0, 128, 0, 255])}, THREE.NoColorSpace);
+        this.paint = {
+            surfaceMap: {value: surface},
+            paintAmount: {value: 0},
+            mtlDiffuse: {value: [0, 1, 2, 3].map(() => new THREE.Color(0x808080))},
+            mtlSpecular: {value: [0, 1, 2, 3].map(() => new THREE.Color(0x0a0a0a))},
+            mtlRough: {value: [0.5, 0.5, 0.5, 0.5]},
+        };
+        hull.onBeforeCompile = shader => {
+            Object.assign(shader.uniforms, this.paint);
+            shader.fragmentShader = shader.fragmentShader
+                .replace('#include <common>', `#include <common>
+uniform sampler2D surfaceMap;
+uniform float paintAmount;
+uniform vec3 mtlDiffuse[4];
+uniform vec3 mtlSpecular[4];
+uniform float mtlRough[4];`)
+                .replace('#include <map_fragment>', `#include <map_fragment>
+vec4 surfaceSample = texture2D(surfaceMap, vMapUv);
+int area = int(floor(surfaceSample.r * 3.0 + 0.5));
+vec3 areaColor = mtlDiffuse[0];
+vec3 areaSpecular = mtlSpecular[0];
+float areaRough = mtlRough[0];
+if (area == 1) { areaColor = mtlDiffuse[1]; areaSpecular = mtlSpecular[1]; areaRough = mtlRough[1]; }
+else if (area == 2) { areaColor = mtlDiffuse[2]; areaSpecular = mtlSpecular[2]; areaRough = mtlRough[2]; }
+else if (area >= 3) { areaColor = mtlDiffuse[3]; areaSpecular = mtlSpecular[3]; areaRough = mtlRough[3]; }
+// keep the texture's detail (its brightness) under the paint
+float detail = clamp(dot(diffuseColor.rgb, vec3(0.299, 0.587, 0.114)) * 2.0, 0.0, 1.6);
+diffuseColor.rgb = mix(diffuseColor.rgb, areaColor * detail, paintAmount);`)
+                .replace('#include <roughnessmap_fragment>', `float roughnessFactor = roughness;
+float hullRough = surfaceSample.g;
+roughnessFactor = mix(hullRough, clamp(areaRough + (hullRough - 0.5) * 0.4, 0.04, 1.0), paintAmount);`)
+                .replace('#include <metalnessmap_fragment>', `float metalnessFactor = mix(metalness, 0.0, paintAmount);`)
+                // painted: the material's own specular colour, as the client's shaders use it
+                .replace('#include <lights_physical_fragment>', `#include <lights_physical_fragment>
+material.specularColorBlended = mix(material.specularColorBlended, areaSpecular, paintAmount);`);
+        };
+        this.hull = hull;
+        this.applyPaint();
+
         const glass = new THREE.MeshStandardMaterial({
             color: 0x10202c, roughness: 0.08, metalness: 0.9, transparent: true, opacity: 0.85,
         });
         const glow = new THREE.MeshStandardMaterial({
             color: 0x332211, emissive: new THREE.Color(0xffa860), emissiveIntensity: 2.5, roughness: 0.4,
         });
+        this.glowMaterial = glow;
         return [hull, glass, glow];
+    }
+
+    // Puts the chosen paint into the hull shader: 'default' = the ship's own look, a SKIN id, or '' = unpainted (the
+    // textures as they are). The client's own materials are used when its files have them, else an approximation from
+    // the SDE (see ShipPaint).
+    applyPaint() {
+        if (this.paint === undefined) {
+            return;
+        }
+        const {skin} = this.state;
+        const ship = this.props.ship;
+        let areas;
+        let exact = false;
+        if (skin !== '') {
+            // a guessed metal/rough material as diffuse and specular: diffuse fades and specular takes the colour as
+            // it gets more metallic
+            const guessed = a => {
+                const color = new THREE.Color(a.color);
+                return {
+                    diffuse: color.clone().multiplyScalar(1 - a.metalness),
+                    specular: new THREE.Color(0.04, 0.04, 0.04).lerp(color, a.metalness),
+                    roughness: a.roughness,
+                };
+            };
+            const sof = ShipSof.areas(ship, skin === 'default' ? undefined : skin);
+            if (sof !== undefined) {
+                areas = sof.map(a => a.missing ? guessed(ShipPaint.fromName(a.name)) :
+                    {diffuse: new THREE.Color().setRGB(...a.diffuse), specular: new THREE.Color().setRGB(...a.specular), roughness: a.roughness});
+                exact = sof.every(a => !a.missing);
+            } else if (skin !== 'default') {
+                const approx = ShipPaint.areas(skin);
+                if (approx !== undefined) {
+                    areas = approx.areas.map(guessed);
+                }
+            }
+        }
+        this.paint.paintAmount.value = areas !== undefined ? 1 : 0;
+        if (areas !== undefined) {
+            areas.forEach((area, i) => {
+                this.paint.mtlDiffuse.value[i].copy(area.diffuse);
+                this.paint.mtlSpecular.value[i].copy(area.specular);
+                this.paint.mtlRough.value[i] = area.roughness;
+            });
+        }
+        const source = areas === undefined ? 'none' : exact ? 'client' : 'approximate';
+        if (this.state.paintSource !== source) {
+            this.setState({paintSource: source});
+        }
+        const paint = skin !== '' && skin !== 'default' ? ShipPaint.areas(skin) : undefined;
+        // lights glow in the SKIN's window colour, when it's bright enough to be one
+        const glow = new THREE.Color(paint !== undefined ? paint.glow : '#ffc48a');
+        const hsl = {};
+        glow.getHSL(hsl);
+        const light = hsl.l > 0.35 ? glow : new THREE.Color('#ffc48a');
+        if (this.hull !== undefined && this.hull.emissiveMap) {
+            this.hull.emissive.copy(light);
+        }
+        if (this.glowMaterial !== undefined) {
+            this.glowMaterial.emissive.copy(light);
+        }
     }
 
     resetView() {
@@ -281,6 +389,17 @@ export default class ShipViewer extends React.Component {
                 }
 
                 <div className="ship-viewer-toolbar">
+                    <select className="field small ship-skin" value={this.state.skin} title="SKIN"
+                            onChange={e => this.setState({skin: ['', 'default'].includes(e.target.value) ? e.target.value : Number(e.target.value)})}>
+                        <option value="default">Default</option>
+                        {ShipPaint.skinsFor(ship).map(skin => <option key={skin.id} value={skin.id}>{skin.name}</option>)}
+                        <option value="">Unpainted</option>
+                    </select>
+                    {status === 'ready' && this.state.skin !== '' && this.state.paintSource !== 'none' &&
+                        <span className="faint" title={this.state.paintSource === 'client' ? 'Paint from your EVE client\'s own material files' :
+                            'Your client\'s material files for this paint weren\'t found, so it\'s approximated from its name'}>
+                            {this.state.paintSource === 'client' ? 'Client paint' : 'Approximate paint'}
+                        </span>}
                     <div className="seg">
                         {Object.entries(LIGHTING).map(([key, preset]) =>
                             <button key={key} type="button" className={this.state.lighting === key ? 'active' : ''}

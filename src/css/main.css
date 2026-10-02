@@ -3674,3 +3674,7 @@ a:hover {
 .eve-folder-path.missing {
     color: var(--warn);
 }
+
+.ship-skin {
+    max-width: 220px;
+}

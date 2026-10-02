@@ -24,6 +24,8 @@ const DRIVE_PATHS = [
 // folder names worth looking inside when searching a drive
 const EVE_LIKE = /eve|ccp|sharedcache|games|steam/i;
 const SHIP_PREFIX = 'res:/dx9/model/ship/';
+// the space object factory's factions (a ship's look, and each SKIN's) and materials, for paint
+const SOF_PREFIX = 'res:/dx9/model/spaceobjectfactory/';
 
 let index;      // {folder, files: Map(res path -> absolute file)}
 let detected;   // the auto-detected folder (null when none), found once per session
@@ -207,7 +209,7 @@ export default class ShipModelHelper {
             const files = new Map();
             const text = fs.readFileSync(path.join(folder, 'tq', 'resfileindex.txt'), 'utf8');
             for (const line of text.split('\n')) {
-                if (!line.startsWith(SHIP_PREFIX)) {
+                if (!line.startsWith(SHIP_PREFIX) && !line.startsWith(SOF_PREFIX)) {
                     continue;
                 }
                 const [res, file] = line.split(',');
@@ -235,6 +237,13 @@ export default class ShipModelHelper {
         return undefined;
     }
 
+    // the bytes of a client resource ("res:/..."), or undefined when the client doesn't have it
+    static resource(res) {
+        const files = ShipModelHelper.files();
+        const file = files !== undefined ? files.get(res.toLowerCase()) : undefined;
+        return file !== undefined ? readFile(file) : undefined;
+    }
+
     static isAvailable() {
         return ShipModelHelper.files() !== undefined;
     }
@@ -242,7 +251,7 @@ export default class ShipModelHelper {
     /**
      * Loads a ship's hull for the viewer:
      * {positions, uvs, indices, groups: [{start, count, kind: 'hull'|'glass'|'glow'}], textures: {albedo (parsed BC7/BC
-     * DDS), normal, surface (roughness in G, metalness in B), glow (in R): each {width, height, data} RGBA}}.
+     * DDS), normal, surface (paint area mask in R, roughness in G), glow (in R): each {width, height, data} RGBA}}.
      * Textures that are missing are left out.
      */
     static load(ship) {
@@ -374,21 +383,22 @@ export default class ShipModelHelper {
             textures.normal = {width: mip.width, height: mip.height, data: rgba};
         }
 
-        // roughness and metalness in the channels three.js reads them from (G and B)
+        // the material mask (which of the hull's four paint areas each pixel is: _m, in R) and roughness (_r, in G)
+        const mask = pick('m');
         const roughness = pick('r');
-        const metalness = pick('m');
-        const base = roughness || metalness;
+        const base = mask || roughness;
         if (base !== undefined) {
             const mip = base.mips[0];
             const rgba = new Uint8Array(mip.width * mip.height * 4).fill(255);
-            for (let i = 2; i < rgba.length; i += 4) {
-                rgba[i] = 0;   // not metal unless the metalness map says so
+            for (let i = 0; i < rgba.length; i += 4) {
+                rgba[i] = 0;          // area 0 (the main hull) where there's no mask
+                rgba[i + 1] = 128;    // middling roughness where there's no roughness map
+            }
+            if (mask !== undefined && mask.format === 'BC4' && mask.width === mip.width) {
+                decodeInto(mask.mips[0], 'BC4', rgba, [0]);
             }
             if (roughness !== undefined && roughness.format === 'BC4' && roughness.width === mip.width) {
                 decodeInto(roughness.mips[0], 'BC4', rgba, [1]);
-            }
-            if (metalness !== undefined && metalness.format === 'BC4' && metalness.width === mip.width) {
-                decodeInto(metalness.mips[0], 'BC4', rgba, [2]);
             }
             textures.surface = {width: mip.width, height: mip.height, data: rgba};
         }
