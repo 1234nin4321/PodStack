@@ -140,6 +140,8 @@ ipcMain.handle('dialog:save', (event, options) => dialog.showSaveDialog(mainWind
 
 const createWindow = () => {
     mainWindow = new BrowserWindow({
+        // same icon as the exe, installer and shortcuts (the taskbar uses the window's icon)
+        icon: iconPath,
         width: 1200,
         height: 800,
         // Match the app background so the window doesn't flash white while loading.

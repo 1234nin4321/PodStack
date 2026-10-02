@@ -61,16 +61,12 @@ export default class MainContentDialog extends React.Component {
         switch (type) {
             case 'character':
                 return <Avatar key={id} style={styles.avatar} size={32} src={ImageHelper.characterPortrait(id, 32)} />;
-                break;
             case 'corporation':
                 return <Avatar key={id} style={styles.avatar} size={32} src={ImageHelper.corporationLogo(id, 32)} />;
-                break;
             case 'alliance':
                 return <Avatar key={id} style={styles.avatar} size={32} src={ImageHelper.allianceLogo(id, 32)} />;
-                break;
             case 'mailing_list':
                 return <Avatar key={id} style={styles.avatar} size={32} icon={<FontIcon className="material-icons">list</FontIcon>} />;
-                break;
             default:
                 return <Avatar key={id} style={styles.avatar} size={32} icon={<FontIcon className="material-icons">help</FontIcon>} />;
         }
@@ -83,6 +79,7 @@ export default class MainContentDialog extends React.Component {
 
         const actions = [
             <FlatButton
+                key="close"
                 label="Close"
                 primary={true}
                 onClick={e => this.handleClose(e)}

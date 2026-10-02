@@ -53,7 +53,7 @@ export default class NoteDialog extends React.Component {
 
     render() {
         const actions = [
-            <div>
+            <div key="actions">
                 <FlatButton
                     label="Save"
                     primary={true}

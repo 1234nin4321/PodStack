@@ -51,10 +51,10 @@ export default class NewRenamePlanPopover extends React.Component {
 
     render() {
         return (
-            <Popover style={styles.popover}
+            <Popover
+                style={{ ...styles.popover, background: colors.panelRaised }}
                 open={this.state.open}
                 anchorEl={this.state.anchorEl}
-                style={{ background: colors.panelRaised }}
                 onRequestClose={this.handleRequestClose}
             >
                 <div style={styles.margin10}>

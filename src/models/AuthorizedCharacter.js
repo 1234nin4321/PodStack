@@ -1,6 +1,5 @@
 'use strict';
 
-import CharacterHelper from '../helpers/CharacterHelper';
 
 const Store = require('electron-store');
 

@@ -2,7 +2,6 @@ import appProperties from './../../resources/properties';
 
 const fs = require('fs');
 const xml2js = require('xml2js');
-const path = require('path');
 const {clipboard} = require('electron');
 
 const levelMap = {
@@ -77,7 +76,6 @@ export default class ImportExportHelper {
     static ImportEVEMonXML(filePath) {
         const skills = [];
         if (filePath !== undefined) {
-            const fileName = path.basename(filePath);
             const parser = new xml2js.Parser({ attrValueProcessors: [xml2js.processors.parseNumbers], preserveChildrenOrder: true });
 
             try {

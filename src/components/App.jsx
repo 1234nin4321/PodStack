@@ -9,6 +9,7 @@ import buildMuiTheme from './theme';
 import ThemeHelper from '../helpers/ThemeHelper';
 import LeftNav from './nav/LeftNav';
 import UpdateBanner from './ui/UpdateBanner';
+import EsiStatusBanner from './ui/EsiStatusBanner';
 import Overview from './views/Overview';
 import SkillBrowser from './views/SkillBrowser';
 import SpFarming from './views/SpFarming';
@@ -41,6 +42,7 @@ export default class App extends React.Component {
 
                     <main className="app-main">
                         <UpdateBanner/>
+                        <EsiStatusBanner/>
                         <Route exact path="/" component={Overview} />
                         <Route path="/sp-farming" component={SpFarming} />
                         <Route path="/queue-health" component={QueueHealth} />

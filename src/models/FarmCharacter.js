@@ -34,7 +34,7 @@ class FarmCharacter {
             if (rawCharacters !== undefined) {
                 rawCharacters = new Map(rawCharacters);
 
-                for(let [id, rawCharacter] of rawCharacters) {
+                for(const [, rawCharacter] of rawCharacters) {
                     let character = new FarmCharacter();
                     Object.assign(character, rawCharacter);
                     character.id = character.id.toString();

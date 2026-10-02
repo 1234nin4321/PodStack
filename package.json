@@ -1,7 +1,7 @@
 {
   "name": "podstack",
   "productName": "PodStack",
-  "version": "0.1.5-alpha",
+  "version": "0.1.6-alpha",
   "description": "Character Manager for EVE Online",
   "author": "1234nin4321",
   "license": "AGPL-3.0-only",
@@ -14,7 +14,7 @@
     "package": "electron-forge package",
     "make": "electron-forge make",
     "publish": "electron-forge publish",
-    "lint": "eslint --cache --color --ext .jsx,.js src"
+    "lint": "eslint --cache ."
   },
   "dependencies": {
     "electron-log": "^5.4.4",
@@ -39,14 +39,13 @@
     "@electron-forge/maker-squirrel": "^8.0.1",
     "@electron-forge/maker-zip": "^8.0.1",
     "@electron-forge/publisher-github": "^8.0.1",
+    "@eslint/js": "^9.39.5",
     "electron": "^44.5.1",
     "electron-winstaller": "^5.4.4",
     "esbuild": "^0.28.2",
-    "eslint": "^5.12.0",
-    "eslint-config-airbnb": "^17.1.0",
-    "eslint-plugin-import": "^2.14.0",
-    "eslint-plugin-jsx-a11y": "^6.1.2",
-    "eslint-plugin-react": "^7.12.3"
+    "eslint": "^9.39.5",
+    "eslint-plugin-react": "^7.37.5",
+    "globals": "^16.5.0"
   },
   "allowScripts": {
     "esbuild@0.28.2": true,

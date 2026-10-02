@@ -4,6 +4,7 @@ import rp from 'request-promise-native';
 import log from 'electron-log';
 
 import appProperties from './../../../resources/properties';
+import EsiRateLimiter from './EsiRateLimiter';
 
 export default class EsiClient {
 
@@ -22,6 +23,8 @@ export default class EsiClient {
     async authChar(authorizedCharacter) {
         this.token = await authorizedCharacter.getAccessToken();
         this.scopes = authorizedCharacter.scopes;
+        // authenticated routes are rate limited per character
+        this.characterId = authorizedCharacter.id;
     }
 
     async get(endpoint, requiredScopes, options) {
@@ -78,19 +81,42 @@ export default class EsiClient {
             requestOptions['json'] = true;
         }
 
-        try {
-            log.verbose(`[ESI] Firing ${method} ${endpoint}...`);
-            let body = await rp(requestOptions);
-            return (typeof body === 'string') ? JSON.parse(body) : body;
-        } catch(err) {
-            log.warn(`[ESI] Failed ${method} ${endpoint}, retrying...`);
+        requestOptions['resolveWithFullResponse'] = true;
+        return EsiClient.send(requestOptions, method, endpoint, this.characterId !== undefined ? String(this.characterId) : 'public');
+    }
+
+    // Sends a request within ESI's limits (see EsiRateLimiter). Retries once after a server error or a dropped
+    // connection, and after the wait ESI asks for on 429/420; other errors (4xx) aren't retried, as they'd only fail
+    // again and cost more of the error budget.
+    static async send(requestOptions, method, endpoint, who) {
+        for (let attempt = 1; ; attempt++) {
+            await EsiRateLimiter.acquire(endpoint, who);
+
+            let response;
             try {
-                let body = await rp(requestOptions);
-                return (typeof body === 'string') ? JSON.parse(body) : body;
-            } catch(err) {
-                log.warn( `[ESI] Failed x2 ${method} ${endpoint}, throwing error.`);
-                throw err;
+                log.verbose(`[ESI] Firing ${method} ${endpoint}...`);
+                response = await rp(requestOptions);
+            } catch (err) {
+                const status = err.statusCode;
+                const retryDelay = EsiRateLimiter.record(endpoint, who, status, err.response && err.response.headers);
+                EsiRateLimiter.release();
+
+                const retryable = status === undefined || status >= 500 || retryDelay > 0;
+                if (!retryable || attempt >= 2) {
+                    log.warn(`[ESI] Failed ${method} ${endpoint} (${status || err.message}), giving up.`);
+                    throw err;
+                }
+
+                log.warn(`[ESI] Failed ${method} ${endpoint} (${status || err.message}), retrying...`);
+                await new Promise(resolve => setTimeout(resolve, retryDelay || 2000));
+                continue;
             }
+
+            EsiRateLimiter.record(endpoint, who, response.statusCode, response.headers);
+            EsiRateLimiter.release();
+
+            const body = response.body;
+            return (typeof body === 'string' && body !== '') ? JSON.parse(body) : body;
         }
     }
 

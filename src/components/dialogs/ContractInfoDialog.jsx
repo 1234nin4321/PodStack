@@ -48,6 +48,7 @@ export default class ContractInfoDialog extends React.Component {
 
         const actions = [
             <FlatButton
+                key="close"
                 label="Close"
                 primary={true}
                 onClick={(e) => this.handleClose(e)}

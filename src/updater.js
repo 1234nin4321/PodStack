@@ -94,7 +94,7 @@ async function latestRelease() {
 
 // "SHA1 filename size" lines; the file starts with a BOM.
 export function parseReleases(text) {
-    return text.replace(/^﻿/, '').split(/\r?\n/).map(l => l.trim()).filter(Boolean).map(line => {
+    return text.replace(/^\uFEFF/, '').split(/\r?\n/).map(l => l.trim()).filter(Boolean).map(line => {
         const [sha1, file, size] = line.split(/\s+/);
         return {sha1: sha1.toUpperCase(), file: path.basename(file.split('?')[0]), size: parseInt(size, 10)};
     });

@@ -66,9 +66,9 @@ export default class About extends React.Component {
                             alt-tabbing and more time undocking.
                         </p>
                         <div className="about-links">
-                            <a href={REPOSITORY} target="_blank"><i className="material-icons">code</i>Source code</a>
-                            <a href={`${REPOSITORY}/releases`} target="_blank"><i className="material-icons">new_releases</i>Releases</a>
-                            <a href={`${REPOSITORY}/issues`} target="_blank"><i className="material-icons">bug_report</i>Report a bug</a>
+                            <a href={REPOSITORY} target="_blank" rel="noreferrer"><i className="material-icons">code</i>Source code</a>
+                            <a href={`${REPOSITORY}/releases`} target="_blank" rel="noreferrer"><i className="material-icons">new_releases</i>Releases</a>
+                            <a href={`${REPOSITORY}/issues`} target="_blank" rel="noreferrer"><i className="material-icons">bug_report</i>Report a bug</a>
                         </div>
                     </div>
                 </section>
@@ -86,7 +86,7 @@ export default class About extends React.Component {
                 <div className="about-columns">
                     <Panel title="Heritage" icon="history_edu">
                         <p style={{marginTop: 0}}>
-                            PodStack is a fork of <a href={ORIGINAL_PROJECT} target="_blank">Cerebral</a>, the
+                            PodStack is a fork of <a href={ORIGINAL_PROJECT} target="_blank" rel="noreferrer">Cerebral</a>, the
                             open-source EVE Online character manager, whose last release was in early 2019. Since
                             then EVE's login and APIs have moved on, so we brought it back into service:
                         </p>
@@ -95,7 +95,7 @@ export default class About extends React.Component {
                         </ul>
                         <p className="muted" style={{marginBottom: 0}}>
                             Like Cerebral, PodStack is free software under the{' '}
-                            <a href="https://www.gnu.org/licenses/agpl-3.0" target="_blank">GNU AGPL v3</a>. Fly safe,
+                            <a href="https://www.gnu.org/licenses/agpl-3.0" target="_blank" rel="noreferrer">GNU AGPL v3</a>. Fly safe,
                             and thanks to everyone who built the original.
                         </p>
                     </Panel>

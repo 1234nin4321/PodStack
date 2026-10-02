@@ -3,18 +3,15 @@
 import React from 'react';
 import log from 'electron-log';
 
-import FontIcon from 'material-ui/FontIcon';
-import IconButton from 'material-ui/IconButton';
-
-import Panel from '../../ui/Panel';
-
 import FormatHelper from '../../../helpers/FormatHelper';
 import MarketHelper from '../../../helpers/MarketHelper';
 import TrainingProfileHelper from '../../../helpers/TrainingProfileHelper';
 
 const isk = value => (value === undefined || value === null ? '—' : `${FormatHelper.number(value)} ISK`);
+const shortIsk = value => `${FormatHelper.compact(value)} ISK`;
 
-// ISK cost of the skillbooks a queue needs that the character hasn't injected yet.
+// Strip at the top of a plan with the ISK cost of the skillbooks it needs that the character hasn't injected yet,
+// expandable to a per-book list.
 export default class SkillbookPanel extends React.Component {
     constructor(props) {
         super(props);
@@ -25,6 +22,7 @@ export default class SkillbookPanel extends React.Component {
             averages: {},
             loading: false,
             error: undefined,
+            expanded: false,
         };
     }
 
@@ -62,79 +60,88 @@ export default class SkillbookPanel extends React.Component {
         } catch (err) {
             log.error('[Market] Failed to load skillbook prices', err);
             if (!this.unmounted && request === this.request) {
-                this.setState({loading: false, error: 'Couldn\'t load market prices. Try again in a moment.'});
+                this.setState({loading: false, error: 'Couldn\'t load market prices.'});
             }
         }
     }
 
+    renderTable() {
+        const {books, forge, averages, loading} = this.state;
+
+        return (
+            <div className="skillbook-details">
+                <table className="data-table">
+                    <thead>
+                        <tr>
+                            <th>Skillbook</th>
+                            <th className="right">Jita lowest sell</th>
+                            <th className="right">EVE average</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {books.map(b =>
+                            <tr key={b.id}>
+                                <td>{b.name}</td>
+                                <td className="right num">{loading ? '…' : isk(forge[b.id])}</td>
+                                <td className="right num muted">{loading ? '…' : isk(averages[b.id])}</td>
+                            </tr>
+                        )}
+                    </tbody>
+                </table>
+                <p className="muted analysis-note">
+                    Skills already injected aren't counted. Jita is the lowest sell order in The Forge; prices refresh
+                    every 6 hours.
+                </p>
+            </div>
+        );
+    }
+
     render() {
-        const {books, forge, averages, loading, error} = this.state;
+        const {books, forge, averages, loading, error, expanded} = this.state;
+        const hasSkills = this.props.queue.some(item => item.type === 'skill');
+
+        if (!hasSkills) {
+            return null;
+        }
+
+        if (books.length === 0) {
+            return (
+                <div className="skillbook-strip done">
+                    <i className="material-icons">menu_book</i>
+                    <span>Skillbooks: every skill in this plan is already injected.</span>
+                </div>
+            );
+        }
+
         const sum = prices => books.reduce((total, b) => total + (prices[b.id] || 0), 0);
         const unpriced = books.filter(b => forge[b.id] === null || forge[b.id] === undefined).length;
 
         return (
-            <Panel
-                title="Skillbooks"
-                icon="menu_book"
-                className="analysis-panel"
-                subtitle={this.props.label}
-                actions={
-                    <IconButton tooltip="Close" onClick={this.props.onClose} style={{width: 32, height: 32, padding: 4}}>
-                        <FontIcon className="material-icons" color="var(--text-dim)">close</FontIcon>
-                    </IconButton>
-                }
-            >
-                {books.length === 0 ?
-                    <p className="empty" style={{margin: 0}}>Every skill in this plan is already injected. Nothing to buy.</p> :
-                    <div>
-                        <div className="analysis-totals">
-                            <div>
-                                <div className="analysis-total-label">Jita (The Forge) lowest sell</div>
-                                <div className="analysis-total num">{loading ? '…' : isk(sum(forge))}</div>
-                            </div>
-                            <div>
-                                <div className="analysis-total-label">EVE average price</div>
-                                <div className="analysis-total num muted">{loading ? '…' : isk(sum(averages))}</div>
-                            </div>
-                            <div>
-                                <div className="analysis-total-label">Books to buy</div>
-                                <div className="analysis-total num">{books.length}</div>
-                            </div>
-                        </div>
-
-                        {error && <p className="fit-error">{error}</p>}
-                        {!loading && unpriced > 0 &&
-                            <p className="fit-warning">
-                                {unpriced} book{unpriced === 1 ? ' has' : 's have'} no sell orders in The Forge right now
-                                and {unpriced === 1 ? 'is' : 'are'} left out of the Jita total.
-                            </p>
+            <div className="skillbook">
+                <div className="skillbook-strip">
+                    <i className="material-icons">menu_book</i>
+                    <span className="skillbook-summary">
+                        <strong>{books.length} skillbook{books.length === 1 ? '' : 's'} to buy</strong>
+                        {loading ? <span className="muted"> · loading prices…</span> :
+                            error ? <span className="fit-warning"> · {error}</span> :
+                                <span>
+                                    {' · Jita '}<span className="num skillbook-total">{shortIsk(sum(forge))}</span>
+                                    <span className="muted">{' · EVE avg '}<span className="num">{shortIsk(sum(averages))}</span></span>
+                                    {unpriced > 0 &&
+                                        <span className="fit-warning" title="No sell orders in The Forge right now; left out of the Jita total">
+                                            {' · '}{unpriced} not on market
+                                        </span>
+                                    }
+                                </span>
                         }
-
-                        <table className="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Skillbook</th>
-                                    <th className="right">Jita lowest sell</th>
-                                    <th className="right">EVE average</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {books.map(b =>
-                                    <tr key={b.id}>
-                                        <td>{b.name}</td>
-                                        <td className="right num">{loading ? '…' : isk(forge[b.id])}</td>
-                                        <td className="right num muted">{loading ? '…' : isk(averages[b.id])}</td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
-
-                        <p className="muted analysis-note">
-                            Skills already injected aren't counted. Prices refresh every 6 hours.
-                        </p>
-                    </div>
-                }
-            </Panel>
+                    </span>
+                    <button type="button" className="text-button" onClick={() => this.setState({expanded: !expanded})}>
+                        {expanded ? 'Hide books' : 'Show books'}
+                        <i className="material-icons">{expanded ? 'expand_less' : 'expand_more'}</i>
+                    </button>
+                </div>
+                {expanded && this.renderTable()}
+            </div>
         );
     }
 }

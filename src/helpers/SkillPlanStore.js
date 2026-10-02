@@ -24,12 +24,12 @@ export default class SkillPlanStore {
 
         SkillPlanStore.require();
 
+        skillPlansLastUsed = new Date().getTime();
+
         if (skillPlans.hasOwnProperty(characterId) && skillPlans[characterId].hasOwnProperty(planId)) {
             return skillPlans[characterId][planId];
         }
         return undefined;
-
-        skillPlansLastUsed = new Date().getTime();
     }
 
     /**

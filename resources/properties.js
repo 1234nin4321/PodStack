@@ -90,25 +90,30 @@ export default {
     // ESI API behaviour is pinned to this date, see https://esi.evetech.net/meta/compatibility-dates
     'eve_esi_compatibility_date': '2026-08-18',
 
+    'manual_refresh_cooldown': 300,
+
+    // Seconds between automatic ESI refreshes of each kind of character data. Every character is refreshed about
+    // hourly (rarely-changing data every 6 hours); the "Refresh from ESI" button allows one manual refresh every
+    // manual_refresh_cooldown seconds per character.
     'refresh_intervals': {
         'character_info': 21600,
         'portrait': 21600,
         'corporation': 21600,
         'alliance': 21600,
-        'attributes': 7200,
+        'attributes': 3600,
         'loyalty_points': 3600,
-        'wallet': 900,
-        'implants': 900,
-        'clones': 900,
-        'skills': 900,
-        'skill_queue': 900,
-        'contracts': 300,
-        'location': 300,
-        'ship': 300,
-        'fatigue': 300,
-        'mails': 300,
-        'maillabels': 900,
-        'mailinglists': 900,
+        'wallet': 3600,
+        'implants': 3600,
+        'clones': 3600,
+        'skills': 3600,
+        'skill_queue': 3600,
+        'contracts': 3600,
+        'location': 3600,
+        'ship': 3600,
+        'fatigue': 3600,
+        'mails': 3600,
+        'maillabels': 3600,
+        'mailinglists': 3600,
     },
 
     'contract_completed_statuses': [

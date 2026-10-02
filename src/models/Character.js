@@ -18,6 +18,8 @@ import MailBodyHelper from '../helpers/MailBodyHelper';
 
 let subscribedComponents = [];
 let characters;
+let buildRunning = false;
+const CHARACTERS_AT_ONCE = 2;
 const charactersStore = new Store({
     name: 'character-data'
 });
@@ -885,10 +887,36 @@ class Character {
     }
 
     markRefreshed(type) {
+        // up to 10% random jitter, so characters added together don't all come due at the same moment
+        const interval = appProperties.refresh_intervals[type] * 1000;
         this.nextRefreshes[type] = {
             last: new Date(),
-            do: new Date(new Date().getTime() + appProperties.refresh_intervals[type] * 1000)
+            do: new Date(new Date().getTime() + interval + Math.random() * interval * 0.1)
         };
+    }
+
+    // When ESI data was last refreshed (most recent of any data type), or undefined.
+    getLastUpdated() {
+        const times = Object.values(this.nextRefreshes).map(r => new Date(r.last).getTime()).filter(t => !isNaN(t));
+        return times.length > 0 ? new Date(Math.max(...times)) : undefined;
+    }
+
+    // When the next automatic refresh of any data type is due, or undefined.
+    getNextAutoRefresh() {
+        const times = Object.values(this.nextRefreshes)
+            .filter(r => r.do !== undefined)
+            .map(r => new Date(r.do).getTime())
+            .filter(t => !isNaN(t));
+        return times.length > 0 ? new Date(Math.min(...times)) : undefined;
+    }
+
+    // ms until the "Refresh from ESI" button can be used again (0 = now).
+    getManualRefreshWait() {
+        if (this.lastManualRefresh === undefined) {
+            return 0;
+        }
+        const ready = new Date(this.lastManualRefresh).getTime() + appProperties.manual_refresh_cooldown * 1000;
+        return Math.max(0, ready - Date.now());
     }
 
     /**
@@ -1005,27 +1033,53 @@ class Character {
         }
     }
 
+    // Refreshes whatever data is due for every character. Runs every 15 seconds but only calls ESI for data whose
+    // refresh time has passed, at most CHARACTERS_AT_ONCE characters at a time (EsiClient also rate limits).
     static async build() {
+        if (buildRunning) {
+            return;
+        }
+        buildRunning = true;
         Character.suspendSubscribers();
 
-        let authorizedChars = AuthorizedCharacter.getAll();
-
-        let promises = [];
-        Object.keys(authorizedChars).map(id => {
-            if (characters.hasOwnProperty(id)) {
-                promises.push(characters[id].refreshAll());
-            } else {
-                let char = new Character(id);
-                promises.push(char.refreshAll());
-                characters[id] = char;
-            }
-        });
-
         try {
-            await Promise.all(promises);
-        } catch(err) {}
+            const ids = Object.keys(AuthorizedCharacter.getAll());
+            ids.forEach(id => {
+                if (!characters.hasOwnProperty(id)) {
+                    characters[id] = new Character(id);
+                }
+            });
 
-        Character.pushToSubscribers();
+            let next = 0;
+            const worker = async () => {
+                while (next < ids.length) {
+                    const character = characters[ids[next++]];
+                    try {
+                        await character.refreshAll();
+                    } catch (err) {}
+                }
+            };
+            await Promise.all(Array.from({length: Math.min(CHARACTERS_AT_ONCE, ids.length)}, worker));
+        } finally {
+            buildRunning = false;
+            Character.pushToSubscribers();
+        }
+    }
+
+    /**
+     * The "Refresh from ESI" button: refreshes all of a character's data now. Allowed once every
+     * manual_refresh_cooldown seconds per character; returns false (doing nothing) while cooling down.
+     */
+    static async refreshNow(characterId, onProgress) {
+        const character = characters[characterId.toString()];
+        if (character === undefined || character.getManualRefreshWait() > 0) {
+            return false;
+        }
+
+        character.lastManualRefresh = new Date();
+        Character.markCharacterForForceRefresh(characterId);
+        await Character.refreshOne(characterId, onProgress);
+        return true;
     }
 
     // Refreshes a single (usually newly authorized) character and pushes the result to the UI straight away,

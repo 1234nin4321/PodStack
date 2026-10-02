@@ -4,6 +4,7 @@ import React from 'react';
 
 import CharacterModel from '../../models/Character';
 import AuthorizedCharacter from '../../models/AuthorizedCharacter';
+import CharacterRefresh from '../ui/CharacterRefresh';
 import FormatHelper from '../../helpers/FormatHelper';
 import ImageHelper from '../../helpers/ImageHelper';
 import DateTimeHelper from '../../helpers/DateTimeHelper';
@@ -69,6 +70,8 @@ export default class Character extends React.Component {
                             }
                         </div>
                     </div>
+
+                    <CharacterRefresh key={char.id} characterId={char.id}/>
 
                     <div className="hero-stats">
                         <div>

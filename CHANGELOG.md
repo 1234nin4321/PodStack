@@ -1,3 +1,13 @@
+## 0.1.6 Alpha (0.1.6-alpha)
+* ESI rate limits: every request now stays within EVE's per-character limits, backs off when ESI asks
+  (429/Retry-After, error limit), runs at most 8 at once, and a banner explains any slow-down.
+* Characters refresh automatically about once an hour (character info daily-ish), spread out over time; each
+  character page has "Refresh from ESI", usable once every 5 minutes, with a plain explanation of why.
+* Skillbook costs are now shown at the top of each plan and the Training Queue, with a per-book list.
+* Desktop and Start Menu shortcuts always use PodStack's icon, refreshed on every update; the window sets it too.
+* Lint switched to ESLint 9 with bug-focused rules (now runs on every push); fixed what it found, including a
+  popover losing its styling and dead code.
+
 ## 0.1.5 Alpha (0.1.5-alpha)
 * New About page: what PodStack does, its heritage as a fork of Cerebral and what was modernised (new ESI versioning,
   EVE login for modern Electron, Electron 44), and a place to support the project with ISK donations.

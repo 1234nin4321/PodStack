@@ -77,7 +77,6 @@ export default class Plans extends React.Component {
 
             fitPlannerOpen: false,
             mergeDialogOpen: false,
-            skillbooksOpen: false,
             implantsOpen: false,
 
             // the combined queue of all switched-on plans; shown instead of a plan while showQueue is set
@@ -664,14 +663,6 @@ export default class Plans extends React.Component {
                         <RaisedButton
                             style={styles.button}
                             labelStyle={styles.buttonLabel}
-                            onClick={() => this.setState({skillbooksOpen: !this.state.skillbooksOpen})}
-                            label="Skillbooks"
-                            primary={this.state.skillbooksOpen}
-                            icon={<FontIcon className="material-icons" style={styles.buttonIcon}>menu_book</FontIcon>}
-                        />
-                        <RaisedButton
-                            style={styles.button}
-                            labelStyle={styles.buttonLabel}
                             onClick={() => this.setState({implantsOpen: !this.state.implantsOpen})}
                             label="Implants"
                             primary={this.state.implantsOpen}
@@ -688,15 +679,6 @@ export default class Plans extends React.Component {
                         currentPlanId={this.state.skillPlanId}
                         onAdded={this.handleFitAdded}
                         onClose={() => this.setState({fitPlannerOpen: false})}
-                    />
-                }
-
-                {this.state.skillbooksOpen &&
-                    <SkillbookPanel
-                        characterId={this.props.characterId}
-                        queue={this.state.showQueue ? this.state.queue : this.state.items}
-                        label={this.state.showQueue ? 'Training Queue' : (this.state.skillPlanName || 'Unsaved plan')}
-                        onClose={() => this.setState({skillbooksOpen: false})}
                     />
                 }
 
@@ -760,6 +742,7 @@ export default class Plans extends React.Component {
                             />
                         }
                     >
+                        <SkillbookPanel characterId={this.props.characterId} queue={this.state.queue}/>
                         <TrainingQueueTable queue={this.state.queue} time={this.state.queueTime}/>
                     </Panel>
                     :
@@ -795,6 +778,7 @@ export default class Plans extends React.Component {
                             </div>
                         }
                     >
+                        <SkillbookPanel characterId={this.props.characterId} queue={this.state.items}/>
                         <SkillPlanTable
                             onEdit={this.handleItemEdit}
                             onRemove={this.handleItemRemove}

@@ -68,11 +68,13 @@ export default class AddFarmDialog extends React.Component {
     render() {
         const actions = [
             <FlatButton
+                key="cancel"
                 label="Cancel"
                 primary={true}
                 onClick={(e) => this.handleClose(e)}
             />,
             <FlatButton
+                key="add"
                 label="Add"
                 primary={true}
                 onClick={(e) => this.handleAdd(e)}
