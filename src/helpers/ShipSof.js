@@ -95,7 +95,8 @@ export default class ShipSof {
     }
 
     /**
-     * The decals the client puts on a hull (markings, registry lettering, caution stripes, the faction's logo):
+     * The decals the client puts on a hull with a faction's look (markings, registry lettering, caution stripes, the
+     * faction's logo):
      * [{name, meshIndex, indices (the full-detail triangles it covers, as vertex indices), position, rotation,
      * scaling (its projection box: it projects along the box's x, its texture spans y and z), textures: {DecalAlbedoMap,
      * DecalTransparencyMap, ...: res paths}}]. Logo decals take their textures from the faction's logo set.
@@ -111,8 +112,13 @@ export default class ShipSof {
             const sets = bytes !== undefined ? new BlackFile(bytes).findList('decalSets', 'EveSOFDataHullDecalSet') : undefined;
             const factionRoot = faction ? black(`${SOF}factions/${faction.toLowerCase()}.black`) : undefined;
             const logos = (factionRoot && factionRoot.logoSet) || {};
-            // the hull's own decals (its first set; the others are for special editions like police or tournaments)
-            const items = sets !== undefined && sets[0] !== undefined ? sets[0].items || [] : [];
+            // the hull's decal sets: those without a visibility group always show; the others (Tech I lettering, police,
+            // tournament and event markings) only when the faction switches their group on
+            const groupSet = factionRoot && factionRoot.visibilityGroupSet;
+            const groups = new Set(((groupSet && groupSet.visibilityGroups) || []).map(g => g && g.str).filter(Boolean));
+            const items = (sets || [])
+                .filter(set => set && (!set.visibilityGroup || groups.has(set.visibilityGroup)))
+                .flatMap(set => set.items || []);
             decals = items
                 .filter(item => item && Array.isArray(item.indexBuffers) && item.indexBuffers[0] && item.position && item.scaling)
                 .map(item => {
