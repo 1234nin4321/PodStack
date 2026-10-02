@@ -14,6 +14,9 @@ import MergePlansDialog from '../../dialogs/MergePlansDialog';
 import TrainingQueueTable from '../../tables/TrainingQueueTable';
 import ImportExportHelper from '../../../helpers/ImportExportHelper';
 import SkillPlanHelper from '../../../helpers/SkillPlanHelper';
+import RemapHelper from '../../../helpers/RemapHelper';
+import TrainingProfileHelper from '../../../helpers/TrainingProfileHelper';
+import Character from '../../../models/Character';
 import FilteredSkillList from '../../skillbrowser/FilteredSkillList';
 import ImportToPlanPopover from '../../popovers/ImportToPlanPopover';
 import NewRenamePlanPopover from '../../popovers/NewRenamePlanPopover';
@@ -90,7 +93,6 @@ export default class Plans extends React.Component {
         this.handleNoteAdd = this.handleNoteAdd.bind(this);
         this.handleRemapAdd = this.handleRemapAdd.bind(this);
 
-        this.handleGetOptimalAttributes = this.handleGetOptimalAttributes.bind(this);
         this.handleItemEdit = this.handleItemEdit.bind(this);
 
         this.handleItemMove = this.handleItemMove.bind(this);
@@ -311,8 +313,12 @@ export default class Plans extends React.Component {
     handleRemapAdd(attributes, implants, index) {
         if (attributes !== undefined) {
             if (index === undefined) {
+                // a new remap happens now, so it goes at the start of the plan; times after it are recalculated
+                const queue = [...this.planCharacter.queue];
+                this.planCharacter.reset();
                 this.planCharacter.addRemap(attributes, implants);
-                this.setState({ items: this.planCharacter.queue });
+                queue.forEach(item => this.planCharacter.addItemToQueue(item));
+                this.setState({ items: this.planCharacter.queue, totalTime: this.planCharacter.time });
                 SkillPlanStore.storeSkillPlan(
                     this.props.characterId,
                     this.state.skillPlanId,
@@ -386,12 +392,6 @@ export default class Plans extends React.Component {
                 noteDialogEditIndex: index,
             });
         }
-    }
-
-    handleGetOptimalAttributes(index, implants) {
-        this.setState({
-            remapAttribues: this.planCharacter.getSuggestedAttributesForRemapAt(index, implants),
-        });
     }
 
     handleSkillPlanAdd(name) {
@@ -530,17 +530,36 @@ export default class Plans extends React.Component {
     }
 
 
+    renderRemapDialog() {
+        const character = Character.get(this.props.characterId);
+        const bonuses = TrainingProfileHelper.getImplantBonuses(this.props.characterId);
+        const values = Object.values(bonuses);
+        const fullSet = Math.min(...values);
+
+        return (
+            <RemapDialog
+                open={this.state.remapDialogOpen}
+                editIndex={this.state.remapDialogEditIndex}
+                attributes={this.state.remapAttribues}
+                implants={this.state.remapImplants}
+                skills={this.state.remapDialogOpen ? RemapHelper.sectionAfter(this.state.items, this.state.remapDialogEditIndex) : []}
+                currentAttributes={TrainingProfileHelper.getBaseAttributes(this.props.characterId)}
+                currentImplants={fullSet}
+                mixedImplants={values.some(v => v !== fullSet)}
+                isOmega={this.planCharacter.isOmega}
+                remapInfo={character.attributes ? {
+                    bonusRemaps: character.attributes.bonus_remaps || 0,
+                    nextYearly: character.getNextYearlyRemapDate(),
+                } : undefined}
+                onAddRemap={this.handleRemapAdd}
+            />
+        );
+    }
+
     render() {
         return (
             <div>
-                <RemapDialog
-                    attributes={this.state.remapAttribues}
-                    editIndex={this.state.remapDialogEditIndex}
-                    implants={this.state.remapImplants}
-                    onAddRemap={this.handleRemapAdd}
-                    onGetOptimalAttributes={this.handleGetOptimalAttributes}
-                    open={this.state.remapDialogOpen}
-                />
+                {this.renderRemapDialog()}
                 <NoteDialog
                     text={this.state.noteText}
                     details={this.state.noteDetails}

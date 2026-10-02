@@ -2062,3 +2062,48 @@ a:hover {
     margin-top: 6px;
     font-size: 12px;
 }
+
+/* ---------------------------------------------------------------- Remap */
+
+.remap-availability {
+    margin: 0 0 10px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.remap-advice {
+    padding: 10px 14px;
+    margin-bottom: 12px;
+    color: var(--text-strong);
+    background: var(--accent-soft);
+    border-left: 2px solid var(--accent);
+}
+
+.remap-scope {
+    margin-top: 2px;
+    font-size: 12px;
+}
+
+.remap-table td {
+    padding-top: 4px;
+    padding-bottom: 4px;
+}
+
+.remap-slider {
+    width: 220px;
+}
+
+.remap-slider > div > div {
+    margin: 0 !important;
+}
+
+.remap-value {
+    width: 36px;
+    font-weight: 700;
+    color: var(--text-strong);
+}
+
+.remap-times {
+    margin-top: 16px;
+    margin-bottom: 0;
+}

@@ -5,270 +5,209 @@ import Dialog from 'material-ui/Dialog';
 import FlatButton from 'material-ui/FlatButton';
 import Slider from 'material-ui/Slider';
 
+import DateTimeHelper from '../../helpers/DateTimeHelper';
+import RemapHelper, {ATTRIBUTES, MIN_ATTRIBUTE, MAX_ATTRIBUTE, REMAP_POINTS} from '../../helpers/RemapHelper';
 
-const styles = {
-    dialog: {
-        width: 400,
-    },
-    row: {
-        height: 48,
-        margin: 10,
-    },
-    slider: {
-        margin: 10,
-        width: 200,
-    },
-};
+const TOTAL = 5 * MIN_ATTRIBUTE + REMAP_POINTS;
+const label = a => a.charAt(0).toUpperCase() + a.slice(1);
+const signed = n => (n > 0 ? `+${n}` : n < 0 ? `−${-n}` : '0');
 
+/**
+ * Remap editor. Compares the character's current attributes with the fastest remap for the skills this remap
+ * affects, says what to change, and lets the split be adjusted before saving.
+ *
+ * Props: open, editIndex (undefined for a new remap), attributes/implants (the remap being edited), skills (queue
+ * items the remap affects), currentAttributes (character's base attributes), currentImplants, isOmega,
+ * remapInfo {bonusRemaps, nextYearly: Date|true}, onAddRemap(attributes, implants, editIndex) / onAddRemap(undefined).
+ */
 export default class RemapDialog extends React.Component {
     constructor(props) {
         super(props);
 
         this.state = {
-            open: false,
-            attributes: {
-                perception: 17,
-                memory: 17,
-                willpower: 17,
-                intelligence: 17,
-                charisma: 17,
-            },
+            attributes: {perception: 17, memory: 17, willpower: 17, intelligence: 17, charisma: 17},
             implants: 0,
         };
-
-        this.handleImplants = this.handleImplants.bind(this);
-        this.handleSlider = this.handleSlider.bind(this);
-        this.handleUseSuggested = this.handleUseSuggested.bind(this);
-        this.updateSliders = this.updateSliders.bind(this);
-    }
-
-    handleClose(e) {
-        this.props.onAddRemap(undefined);
-    }
-
-    handleAdd(e) {
-        this.props.onAddRemap( this.state.attributes, this.state.implants, this.props.editIndex);
     }
 
     componentWillReceiveProps(nextProps) {
-        if (nextProps.open !== this.props.open) {
-            this.setState({ open: nextProps.open });
-        }
-        if (nextProps.attributes !== undefined && nextProps.attributes !== this.props.attributes) {
-            this.setState({ attributes: nextProps.attributes });
-        }
-        if (nextProps.implants !== undefined && nextProps.implants !== this.props.implants) {
-            this.setState({ implants: nextProps.implants });
-        }
-    }
+        if (nextProps.open && !this.props.open) {
+            const implants = nextProps.editIndex !== undefined && nextProps.implants !== undefined ?
+                nextProps.implants : (nextProps.currentImplants || 0);
 
-    updateSliders(e) {
-        const currentAttributes = this.state.attributes;
-        this.setState({ attributes: currentAttributes });
-    }
+            // editing keeps the saved split; a new remap starts on the optimum
+            const attributes = nextProps.editIndex !== undefined && nextProps.attributes !== undefined ?
+                {...nextProps.attributes} :
+                RemapHelper.optimise(nextProps.skills || [], implants, nextProps.isOmega, nextProps.currentAttributes).attributes;
 
-    handleUseSuggested(e) {
-        if (this.props.editIndex !== undefined) {
-            this.props.onGetOptimalAttributes(this.props.editIndex, this.state.implants);
+            this.setState({attributes, implants});
         }
     }
 
     handleSlider(attribute, value) {
-        const currentAttributes = this.state.attributes;
-        let pool = 14 + (5 * 17);
+        const attributes = {...this.state.attributes};
+        const others = ATTRIBUTES.filter(a => a !== attribute).reduce((sum, a) => sum + attributes[a], 0);
 
-        if (currentAttributes[attribute] > value) {
-            currentAttributes[attribute] = value;
-            this.setState({ attributes: currentAttributes });
-        } else {
-            for (const a in currentAttributes) {
-                pool -= currentAttributes[a];
-            }
-            if (pool > 0) {
-                currentAttributes[attribute] = pool + currentAttributes[attribute] <= value ? pool + currentAttributes[attribute] : value;
-                this.setState({ attributes: currentAttributes });
-            } else {
-                this.setState({ attributes: currentAttributes });
-            }
-        }
+        // can't spend more points than are left
+        attributes[attribute] = Math.min(value, TOTAL - others);
+        this.setState({attributes});
     }
 
-    handleImplants(value) {
-        const implants = value;
-        this.setState({ implants });
+    renderAvailability() {
+        const info = this.props.remapInfo;
+        if (info === undefined) {
+            return null;
+        }
+
+        const yearly = info.nextYearly === true ? 'yearly remap available' :
+            `next yearly remap in ${DateTimeHelper.timeUntil(info.nextYearly)}`;
+        const ready = info.nextYearly === true || info.bonusRemaps > 0;
+
+        return (
+            <p className="remap-availability" style={{color: ready ? 'var(--good)' : 'var(--warn)'}}>
+                {info.bonusRemaps} bonus remap{info.bonusRemaps === 1 ? '' : 's'} · {yearly}
+            </p>
+        );
     }
 
     render() {
-        const actions = [
-            <div>
-                {
-                    this.props.editIndex !== undefined ?
-                        <FlatButton
-                            label="Use optimal"
-                            primary={true}
-                            onClick={e => this.handleUseSuggested(e)}
-                        />
-                        : ''
-                }
-                <FlatButton
-                    label="Save"
-                    primary={true}
-                    onClick={e => this.handleAdd(e)}
-                />
+        const {skills = [], currentAttributes, isOmega, editIndex} = this.props;
+        const {attributes, implants} = this.state;
 
-                <FlatButton
-                    label="Cancel"
-                    primary={true}
-                    onClick={e => this.handleClose(e)}
-                />
-            </div>,
-        ];
+        const optimal = RemapHelper.optimise(skills, implants, isOmega, currentAttributes);
+        const currentTime = currentAttributes ? RemapHelper.trainingTime(skills, currentAttributes, implants, isOmega) : undefined;
+        const chosenTime = RemapHelper.trainingTime(skills, attributes, implants, isOmega);
+        const spent = ATTRIBUTES.reduce((sum, a) => sum + attributes[a], 0);
+        const unspent = TOTAL - spent;
+
+        const changes = currentAttributes ? ATTRIBUTES
+            .map(a => ({a, delta: optimal.attributes[a] - currentAttributes[a]}))
+            .filter(c => c.delta !== 0) : [];
+        const saving = currentTime !== undefined ? currentTime - optimal.time : 0;
 
         return (
             <Dialog
-                title={'Remap'}
-                actions={actions}
+                title={editIndex !== undefined ? 'Edit Remap' : 'Remap'}
                 modal={false}
-                open={this.state.open}
-                onRequestClose={(e) => this.handleClose(e)}
-                contentStyle={styles.dialog}
+                open={this.props.open}
+                onRequestClose={() => this.props.onAddRemap(undefined)}
+                contentStyle={{width: 720, maxWidth: '95%'}}
+                autoScrollBodyContent={true}
+                actions={[
+                    <FlatButton key="optimal" label="Use optimal"
+                                onClick={() => this.setState({attributes: {...optimal.attributes}})}/>,
+                    currentAttributes &&
+                        <FlatButton key="current" label="Use current"
+                                    onClick={() => this.setState({attributes: {...currentAttributes}})}/>,
+                    <FlatButton key="cancel" label="Cancel" onClick={() => this.props.onAddRemap(undefined)}/>,
+                    <FlatButton key="save" label={editIndex !== undefined ? 'Save' : 'Add remap'} primary={true}
+                                disabled={unspent !== 0}
+                                onClick={() => this.props.onAddRemap(attributes, implants, editIndex)}/>,
+                ]}
             >
-                <table>
+                {this.renderAvailability()}
+
+                {skills.length === 0 ?
+                    <p className="empty">
+                        There are no skills {editIndex !== undefined ? 'after this remap' : 'in this plan'} to optimise for.
+                    </p> :
+                    <div className="remap-advice">
+                        {changes.length === 0 ?
+                            <span style={{color: 'var(--good)'}}>Your current attributes are already optimal for this plan.</span> :
+                            <span>
+                                <strong>To train fastest:</strong>{' '}
+                                {changes.map(c => `${signed(c.delta)} ${label(c.a)}`).join(', ')}
+                                {saving > 60000 && <span style={{color: 'var(--good)'}}> · saves {DateTimeHelper.niceCountdown(saving)}</span>}
+                            </span>
+                        }
+                        <div className="muted remap-scope">
+                            Optimised for the {skills.length} skill level{skills.length === 1 ? '' : 's'}{' '}
+                            {editIndex !== undefined ? 'between this remap and the next one' : 'in this plan up to its first remap'}.
+                        </div>
+                    </div>
+                }
+
+                <table className="data-table remap-table">
+                    <thead>
+                        <tr>
+                            <th>Attribute</th>
+                            {currentAttributes && <th className="right">Current</th>}
+                            <th className="right">Optimal</th>
+                            {currentAttributes && <th className="right">Change</th>}
+                            <th>Remap to</th>
+                            <th className="right"/>
+                        </tr>
+                    </thead>
                     <tbody>
-                        <tr style={styles.row}>
-                            <td>
-                                <span>Perception</span>
-                            </td>
-                            <td>
-                                <Slider
-                                    name={'Perception'}
-                                    style={styles.slider}
-                                    sliderStyle={styles.slider}
-                                    axis="x"
-                                    step={1}
-                                    min={17}
-                                    max={27}
-                                    onDragStop={(e) => this.updateSliders(e)}
-                                    onChange={(e, value) => this.handleSlider('perception', value)}
-                                    value={this.state.attributes.perception}
-                                />
-                            </td>
-                            <td>
-                                <span>{this.state.attributes.perception}</span>
-                            </td>
-                        </tr>
+                        {ATTRIBUTES.map(a => {
+                            const delta = currentAttributes ? optimal.attributes[a] - currentAttributes[a] : 0;
+                            return (
+                                <tr key={a}>
+                                    <td>{label(a)}</td>
+                                    {currentAttributes && <td className="right num">{currentAttributes[a]}</td>}
+                                    <td className="right num" style={{color: 'var(--accent)'}}>{optimal.attributes[a]}</td>
+                                    {currentAttributes &&
+                                        <td className="right num"
+                                            style={{color: delta > 0 ? 'var(--good)' : delta < 0 ? 'var(--warn)' : 'var(--text-faint)'}}>
+                                            {signed(delta)}
+                                        </td>
+                                    }
+                                    <td className="remap-slider">
+                                        <Slider
+                                            axis="x" step={1} min={MIN_ATTRIBUTE} max={MAX_ATTRIBUTE}
+                                            sliderStyle={{margin: 0}}
+                                            value={attributes[a]}
+                                            onChange={(e, value) => this.handleSlider(a, value)}
+                                        />
+                                    </td>
+                                    <td className="right num remap-value">{attributes[a]}</td>
+                                </tr>
+                            );
+                        })}
                         <tr>
-                            <td>
-                                <span>Memory</span>
+                            <td>Implants</td>
+                            {currentAttributes && <td/>}
+                            <td/>
+                            {currentAttributes && <td/>}
+                            <td className="remap-slider">
+                                <Slider axis="x" step={1} min={0} max={5} sliderStyle={{margin: 0}}
+                                        value={implants} onChange={(e, value) => this.setState({implants: value})}/>
                             </td>
-                            <td>
-                                <Slider
-                                    name={'memory'}
-                                    style={styles.slider}
-                                    sliderStyle={styles.slider}
-                                    axis="x"
-                                    step={1}
-                                    min={17}
-                                    max={27}
-                                    onDragStop={(e) => this.updateSliders(e)}
-                                    onChange={(e, value) => this.handleSlider('memory', value)}
-                                    value={this.state.attributes.memory}
-                                />
-                            </td>
-                            <td>
-                                <span>{this.state.attributes.memory}</span>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>
-                                <span>Willpower</span>
-                            </td>
-                            <td>
-                                <Slider
-                                    name={'willpower'}
-                                    style={styles.slider}
-                                    sliderStyle={styles.slider}
-                                    axis="x"
-                                    step={1}
-                                    min={17}
-                                    max={27}
-                                    onDragStop={(e) => this.updateSliders(e)}
-                                    onChange={(e, value) => this.handleSlider('willpower', value)}
-                                    value={this.state.attributes.willpower}
-                                />
-                            </td>
-                            <td>
-                                <span>{this.state.attributes.willpower}</span>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>
-                                <span>Intelligence</span>
-                            </td>
-                            <td>
-                                <Slider
-                                    name={'intelligence'}
-                                    style={styles.slider}
-                                    sliderStyle={styles.slider}
-                                    axis="x"
-                                    step={1}
-                                    min={17}
-                                    max={27}
-                                    onDragStop={(e) => this.updateSliders(e)}
-                                    onChange={(e, value) => this.handleSlider('intelligence', value)}
-                                    value={this.state.attributes.intelligence}
-                                />
-                            </td>
-                            <td>
-                                <span>{this.state.attributes.intelligence}</span>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>
-                                <span>Charisma</span>
-                            </td>
-                            <td>
-                                <Slider
-                                    name={'charisma'}
-                                    style={styles.slider}
-                                    sliderStyle={styles.slider}
-                                    axis="x"
-                                    step={1}
-                                    min={17}
-                                    max={27}
-                                    onDragStop={(e) => this.updateSliders(e)}
-                                    onChange={(e, value) => this.handleSlider('charisma', value)}
-                                    value={this.state.attributes.charisma}
-                                />
-                            </td>
-                            <td>
-                                <span>{this.state.attributes.charisma}</span>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>
-                                <span>Implants</span>
-                            </td>
-                            <td>
-                                <Slider
-                                    name={'charisma'}
-                                    style={styles.slider}
-                                    sliderStyle={styles.slider}
-                                    axis="x"
-                                    step={1}
-                                    min={0}
-                                    max={5}
-                                    onDragStop={(e) => this.updateSliders(e)}
-                                    onChange={(e, value) => this.handleImplants(value)}
-                                    value={this.state.implants}
-                                />
-                            </td>
-                            <td>
-                                <span>{`+${this.state.implants}`}</span>
-                            </td>
+                            <td className="right num remap-value">+{implants}</td>
                         </tr>
                     </tbody>
                 </table>
+
+                {unspent !== 0 &&
+                    <p className="fit-warning" style={{marginTop: 10}}>
+                        {unspent > 0 ? `${unspent} point${unspent === 1 ? '' : 's'} left to assign.` : `${-unspent} points too many.`}
+                    </p>
+                }
+
+                {skills.length > 0 &&
+                    <div className="analysis-totals remap-times">
+                        {currentTime !== undefined &&
+                            <div>
+                                <div className="analysis-total-label">Current attributes</div>
+                                <div className="analysis-total num muted">{DateTimeHelper.niceCountdown(currentTime)}</div>
+                            </div>
+                        }
+                        <div>
+                            <div className="analysis-total-label">Optimal</div>
+                            <div className="analysis-total num" style={{color: 'var(--accent)'}}>{DateTimeHelper.niceCountdown(optimal.time)}</div>
+                        </div>
+                        <div>
+                            <div className="analysis-total-label">This remap</div>
+                            <div className="analysis-total num">{DateTimeHelper.niceCountdown(chosenTime)}</div>
+                        </div>
+                    </div>
+                }
+
+                {this.props.mixedImplants &&
+                    <p className="muted analysis-note">
+                        Your current implants aren't the same for every attribute; times here assume +{implants} on all five.
+                    </p>
+                }
             </Dialog>
         );
     }
