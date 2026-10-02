@@ -1,3 +1,9 @@
+## 0.2.9 Alpha (0.2.9-alpha)
+* Skill plans: the Implants button is now "Implants & Accelerators". It shows the cerebral accelerator the character
+  has active and compares the plan with it for the time it has left (pick another, or None, to compare that instead).
+* Plan training times no longer assume an active accelerator lasts forever.
+* The plan toolbar fits on one row again at the smallest window size.
+
 ## 0.2.8 Alpha (0.2.8-alpha)
 * Cerebral accelerators: an active accelerator shows as "+10 · 3d left" next to the character's name, with details
   on the Summary tab. EVE only reveals the bonus, so pick which accelerator it is and correct the start time if

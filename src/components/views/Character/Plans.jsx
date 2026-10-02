@@ -39,15 +39,16 @@ const styles = {
         height: 32,
         lineHeight: '32px',
     },
+    // compact enough for the whole toolbar to fit on one row at the minimum window width
     buttonLabel: {
         fontSize: 12,
-        letterSpacing: '0.06em',
-        paddingLeft: 6,
-        paddingRight: 12,
+        letterSpacing: '0.03em',
+        paddingLeft: 5,
+        paddingRight: 9,
     },
     buttonIcon: {
         fontSize: 17,
-        marginLeft: 10,
+        marginLeft: 8,
     },
 };
 
@@ -648,7 +649,7 @@ export default class Plans extends React.Component {
     }
 
 
-    // Per-skill times for the setup picked in the Implants panel: {label, times: {"id:level": ms}, total}, or
+    // Per-skill times for the setup picked in the Implants & Accelerators panel: {label, times: {"id:level": ms}, total}, or
     // undefined. Cached until the queue or the setup changes.
     getComparison(queue) {
         const profile = this.state.compareProfile;
@@ -847,7 +848,7 @@ export default class Plans extends React.Component {
                             style={styles.button}
                             labelStyle={styles.buttonLabel}
                             onClick={() => this.setState({implantsOpen: !this.state.implantsOpen})}
-                            label="Implants"
+                            label="Implants & Accelerators"
                             primary={this.state.implantsOpen}
                             icon={<FontIcon className="material-icons" style={styles.buttonIcon}>psychology</FontIcon>}
                         />

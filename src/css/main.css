@@ -1325,15 +1325,15 @@ a:hover {
     display: flex;
     align-items: center;
     flex-wrap: wrap;
-    gap: 16px;
-    padding: 10px 16px;
+    gap: 10px;
+    padding: 10px 14px;
     margin-bottom: 16px;
 }
 
 .plan-toolbar-group {
     display: flex;
-    gap: 6px;
-    padding-left: 16px;
+    gap: 5px;
+    padding-left: 10px;
     border-left: 1px solid var(--line);
 }
 
@@ -3096,4 +3096,24 @@ a:hover {
     color: #fff;
     background: var(--danger);
     border-radius: 9px;
+}
+
+.profiler-active-accel {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+    padding: 8px 10px;
+    font-size: 13px;
+    border: 1px solid color-mix(in srgb, var(--good) 45%, transparent);
+    background: color-mix(in srgb, var(--good) 8%, transparent);
+}
+
+.profiler-active-accel .material-icons {
+    font-size: 16px;
+    color: var(--good);
+}
+
+.profiler-active-accel .link-button {
+    margin-left: auto;
 }

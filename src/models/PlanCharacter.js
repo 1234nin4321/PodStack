@@ -2,6 +2,20 @@
 
 import AllSkills from '../../resources/all_skills';
 import Character from '../models/Character';
+import AcceleratorHelper from '../helpers/AcceleratorHelper';
+
+// The character's attributes without an active cerebral accelerator, which runs out: plans assume none, and the
+// Implants & Accelerators panel applies one for its remaining time.
+function attributesWithoutAccelerator(character) {
+    const attributes = Object.assign({}, character.attributes);
+    const booster = AcceleratorHelper.attributeBonus(character);
+    ['perception', 'memory', 'willpower', 'intelligence', 'charisma'].forEach(a => {
+        if (typeof attributes[a] === 'number') {
+            attributes[a] -= booster;
+        }
+    });
+    return attributes;
+}
 
 class PlanCharacter {
 
@@ -21,7 +35,7 @@ class PlanCharacter {
      */
     load() {
         this.name = this.baseCharacter.name.toString();
-        this.attributes = Object.assign({}, this.baseCharacter.attributes);
+        this.attributes = attributesWithoutAccelerator(this.baseCharacter);
         this.isOmega = this.baseCharacter.isOmega();
 
         this.skills = {};
@@ -80,7 +94,7 @@ class PlanCharacter {
     reset() {
         this.queue = [];
         this.time = 0;
-        this.attributes = Object.assign({}, this.baseCharacter.attributes);
+        this.attributes = attributesWithoutAccelerator(this.baseCharacter);
         this.lastRemap = this.attributes.last_remap_date !== undefined ?  (Date.now() - (new Date(this.attributes.last_remap_date).getTime())) : 0;
 
         Object.keys(AllSkills.skills).forEach((skill) => {

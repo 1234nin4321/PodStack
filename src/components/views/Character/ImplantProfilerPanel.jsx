@@ -13,6 +13,7 @@ import Panel from '../../ui/Panel';
 
 import Character from '../../../models/Character';
 import DateTimeHelper from '../../../helpers/DateTimeHelper';
+import AcceleratorHelper from '../../../helpers/AcceleratorHelper';
 import TrainingProfileHelper, {CURRENT_CLONE} from '../../../helpers/TrainingProfileHelper';
 import {ACCELERATORS, IMPLANT_GRADES, IMPLANT_SLOTS} from '../../../../resources/clone_items';
 
@@ -59,7 +60,32 @@ export default class ImplantProfilerPanel extends React.Component {
             acceleratorSearch: 'None',      // text in the search box
             acceleratorBonus: 0,
             acceleratorDays: '7',
+            ...this.activeAcceleratorState(),
         };
+    }
+
+    // The accelerator the character has active now (see AcceleratorHelper), for as long as it has left.
+    activeAccelerator() {
+        const status = AcceleratorHelper.status(Character.get(this.props.characterId));
+        return status !== undefined && status.remaining > 0 ? status : undefined;
+    }
+
+    activeAcceleratorState() {
+        const active = this.activeAccelerator();
+        if (active === undefined) {
+            return {};
+        }
+        const days = String(Math.round(active.remaining / 86400000 * 10) / 10);
+        return active.item !== undefined ?
+            {accelerator: active.item.typeId, acceleratorSearch: optionText(active.item.typeId), acceleratorBonus: active.bonus, acceleratorDays: days} :
+            {accelerator: CUSTOM_ACCELERATOR, acceleratorSearch: optionText(CUSTOM_ACCELERATOR), acceleratorBonus: active.bonus, acceleratorDays: days};
+    }
+
+    componentDidMount() {
+        // an active accelerator is compared in the plan straight away
+        if (this.props.onProfileChange !== undefined && this.getProfile() !== undefined) {
+            this.props.onProfileChange(this.getProfile());
+        }
     }
 
     componentDidUpdate(prevProps, prevState) {
@@ -146,6 +172,28 @@ export default class ImplantProfilerPanel extends React.Component {
         }
     }
 
+    renderActiveAccelerator() {
+        const active = this.activeAccelerator();
+        if (active === undefined) {
+            return null;
+        }
+        const usingIt = this.state.acceleratorBonus === active.bonus &&
+            (active.item === undefined || this.state.accelerator === active.item.typeId);
+
+        return (
+            <div className="profiler-active-accel">
+                <i className="material-icons">bolt</i>
+                <span>
+                    Active now: <b>{active.item ? active.item.name : 'Cerebral accelerator'} +{active.bonus}</b>
+                    <span className="muted"> · {DateTimeHelper.niceCountdown(active.remaining).split(' ').slice(0, 2).join(' ')} left{active.estimated ? ' (estimated)' : ''}</span>
+                </span>
+                {!usingIt &&
+                    <button type="button" className="link-button" onClick={() => this.setState(this.activeAcceleratorState())}>Use it</button>
+                }
+            </div>
+        );
+    }
+
     // The character's attribute implants, by name, for the "Current clone" row.
     currentImplantNames() {
         const bonusAttributes = [175, 176, 177, 178, 179];
@@ -163,7 +211,7 @@ export default class ImplantProfilerPanel extends React.Component {
 
         return (
             <Panel
-                title="Implants & Boosters"
+                title="Implants & Accelerators"
                 icon="psychology"
                 className="analysis-panel"
                 subtitle={this.props.label}
@@ -184,6 +232,8 @@ export default class ImplantProfilerPanel extends React.Component {
                         </div>
                     )}
                 </div>
+
+                {this.renderActiveAccelerator()}
 
                 <div className="fit-actions" style={{marginTop: 0}}>
                     <AutoComplete
@@ -274,8 +324,9 @@ export default class ImplantProfilerPanel extends React.Component {
 
                 <p className="muted analysis-note">
                     Pick a row and/or an accelerator to compare it skill by skill in the plan below. Base attributes are
-                    EVE's values minus your current implants (shown as +N). Times assume training starts now. EVE doesn't report boosters, so PodStack can't tell whether an accelerator is active;
-                    use the setting above to see its effect.
+                    EVE's values minus your current implants (shown as +N) and any active accelerator. Times assume
+                    training starts now. An active accelerator is picked for you with the time it has left; check it on
+                    the Summary tab.
                 </p>
             </Panel>
         );
