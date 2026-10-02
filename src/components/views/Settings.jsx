@@ -55,7 +55,7 @@ export default class Settings extends React.Component {
                 return (
                     <span>
                         {update.version} is available.{' '}
-                        {update.error && <span style={{color: 'var(--warn)'}}>Automatic update failed: {update.error} </span>}
+                        {update.error && <span style={{color: 'var(--warn)'}}>Last attempt failed: {update.error} </span>}
                         {update.canAutoInstall ? '' : 'This copy can\'t update itself (portable or unsigned build), so download it from the release page.'}
                     </span>
                 );
@@ -73,6 +73,17 @@ export default class Settings extends React.Component {
             return (
                 <RaisedButton label="Restart to update" primary={true} onClick={() => UpdateHelper.install()}
                               icon={<FontIcon className="material-icons">restart_alt</FontIcon>}/>
+            );
+        }
+        if (update.status === 'available' && update.canAutoInstall) {
+            return (
+                <div className="update-actions">
+                    <RaisedButton label="What's new" onClick={() => UpdateHelper.openRelease()}
+                                  icon={<FontIcon className="material-icons">open_in_new</FontIcon>}/>
+                    <RaisedButton label={update.error ? 'Try again' : 'Update now'} primary={true}
+                                  onClick={() => UpdateHelper.download()}
+                                  icon={<FontIcon className="material-icons">download</FontIcon>}/>
+                </div>
             );
         }
         if (update.status === 'available') {
@@ -106,8 +117,8 @@ export default class Settings extends React.Component {
                             </div>
                             <div className="update-status">{this.renderUpdateStatus()}</div>
                             <div className="muted update-note">
-                                PodStack checks for new versions at startup and every 4 hours, downloads and installs them
-                                in the background, then asks before restarting.
+                                PodStack checks for new versions at startup and every 4 hours and lets you know. Nothing is
+                                downloaded until you choose Update now; after it installs, you choose when to restart.
                             </div>
                         </div>
                         {this.renderUpdateAction()}

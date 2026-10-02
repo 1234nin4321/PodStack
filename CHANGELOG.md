@@ -1,3 +1,9 @@
+## 0.1.3 Alpha (0.1.3-alpha)
+* Updates ask first: PodStack still checks automatically, but only downloads when you choose Update now.
+* Implants & Boosters: implant sets are shown by name (Limited, Limited Beta, Basic, Standard, Improved) and your
+  current attribute implants are listed; cerebral accelerators are picked from a searchable list of real items
+  ("Name +X") with their duration filled in, or set up as a custom accelerator.
+
 ## 0.1.2 Alpha (0.1.2-alpha)
 * New app icon.
 * Update downloads show progress: percentage, size, speed and time left, then install progress.

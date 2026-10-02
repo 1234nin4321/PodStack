@@ -12,7 +12,12 @@ export default class UpdateHelper {
         return ipcRenderer.invoke('update:check');
     }
 
-    // Restarts into the downloaded update (installed Windows copies only).
+    // Accepts an available update: downloads and installs it in the background (installed Windows copies only).
+    static download() {
+        return ipcRenderer.invoke('update:download');
+    }
+
+    // Restarts into the installed update.
     static install() {
         return ipcRenderer.invoke('update:install');
     }

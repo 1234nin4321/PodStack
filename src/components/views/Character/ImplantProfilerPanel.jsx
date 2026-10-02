@@ -2,6 +2,7 @@
 
 import React from 'react';
 
+import AutoComplete from 'material-ui/AutoComplete';
 import FontIcon from 'material-ui/FontIcon';
 import IconButton from 'material-ui/IconButton';
 import MenuItem from 'material-ui/MenuItem';
@@ -10,19 +11,34 @@ import TextField from 'material-ui/TextField';
 
 import Panel from '../../ui/Panel';
 
+import Character from '../../../models/Character';
 import DateTimeHelper from '../../../helpers/DateTimeHelper';
 import TrainingProfileHelper, {CURRENT_CLONE} from '../../../helpers/TrainingProfileHelper';
+import {ACCELERATORS, IMPLANT_GRADES, IMPLANT_SLOTS} from '../../../../resources/clone_items';
 
 const SCENARIOS = [
     {implants: CURRENT_CLONE, label: 'Current clone'},
     {implants: 0, label: 'No implants'},
-    {implants: 1, label: '+1 set'},
-    {implants: 2, label: '+2 set'},
-    {implants: 3, label: '+3 set'},
-    {implants: 4, label: '+4 set'},
-    {implants: 5, label: '+5 set'},
+    ...IMPLANT_GRADES.map(g => ({
+        implants: g.bonus,
+        label: `${g.grade} implants +${g.bonus}`,
+        detail: IMPLANT_SLOTS.map(s => g.name(s.base)).join(' · '),
+    })),
 ];
-const ACCELERATOR_BONUSES = [0, 2, 3, 4, 5, 6, 8, 10, 12];
+const NO_ACCELERATOR = 'none';
+const CUSTOM_ACCELERATOR = 'custom';
+const CUSTOM_BONUSES = [1, 2, 3, 4, 5, 6, 8, 10, 12];
+
+// Options for the searchable accelerator box: "None", every accelerator as "Name +X", then "Custom…".
+const ACCELERATOR_OPTIONS = [
+    {id: NO_ACCELERATOR, text: 'None'},
+    ...ACCELERATORS.map(a => ({id: a.typeId, text: `${a.name} +${a.bonus}`, days: a.days})),
+    {id: CUSTOM_ACCELERATOR, text: 'Custom…'},
+].map(o => ({
+    ...o,
+    value: <MenuItem primaryText={o.text} secondaryText={o.days !== undefined ? `${o.days}d` : undefined}/>,
+}));
+const optionText = id => (ACCELERATOR_OPTIONS.find(o => o.id === id) || ACCELERATOR_OPTIONS[0]).text;
 const ATTRIBUTE_ORDER = ['perception', 'memory', 'willpower', 'intelligence', 'charisma'];
 
 const formatDate = date => date.toLocaleDateString(undefined, {day: 'numeric', month: 'short', year: 'numeric'});
@@ -33,6 +49,8 @@ export default class ImplantProfilerPanel extends React.Component {
         super(props);
 
         this.state = {
+            accelerator: NO_ACCELERATOR,   // NO_ACCELERATOR, CUSTOM_ACCELERATOR or an accelerator's typeId
+            acceleratorSearch: 'None',      // text in the search box
             acceleratorBonus: 0,
             acceleratorDays: '7',
         };
@@ -56,6 +74,50 @@ export default class ImplantProfilerPanel extends React.Component {
             this.resultsKey = key;
         }
         return this.results;
+    }
+
+    // Every word typed must appear somewhere in the option, in any order ("boost 10", "festival vii", "+8").
+    // While the box still shows the current choice, the whole list is offered.
+    filterAccelerators(searchText, key) {
+        if (searchText === optionText(this.state.accelerator)) {
+            return true;
+        }
+
+        const words = searchText.toLowerCase().split(/\s+/).filter(Boolean);
+        return words.every(word => key.toLowerCase().includes(word));
+    }
+
+    handleAcceleratorPick(chosen, index) {
+        // Enter without picking from the list takes the first match
+        const option = index !== -1 ? chosen :
+            ACCELERATOR_OPTIONS.find(o => this.filterAccelerators(this.state.acceleratorSearch, o.text));
+
+        if (option === undefined) {
+            this.setState({acceleratorSearch: optionText(this.state.accelerator)});
+            return;
+        }
+
+        this.setState({acceleratorSearch: option.text});
+        this.handleAccelerator(option.id);
+    }
+
+    handleAccelerator(accelerator) {
+        if (accelerator === NO_ACCELERATOR) {
+            this.setState({accelerator, acceleratorBonus: 0});
+        } else if (accelerator === CUSTOM_ACCELERATOR) {
+            this.setState({accelerator, acceleratorBonus: this.state.acceleratorBonus || 4});
+        } else {
+            const item = ACCELERATORS.find(a => a.typeId === accelerator);
+            this.setState({accelerator, acceleratorBonus: item.bonus, acceleratorDays: String(item.days)});
+        }
+    }
+
+    // The character's attribute implants, by name, for the "Current clone" row.
+    currentImplantNames() {
+        const bonusAttributes = [175, 176, 177, 178, 179];
+        return (Character.get(this.props.characterId).implants || [])
+            .filter(i => (i.dogmaAttributes || []).some(a => bonusAttributes.includes(a.attribute_id) && a.value > 0))
+            .map(i => i.name);
     }
 
     render() {
@@ -90,16 +152,35 @@ export default class ImplantProfilerPanel extends React.Component {
                 </div>
 
                 <div className="fit-actions" style={{marginTop: 0}}>
-                    <SelectField
+                    <AutoComplete
+                        id="acceleratorSearch"
                         floatingLabelText="Cerebral accelerator"
-                        value={this.state.acceleratorBonus}
-                        onChange={(e, i, acceleratorBonus) => this.setState({acceleratorBonus})}
-                        style={{width: 220}}
-                    >
-                        {ACCELERATOR_BONUSES.map(b =>
-                            <MenuItem key={b} value={b} primaryText={b === 0 ? 'None' : `+${b} to all attributes`}/>
-                        )}
-                    </SelectField>
+                        hintText="Type to search, e.g. boost 10"
+                        searchText={this.state.acceleratorSearch}
+                        dataSource={ACCELERATOR_OPTIONS}
+                        dataSourceConfig={{text: 'text', value: 'value'}}
+                        filter={(searchText, key) => this.filterAccelerators(searchText, key)}
+                        onUpdateInput={acceleratorSearch => this.setState({acceleratorSearch})}
+                        onNewRequest={(chosen, index) => this.handleAcceleratorPick(chosen, index)}
+                        // leaving the box with half-typed text shows the current choice again (after any pick lands)
+                        onBlur={() => setTimeout(() => this.setState(state => ({acceleratorSearch: optionText(state.accelerator)})), 0)}
+                        openOnFocus={true}
+                        maxSearchResults={ACCELERATOR_OPTIONS.length}
+                        menuProps={{maxHeight: 320, desktop: true}}
+                        listStyle={{maxHeight: 320, overflowY: 'auto'}}
+                        style={{width: 380}}
+                        fullWidth={true}
+                    />
+                    {this.state.accelerator === CUSTOM_ACCELERATOR &&
+                        <SelectField
+                            floatingLabelText="Bonus"
+                            value={this.state.acceleratorBonus}
+                            onChange={(e, i, acceleratorBonus) => this.setState({acceleratorBonus})}
+                            style={{width: 120}}
+                        >
+                            {CUSTOM_BONUSES.map(b => <MenuItem key={b} value={b} primaryText={`+${b}`}/>)}
+                        </SelectField>
+                    }
                     {this.state.acceleratorBonus > 0 &&
                         <TextField
                             id="acceleratorDays"
@@ -129,7 +210,14 @@ export default class ImplantProfilerPanel extends React.Component {
                                 const delta = r.time - current.time;
                                 return (
                                     <tr key={r.label} className={r === current ? 'profiler-current' : ''}>
-                                        <td>{r.label}</td>
+                                        <td>
+                                            {r.label}
+                                            {(r === current ? this.currentImplantNames().join(' · ') : r.detail) &&
+                                                <div className="profiler-implants">
+                                                    {r === current ? this.currentImplantNames().join(' · ') : r.detail}
+                                                </div>
+                                            }
+                                        </td>
                                         <td className="right num">{DateTimeHelper.niceCountdown(r.time)}</td>
                                         <td className="right num muted">{formatDate(new Date(Date.now() + r.time))}</td>
                                         <td className="right num" style={{color: Math.abs(delta) < 60000 ? 'var(--text-faint)' : (delta < 0 ? 'var(--good)' : 'var(--warn)')}}>

@@ -5,8 +5,8 @@ import React from 'react';
 import UpdateHelper from '../../helpers/UpdateHelper';
 import UpdateProgress from './UpdateProgress';
 
-// Strip across the top of the app while an update downloads and installs, when it's ready, or when one is available
-// to download (copies that can't update themselves).
+// Strip across the top of the app when an update is available (the user accepts it here), while it downloads and
+// installs, and when it's ready to restart into.
 export default class UpdateBanner extends React.Component {
     constructor(props) {
         super(props);
@@ -37,6 +37,7 @@ export default class UpdateBanner extends React.Component {
         }
 
         const ready = status.status === 'ready';
+        const canInstall = status.status === 'available' && status.canAutoInstall;
 
         if (busy) {
             return (
@@ -58,10 +59,16 @@ export default class UpdateBanner extends React.Component {
                     {ready ?
                         `PodStack ${status.version} is installed. Restart to start using it.` :
                         `PodStack ${status.version} is available.`}
+                    {status.error && <span className="update-banner-error"> Last attempt failed: {status.error}</span>}
                 </span>
+                {canInstall &&
+                    <button type="button" className="text-button" onClick={() => UpdateHelper.openRelease()}>
+                        What's new
+                    </button>
+                }
                 <button type="button" className="update-banner-action"
-                        onClick={() => (ready ? UpdateHelper.install() : UpdateHelper.openRelease())}>
-                    {ready ? 'Restart now' : 'Download'}
+                        onClick={() => (ready ? UpdateHelper.install() : canInstall ? UpdateHelper.download() : UpdateHelper.openRelease())}>
+                    {ready ? 'Restart now' : canInstall ? (status.error ? 'Try again' : 'Update now') : 'Download'}
                 </button>
                 <button type="button" className="text-button"
                         onClick={() => this.setState({dismissed: `${status.status}:${status.version}`})}>

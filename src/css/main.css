@@ -2125,3 +2125,20 @@ a:hover {
     flex: 1;
     min-width: 0;
 }
+
+.update-banner-error {
+    color: var(--warn);
+}
+
+.update-actions {
+    display: flex;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.profiler-implants {
+    margin-top: 2px;
+    font-size: 11px;
+    line-height: 15px;
+    color: var(--text-faint);
+}

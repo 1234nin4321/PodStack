@@ -2,7 +2,8 @@
 
 // Auto-update (main process).
 //
-// Releases are published on GitHub. For installed Windows copies (Squirrel), PodStack downloads the release's full
+// Releases are published on GitHub. New versions are checked for automatically, but nothing is downloaded until the
+// user accepts the update. For installed Windows copies (Squirrel), PodStack then downloads the release's full
 // .nupkg itself, so it can report byte-level progress, checks it against the SHA1 in the release's RELEASES file, then
 // hands the local folder to Squirrel's Update.exe to install, reading Update.exe's percentage output for the install
 // step. Other copies (the portable zip, Linux, macOS) can't replace themselves, so they're told a new version exists
@@ -29,6 +30,7 @@ let getWindow = () => undefined;
 // status: idle | checking | up-to-date | downloading | installing | ready | available | error
 // downloading adds received/total (bytes) and speed (bytes/s); installing adds percent
 let state = {status: 'idle'};
+let pendingRelease;   // the newer release found by the last check, until the user accepts or it's replaced
 
 function setState(next) {
     state = {...next, currentVersion: app.getVersion(), canAutoInstall: canAutoInstall(), checkedAt: next.checkedAt || state.checkedAt};
@@ -228,15 +230,26 @@ async function check() {
         return state;
     }
 
-    const version = release.tag_name.replace(/^v/, '');
-    if (!canAutoInstall()) {
-        setState({status: 'available', version, url: release.html_url, checkedAt});
+    // tell the user; downloading waits until they accept (startUpdate)
+    pendingRelease = release;
+    setState({status: 'available', version: release.tag_name.replace(/^v/, ''), url: release.html_url, checkedAt});
+    return state;
+}
+
+// The user accepted the update: download and install it in the background, reporting progress through setState.
+function startUpdate() {
+    if (state.status !== 'available' || pendingRelease === undefined || !canAutoInstall()) {
         return state;
     }
 
-    // runs in the background; progress arrives through setState
+    const release = pendingRelease;
+    const version = release.tag_name.replace(/^v/, '');
+    const checkedAt = state.checkedAt;
+
+    setState({status: 'downloading', version, url: release.html_url, checkedAt, received: 0, total: undefined, speed: 0});
     downloadAndInstall(release, version, checkedAt).catch(err => {
         log.warn('[Update] Download/install failed', err.message);
+        // back to "available" so the user can try again
         setState({status: 'available', version, url: release.html_url, checkedAt, error: err.message});
     });
 
@@ -261,6 +274,7 @@ export function initUpdater(windowGetter) {
 
     ipcMain.handle('update:get-status', () => ({...state, currentVersion: app.getVersion(), canAutoInstall: canAutoInstall()}));
     ipcMain.handle('update:check', () => check());
+    ipcMain.handle('update:download', () => startUpdate());
     ipcMain.handle('update:install', () => restartIntoUpdate());
     ipcMain.handle('update:open-release', () => {
         if (typeof state.url === 'string' && state.url.startsWith(`https://github.com/${REPOSITORY}/`)) {
