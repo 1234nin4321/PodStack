@@ -1910,8 +1910,9 @@ a:hover {
     color: var(--good);
 }
 
-.data-table tr.profiler-current td {
-    background: var(--accent-soft);
+/* the character's actual clone; the selected comparison row is highlighted separately */
+.data-table tr.profiler-current td:first-child {
+    font-weight: 700;
 }
 
 /* ---------------------------------------------------------------- Queue health */
@@ -2478,4 +2479,30 @@ a:hover {
 .plan-add-level:hover {
     color: var(--bg-0);
     background: var(--accent);
+}
+
+/* ---------------------------------------------------------------- Implant/accelerator comparison */
+
+.profiler-row {
+    cursor: pointer;
+}
+
+.profiler-row:hover td {
+    background: var(--panel-hover);
+}
+
+.data-table tr.profiler-selected td {
+    background: var(--accent-soft);
+    color: var(--text-strong);
+}
+
+.profiler-radio {
+    font-size: 16px;
+    vertical-align: -3px;
+    margin-right: 8px;
+    color: var(--accent);
+}
+
+.compare-header {
+    color: var(--accent);
 }

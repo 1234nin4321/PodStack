@@ -80,10 +80,19 @@ export default class TrainingProfileHelper {
      * @returns {number} training time in ms
      */
     static simulate(characterId, queue, implants, accelerator) {
+        return TrainingProfileHelper.simulateItems(characterId, queue, implants, accelerator)
+            .reduce((total, item) => total + item.time, 0);
+    }
+
+    /**
+     * Per-skill training times of a queue under a clone setup, in queue order: [{id, level, time}] for each skill
+     * level (notes and remaps are skipped). Same arguments as simulate().
+     */
+    static simulateItems(characterId, queue, implants, accelerator) {
         const withoutBooster = TrainingProfileHelper.itemTimes(characterId, queue, implants, 0);
 
         if (accelerator === undefined || !(accelerator.bonus > 0) || !(accelerator.days > 0)) {
-            return withoutBooster.reduce((total, t) => total + t, 0);
+            return withoutBooster;
         }
 
         // SP accrues linearly, so a skill straddling the expiry trains the boosted share at the boosted rate
@@ -92,20 +101,21 @@ export default class TrainingProfileHelper {
         const window = accelerator.days * 24 * 3600 * 1000;
         let elapsed = 0;
 
-        boosted.forEach((fast, i) => {
+        return boosted.map((fast, i) => {
             const remainingWindow = Math.max(0, window - elapsed);
-            if (fast <= remainingWindow) {
-                elapsed += fast;
+            let time;
+            if (fast.time <= remainingWindow) {
+                time = fast.time;
             } else {
-                const doneWhileBoosted = fast > 0 ? remainingWindow / fast : 1;
-                elapsed += remainingWindow + (1 - doneWhileBoosted) * withoutBooster[i];
+                const doneWhileBoosted = fast.time > 0 ? remainingWindow / fast.time : 1;
+                time = remainingWindow + (1 - doneWhileBoosted) * withoutBooster[i].time;
             }
+            elapsed += time;
+            return {...fast, time};
         });
-
-        return elapsed;
     }
 
-    // Per-skill training times with the given implants and an extra flat bonus, in queue order (skills only).
+    // Per-skill training times ([{id, level, time}]) with the given implants and an extra flat bonus, in queue order.
     static itemTimes(characterId, queue, implants, extraBonus) {
         const planCharacter = new PlanCharacter(characterId);
         const base = TrainingProfileHelper.getBaseAttributes(characterId);
@@ -125,7 +135,7 @@ export default class TrainingProfileHelper {
             } else if (item.type === 'skill') {
                 const before = planCharacter.queue.length;
                 planCharacter.planSkill(item.id, item.level);
-                planCharacter.queue.slice(before).forEach(q => times.push(q.time));
+                planCharacter.queue.slice(before).forEach(q => times.push({id: q.id, level: q.level, time: q.time}));
             }
         }
 

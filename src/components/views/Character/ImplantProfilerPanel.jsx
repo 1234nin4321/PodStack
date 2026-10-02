@@ -43,12 +43,18 @@ const ATTRIBUTE_ORDER = ['perception', 'memory', 'willpower', 'intelligence', 'c
 
 const formatDate = date => date.toLocaleDateString(undefined, {day: 'numeric', month: 'short', year: 'numeric'});
 
-// Compares a queue's training time under different implant sets and cerebral accelerators.
+// Short name of an implant scenario for column headers, e.g. "Improved +5".
+const scenarioShortLabel = implants => (implants === CURRENT_CLONE ? 'Current clone' :
+    implants === 0 ? 'No implants' : `${IMPLANT_GRADES.find(g => g.bonus === implants).grade} +${implants}`);
+
+// Compares a queue's training time under different implant sets and cerebral accelerators. The selected row and
+// accelerator are reported through onProfileChange, so the plan can show per-skill times for that setup.
 export default class ImplantProfilerPanel extends React.Component {
     constructor(props) {
         super(props);
 
         this.state = {
+            selectedImplants: CURRENT_CLONE,   // the implant row picked for comparison in the plan
             accelerator: NO_ACCELERATOR,   // NO_ACCELERATOR, CUSTOM_ACCELERATOR or an accelerator's typeId
             acceleratorSearch: 'None',      // text in the search box
             acceleratorBonus: 0,
@@ -56,10 +62,38 @@ export default class ImplantProfilerPanel extends React.Component {
         };
     }
 
-    componentDidUpdate(prevProps) {
+    componentDidUpdate(prevProps, prevState) {
         if (prevProps.queue !== this.props.queue) {
             this.results = undefined;
         }
+
+        const changed = ['selectedImplants', 'accelerator', 'acceleratorBonus', 'acceleratorDays']
+            .some(key => prevState[key] !== this.state[key]);
+        if (changed && this.props.onProfileChange !== undefined) {
+            this.props.onProfileChange(this.getProfile());
+        }
+    }
+
+    // The setup to compare in the plan, or undefined when it's just the current clone with no accelerator.
+    getProfile() {
+        const {selectedImplants, acceleratorBonus, acceleratorDays} = this.state;
+        const days = parseFloat(acceleratorDays);
+        const hasAccelerator = acceleratorBonus > 0 && days > 0;
+
+        if (selectedImplants === CURRENT_CLONE && !hasAccelerator) {
+            return undefined;
+        }
+
+        const label = [
+            scenarioShortLabel(selectedImplants),
+            hasAccelerator ? `+${acceleratorBonus} accel ${days}d` : undefined,
+        ].filter(Boolean).join(' · ');
+
+        return {
+            implants: selectedImplants,
+            accelerator: hasAccelerator ? {bonus: acceleratorBonus, days} : undefined,
+            label,
+        };
     }
 
     // Replaying the queue per scenario is the slow part, so results are kept until the inputs change.
@@ -209,8 +243,16 @@ export default class ImplantProfilerPanel extends React.Component {
                             {results.map(r => {
                                 const delta = r.time - current.time;
                                 return (
-                                    <tr key={r.label} className={r === current ? 'profiler-current' : ''}>
+                                    <tr
+                                        key={r.label}
+                                        className={`profiler-row ${r === current ? 'profiler-current' : ''} ${r.implants === this.state.selectedImplants ? 'profiler-selected' : ''}`}
+                                        onClick={() => this.setState({selectedImplants: r.implants})}
+                                        title="Compare this setup in the plan"
+                                    >
                                         <td>
+                                            <i className="material-icons profiler-radio">
+                                                {r.implants === this.state.selectedImplants ? 'radio_button_checked' : 'radio_button_unchecked'}
+                                            </i>
                                             {r.label}
                                             {(r === current ? this.currentImplantNames().join(' · ') : r.detail) &&
                                                 <div className="profiler-implants">
@@ -231,8 +273,8 @@ export default class ImplantProfilerPanel extends React.Component {
                 }
 
                 <p className="muted analysis-note">
-                    Base attributes are EVE's values minus your current implants (shown as +N). Times assume training
-                    starts now. EVE doesn't report boosters, so PodStack can't tell whether an accelerator is active;
+                    Pick a row and/or an accelerator to compare it skill by skill in the plan below. Base attributes are
+                    EVE's values minus your current implants (shown as +N). Times assume training starts now. EVE doesn't report boosters, so PodStack can't tell whether an accelerator is active;
                     use the setting above to see its effect.
                 </p>
             </Panel>

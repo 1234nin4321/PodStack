@@ -60,6 +60,12 @@ const styles = {
         paddingRight: 3,
         paddingLeft: 6,
     },
+    planRowColumnCompare: {
+        height: 20,
+        width: 120,
+        paddingRight: 6,
+        paddingLeft: 6,
+    },
     planRowColumnSPh: {
         height: 20,
         width: 40,
@@ -82,6 +88,19 @@ const styles = {
 };
 
 const LEVEL_NUMERALS = ['0', 'I', 'II', 'III', 'IV', 'V'];
+
+// "Change" column for an implant/accelerator comparison: time saved (green, minus) or added (amber, plus).
+function changeCell(base, compared) {
+    const delta = compared - base;
+    if (Math.abs(delta) < 1000) {
+        return <span style={{color: 'var(--text-faint)'}}>—</span>;
+    }
+    return (
+        <span style={{color: delta < 0 ? 'var(--good)' : 'var(--warn)'}}>
+            {delta < 0 ? '−' : '+'}{DateHelper.niceCountdown(Math.abs(delta))}
+        </span>
+    );
+}
 
 const SortableItem = SortableElement(
     class SortableItemA extends React.PureComponent {
@@ -126,6 +145,16 @@ const SortableItem = SortableElement(
                             <TableRowColumn style={this.props.columnTime}>
                                 {DateHelper.niceCountdown(this.props.value.time)}
                             </TableRowColumn>
+                            {this.props.compare &&
+                                <TableRowColumn style={styles.planRowColumnCompare}>
+                                    {DateHelper.niceCountdown(this.props.compare.times[`${this.props.value.id}:${this.props.value.level}`] || 0)}
+                                </TableRowColumn>
+                            }
+                            {this.props.compare &&
+                                <TableRowColumn style={styles.planRowColumnCompare}>
+                                    {changeCell(this.props.value.time, this.props.compare.times[`${this.props.value.id}:${this.props.value.level}`] || 0)}
+                                </TableRowColumn>
+                            }
                             <TableRowColumn style={this.props.columnMarketGroup}>
                                 {AllSkills.skills[this.props.value.id].market_group_name}
                             </TableRowColumn>
@@ -159,6 +188,8 @@ const SortableItem = SortableElement(
                                 {this.props.value.title}
                             </TableRowColumn>
                             <TableRowColumn style={this.props.columnTime} />
+                            {this.props.compare && <TableRowColumn style={styles.planRowColumnCompare} />}
+                            {this.props.compare && <TableRowColumn style={styles.planRowColumnCompare} />}
                             <TableRowColumn style={this.props.columnMarketGroup} />
                             <TableRowColumn style={this.props.columnAttributes} />
                             <TableRowColumn style={this.props.columnSPhs} />
@@ -211,6 +242,7 @@ const SortableList = SortableContainer(
                                     onEdit={this.props.onEdit}
                                     onAddLevel={this.props.onAddLevel}
                                     canAddLevel={canAddLevel}
+                                    compare={this.props.compare}
                                     idx={index}
                                     highlighted={highlighted}
                                     columnTime={this.props.columnTime}
@@ -236,9 +268,11 @@ export default class SkillPlanTable extends React.Component {
     constructor(props) {
         super(props);
 
+        // start from the plan passed in: the table is created fresh when switching from the Training Queue to a plan,
+        // and componentWillReceiveProps only sees later changes
         this.state = {
-            items: [],
-            totalTime: 0,
+            items: props.items || [],
+            totalTime: props.totalTime || 0,
             selection: [],
             columnTimeChecked: true,
             columnMarketGroupChecked: true,
@@ -386,6 +420,14 @@ export default class SkillPlanTable extends React.Component {
                         <TableRow style={styles.planRow}>
                             <TableHeaderColumn style={styles.planRowColumnSkill}>Skill</TableHeaderColumn>
                             <TableHeaderColumn style={this.state.columnTimeStyle}>Training Time</TableHeaderColumn>
+                            {this.props.compare &&
+                                <TableHeaderColumn style={styles.planRowColumnCompare} tooltip={this.props.compare.label}>
+                                    <span className="compare-header">{this.props.compare.label}</span>
+                                </TableHeaderColumn>
+                            }
+                            {this.props.compare &&
+                                <TableHeaderColumn style={styles.planRowColumnCompare}>Change</TableHeaderColumn>
+                            }
                             <TableHeaderColumn style={this.state.columnMarketGroupStyle}>Group</TableHeaderColumn>
                             <TableHeaderColumn style={this.state.columnAttributesStyle}>Attributes</TableHeaderColumn>
                             <TableHeaderColumn style={this.state.columnSPhsStyle}>SP/h</TableHeaderColumn>
@@ -412,6 +454,7 @@ export default class SkillPlanTable extends React.Component {
                         selection={this.state.selection}
                         onEdit={this.props.onEdit}
                         onAddLevel={this.props.onAddLevel}
+                        compare={this.props.compare}
                         onMouseDown={this.handleMouseDown}
                         onRemove={this.handleDelete}
                         onSortEnd={this.handleSortEnd}
@@ -437,6 +480,12 @@ export default class SkillPlanTable extends React.Component {
                                     `${this.state.items.length} skills`
                                 }</TableHeaderColumn>
                             <TableHeaderColumn style={this.state.columnTimeStyle}>{DateHelper.niceCountdown(this.state.totalTime)}</TableHeaderColumn>
+                            {this.props.compare &&
+                                <TableHeaderColumn style={styles.planRowColumnCompare}>{DateHelper.niceCountdown(this.props.compare.total)}</TableHeaderColumn>
+                            }
+                            {this.props.compare &&
+                                <TableHeaderColumn style={styles.planRowColumnCompare}>{changeCell(this.state.totalTime, this.props.compare.total)}</TableHeaderColumn>
+                            }
                             <TableHeaderColumn style={this.state.columnMarketGroupStyle} />
                             <TableHeaderColumn style={this.state.columnAttributesStyle} />
                             <TableHeaderColumn style={this.state.columnSPhsStyle} />

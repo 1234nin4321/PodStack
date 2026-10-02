@@ -1,3 +1,8 @@
+## 0.1.9 Alpha (0.1.9-alpha)
+* Implants & Boosters: pick an implant set and/or a cerebral accelerator and the open plan (and the Training Queue)
+  gains two columns: each skill's time with that setup, and the change from your current clone, plus totals.
+* Fixed: opening a plan from the Plans list showed an empty plan until it was clicked a second time.
+
 ## 0.1.8 Alpha (0.1.8-alpha)
 * Skill plans: hovering a skill below level V shows "+ Level N" to add the next level straight after it; the plan's
   training times are recalculated.

@@ -78,6 +78,7 @@ export default class Plans extends React.Component {
             fitPlannerOpen: false,
             mergeDialogOpen: false,
             implantsOpen: false,
+            compareProfile: undefined,   // implant/accelerator setup picked in the Implants panel, compared per skill
 
             // the combined queue of all switched-on plans; shown instead of a plan while showQueue is set
             showQueue: false,
@@ -562,6 +563,29 @@ export default class Plans extends React.Component {
     }
 
 
+    // Per-skill times for the setup picked in the Implants panel: {label, times: {"id:level": ms}, total}, or
+    // undefined. Cached until the queue or the setup changes.
+    getComparison(queue) {
+        const profile = this.state.compareProfile;
+        if (profile === undefined || !queue.some(item => item.type === 'skill')) {
+            return undefined;
+        }
+
+        if (this.comparison === undefined || this.comparison.queue !== queue || this.comparison.profile !== profile) {
+            const items = TrainingProfileHelper.simulateItems(this.props.characterId, queue, profile.implants, profile.accelerator);
+            const times = {};
+            items.forEach(item => times[`${item.id}:${item.level}`] = item.time);
+
+            this.comparison = {
+                queue,
+                profile,
+                result: {label: profile.label, times, total: items.reduce((total, item) => total + item.time, 0)},
+            };
+        }
+
+        return this.comparison.result;
+    }
+
     renderRemapDialog() {
         const character = Character.get(this.props.characterId);
         const bonuses = TrainingProfileHelper.getImplantBonuses(this.props.characterId);
@@ -720,7 +744,8 @@ export default class Plans extends React.Component {
                         characterId={this.props.characterId}
                         queue={this.state.showQueue ? this.state.queue : this.state.items}
                         label={this.state.showQueue ? 'Training Queue' : (this.state.skillPlanName || 'Unsaved plan')}
-                        onClose={() => this.setState({implantsOpen: false})}
+                        onProfileChange={compareProfile => this.setState({compareProfile})}
+                        onClose={() => this.setState({implantsOpen: false, compareProfile: undefined})}
                     />
                 }
 
@@ -776,7 +801,8 @@ export default class Plans extends React.Component {
                         }
                     >
                         <SkillbookPanel characterId={this.props.characterId} queue={this.state.queue}/>
-                        <TrainingQueueTable queue={this.state.queue} time={this.state.queueTime}/>
+                        <TrainingQueueTable queue={this.state.queue} time={this.state.queueTime}
+                                            compare={this.getComparison(this.state.queue)}/>
                     </Panel>
                     :
                     <Panel
@@ -817,6 +843,7 @@ export default class Plans extends React.Component {
                             onRemove={this.handleItemRemove}
                             onSkillMove={this.handleItemMove}
                             onAddLevel={this.handleAddNextLevel}
+                            compare={this.getComparison(this.state.items)}
                             items={this.state.items}
                             totalTime={this.state.totalTime}
                             selected={this.state.selected}
