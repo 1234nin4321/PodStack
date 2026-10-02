@@ -1,3 +1,12 @@
+## 0.2.16 Alpha (0.2.16-alpha)
+* Ship Browser in the left menu: every ship by class, race and tech level, whether the pilot can fly it, how long
+  until they can, the skills it needs, and Add skills to put them in a new or existing plan.
+* EVE time and the countdown to daily downtime under Tranquility's status in the left menu.
+* The tray icon's tooltip shows how long each character's queue has left; its menu lists each character's skill in
+  training, and clicking one opens them.
+* Fixed: Loyalty Points could show each corporation twice after two refreshes overlapped.
+* `npm run update-ships` regenerates the ship data from EVE's static data export.
+
 ## 0.2.15 Alpha (0.2.15-alpha)
 * Optimise asks how: with the current attributes, or with a remap. With a remap, PodStack works out the remap that
   trains the plan fastest, adds it at the start of the plan (or changes the remap already there), reorders around it

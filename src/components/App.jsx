@@ -12,6 +12,7 @@ import UpdateBanner from './ui/UpdateBanner';
 import EsiStatusBanner from './ui/EsiStatusBanner';
 import MarketOrders from './views/MarketOrders';
 import AssetSearch from './views/AssetSearch';
+import ShipBrowser from './views/ShipBrowser';
 import ConfirmDialogHost from './dialogs/ConfirmDialogHost';
 import Overview from './views/Overview';
 import SkillBrowser from './views/SkillBrowser';
@@ -58,6 +59,7 @@ export default class App extends React.Component {
                                 <Route path="/sp-farming" component={SpFarming} />
                                 <Route path="/queue-health" component={QueueHealth} />
                                 <Route path="/skill-browser" component={SkillBrowser} />
+                                <Route path="/ship-browser" component={ShipBrowser} />
                                 <Route path="/contracts" component={Contracts} />
                                 <Route path="/market-orders" component={MarketOrders} />
                                 <Route path="/asset-search" component={AssetSearch} />

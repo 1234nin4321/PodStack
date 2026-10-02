@@ -154,6 +154,37 @@ ipcMain.on('theme:background', (event, color) => {
 ipcMain.handle('dialog:save', (event, options) => dialog.showSaveDialog(mainWindow, options));
 // Clicking a desktop alert brings the window back from the tray.
 ipcMain.on('window:show', () => showWindow());
+// The window keeps the tray showing each character's training (see helpers/TrayHelper.js).
+ipcMain.on('tray:update', (event, info) => {
+    if (trayIcon === undefined || trayIcon.isDestroyed() || info === null || typeof info !== 'object') {
+        return;
+    }
+    if (typeof info.tooltip === 'string') {
+        trayIcon.setToolTip(info.tooltip);
+    }
+    if (Array.isArray(info.characters)) {
+        setTrayMenu(info.characters);
+    }
+});
+
+// Tray menu: a line per character (opening them), then Show and Quit.
+function setTrayMenu(characters) {
+    const items = characters
+        .filter(c => c !== null && typeof c === 'object' && typeof c.label === 'string')
+        .map(c => ({
+            label: c.label,
+            click: () => {
+                showWindow();
+                mainWindow.webContents.send('tray:open-character', String(c.id));
+            },
+        }));
+    trayIcon.setContextMenu(Menu.buildFromTemplate([
+        ...items,
+        ...(items.length > 0 ? [{type: 'separator'}] : []),
+        {label: 'Show', click: () => showWindow()},
+        {label: 'Quit', click: () => quitApp()},
+    ]));
+}
 // The window can't use the clipboard or shell modules itself any more (see helpers/NativeHelper.js).
 ipcMain.handle('clipboard:read-text', () => clipboard.readText());
 ipcMain.handle('clipboard:write-text', (event, text) => {
@@ -295,11 +326,7 @@ const createWindow = () => {
 
     trayIcon = new Tray(iconPath);
     trayIcon.setToolTip('PodStack');
-    let contextMenu = Menu.buildFromTemplate([
-        {label: 'Show', click: () => showWindow()},
-        {label: 'Quit', click: () => quitApp()}
-    ]);
-    trayIcon.setContextMenu(contextMenu);
+    setTrayMenu([]);
     trayIcon.on('click', () => showWindow());
 
     // Minimising goes to the taskbar, or to the tray for those who chose that for closing.

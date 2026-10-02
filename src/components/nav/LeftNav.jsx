@@ -15,6 +15,7 @@ import appProperties from '../../../resources/properties';
 const sections = [
     {path: '/', label: 'Character Overview', icon: 'dashboard', exact: true},
     {path: '/skill-browser', label: 'Skill Browser', icon: 'account_tree'},
+    {path: '/ship-browser', label: 'Ship Browser', icon: 'rocket_launch'},
     {path: '/queue-health', label: 'Queue Health', icon: 'monitor_heart', badge: QueueHealthHelper.countProblems},
     {path: '/sp-farming', label: 'SP Farming', icon: 'opacity'},
     {path: '/contracts', label: 'All Contracts', icon: 'assignment'},

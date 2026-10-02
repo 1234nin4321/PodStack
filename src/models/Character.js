@@ -74,6 +74,11 @@ class Character {
                 this[key] = [];
             }
         });
+        // saved before overlapping refreshes stopped doubling them: one line per corporation
+        if (Array.isArray(this.loyalty_points)) {
+            const seen = new Set();
+            this.loyalty_points = this.loyalty_points.filter(o => !seen.has(o.corporation_id) && seen.add(o.corporation_id));
+        }
         ['nextRefreshes', 'mailLabels', 'mailingLists'].forEach(key => {
             if (this[key] === null || typeof this[key] !== 'object' || Array.isArray(this[key])) {
                 this[key] = {};
@@ -1101,15 +1106,17 @@ class Character {
                     'esi-characters.read_loyalty.v1'
                 );
 
-                this.loyalty_points = [];
+                // built aside and swapped in whole: two overlapping refreshes pushing into the same list doubled its lines
+                const points = [];
                 for(let o of data) {
                     if (o.loyalty_points > 0) {
                         o.corporation = await client.get('corporations/' + o.corporation_id);
-                        this.loyalty_points.push(o);
+                        points.push(o);
                     }
                 }
 
-                this.loyalty_points.sort((a, b) => a.corporation.name.localeCompare(b.corporation.name));
+                points.sort((a, b) => a.corporation.name.localeCompare(b.corporation.name));
+                this.loyalty_points = points;
 
                 this.markRefreshed('loyalty_points');
             } catch (err) {

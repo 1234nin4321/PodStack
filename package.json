@@ -1,7 +1,7 @@
 {
   "name": "podstack",
   "productName": "PodStack",
-  "version": "0.2.15-alpha",
+  "version": "0.2.16-alpha",
   "description": "Character Manager for EVE Online",
   "author": "1234nin4321",
   "license": "AGPL-3.0-only",
@@ -16,7 +16,8 @@
     "publish": "electron-forge publish",
     "lint": "eslint --cache .",
     "stats": "node scripts/stats.js",
-    "update-skills": "node scripts/update-skills.js"
+    "update-skills": "node scripts/update-skills.js",
+    "update-ships": "node scripts/update-ships.js"
   },
   "dependencies": {
     "electron-log": "^5.4.4",
