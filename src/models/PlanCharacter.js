@@ -461,7 +461,8 @@ class PlanCharacter {
             let spPerHour = (this.attributes[skill.primary_attribute] +
                 (this.attributes[skill.secondary_attribute] / 2)) * 60;
 
-            if (!this.isOmega) {
+            // Alpha clones train at half speed; a character not known to be Alpha is planned at Omega speed
+            if (this.isOmega === false) {
                 spPerHour *= 0.5;
             }
 
@@ -473,7 +474,8 @@ class PlanCharacter {
                         && (this.bannedSkillLevel !== undefined && this.bannedSkillLevel <= i)))
                 ) {
                     const currentSP = skill.skillpoints_in_skill > skill.planned_skillpoints_in_skill ? skill.skillpoints_in_skill : skill.planned_skillpoints_in_skill;
-                    const spForLevel = 250 * skill.training_time_multiplier * (Math.sqrt(32) ** (i - 1));
+                    // EVE rounds each level's skill points up (e.g. 1,415 and 45,255 for a rank 1 skill)
+                    const spForLevel = Math.ceil(250 * skill.training_time_multiplier * (32 ** ((i - 1) / 2)));
                     const missingSPforLevel = spForLevel - currentSP;
 
                     let time = missingSPforLevel * (3600 / spPerHour);

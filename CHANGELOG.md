@@ -1,3 +1,10 @@
+## 0.2.10 Alpha (0.2.10-alpha)
+* Fixed: skill plan times were doubled for Omega characters PodStack couldn't confirm as Omega (e.g. under 5M SP).
+  Omega or Alpha is now read from the training speed in EVE's skill queue, and plans assume Omega unless a character
+  is known to be Alpha.
+* Skill plan times now match EVE exactly: each level's skill points are rounded up as EVE does.
+* Checked all 512 skills (rank, attributes, prerequisites) against EVE's live data: all correct.
+
 ## 0.2.9 Alpha (0.2.9-alpha)
 * Skill plans: the Implants button is now "Implants & Accelerators". It shows the cerebral accelerator the character
   has active and compares the plan with it for the time it has left (pick another, or None, to compare that instead).

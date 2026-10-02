@@ -54,7 +54,8 @@ export default class RemapHelper {
         let hours = 0;
         for (const p of pairs) {
             const spPerHour = ((attributes[p.primary] + implants) + (attributes[p.secondary] + implants) / 2) * 60;
-            hours += p.sp / (isOmega ? spPerHour : spPerHour / 2);
+            // half speed only for a character known to be Alpha
+            hours += p.sp / (isOmega === false ? spPerHour / 2 : spPerHour);
         }
         return hours * 3600 * 1000;
     }

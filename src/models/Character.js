@@ -11,6 +11,7 @@ import AuthorizedCharacter from './AuthorizedCharacter';
 
 import appProperties from '../../resources/properties';
 import alphaSkillSet from '../../resources/alpha_skill_set';
+import AllSkills from '../../resources/all_skills';
 import DateTimeHelper from '../helpers/DateTimeHelper';
 import BulkIdResolver from '../helpers/BulkIdResolver';
 import LocationHelper from '../helpers/LocationHelper';
@@ -239,7 +240,39 @@ class Character {
         return Math.floor(totalSp);
     }
 
+    /**
+     * How fast the current skill really trains (from EVE's skill queue) compared with full Omega speed for the
+     * character's attributes: about 1 for Omega, 0.5 for Alpha, more with an accelerator the attributes don't include.
+     *
+     * @returns {number|undefined} undefined when nothing is training or the numbers aren't there
+     */
+    getTrainingSpeedRatio() {
+        const skill = this.getCurrentSkill();
+        const info = skill !== undefined ? AllSkills.skills[skill.skill_id] : undefined;
+        if (info === undefined || this.attributes === undefined) {
+            return undefined;
+        }
+
+        const hours = (new Date(skill.finish_date) - new Date(skill.start_date)) / 3600000;
+        const fullSpeed = ((this.attributes[info.primary_attribute] || 0) + (this.attributes[info.secondary_attribute] || 0) / 2) * 60;
+        if (!(hours > 0.05) || !(fullSpeed > 0) || !(skill.level_end_sp > skill.training_start_sp)) {
+            return undefined;
+        }
+        return (skill.level_end_sp - skill.training_start_sp) / hours / fullSpeed;
+    }
+
     isOmega() {
+        // the training speed tells: Alpha clones train at half speed
+        const ratio = this.getTrainingSpeedRatio();
+        if (ratio !== undefined) {
+            if (ratio >= 0.9) {
+                return true;
+            }
+            if (ratio >= 0.45 && ratio <= 0.56) {
+                return false;
+            }
+        }
+
         // if they have >5 mil sp and a skill actively training, must be omega
         if ((this.total_sp > 5000000) && (this.getCurrentSkill() != null)) {
             return true;
@@ -261,10 +294,9 @@ class Character {
             return true;
         }
 
-        // if they have any skills starting >24 hours in the future with a scheduled finish date, must be omega
-        if (this.skills.find(o =>
-                (new Date(o.start_date).getTime()) > (new Date().getTime() + 24*60*60) &&
-                o.hasOwnProperty('finish_date')
+        // if they have queued skills starting more than 24 hours from now, must be omega
+        if ((this.skillQueue || []).find(o =>
+                o.finish_date !== undefined && new Date(o.start_date).getTime() > Date.now() + 24 * 3600 * 1000
             ) !== undefined) {
             return true;
         }
