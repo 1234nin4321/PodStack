@@ -18,20 +18,29 @@ import Api from './Character/Api';
 import Assets from './Character/Assets';
 import Industry from './Character/Industry';
 import Planets from './Character/Planets';
+import Wallet from './Character/Wallet';
+import Clones from './Character/Clones';
 import {CloneStateBadge, TokenStatusDot} from '../ui/CharacterBadges';
 import ErrorBoundary from '../ui/ErrorBoundary';
 import AcceleratorBadge from '../ui/AcceleratorBadge';
 
-const pages = [
-    {key: 'summary', label: 'Summary', icon: 'assessment'},
-    {key: 'skills', label: 'Skills', icon: 'library_books'},
-    {key: 'plans', label: 'Plans', icon: 'format_list_numbered'},
-    {key: 'mails', label: 'Mails', icon: 'mail'},
-    {key: 'contracts', label: 'Contracts', icon: 'assignment'},
-    {key: 'assets', label: 'Assets', icon: 'inventory_2'},
-    {key: 'industry', label: 'Industry', icon: 'precision_manufacturing'},
-    {key: 'planets', label: 'PI', icon: 'public'},
-    {key: 'api', label: 'API', icon: 'vpn_key'},
+// two rows of tabs: the pilot first, then ISK and stuff
+const pageRows = [
+    [
+        {key: 'summary', label: 'Summary', icon: 'assessment'},
+        {key: 'skills', label: 'Skills', icon: 'library_books'},
+        {key: 'plans', label: 'Plans', icon: 'format_list_numbered'},
+        {key: 'clones', label: 'Clones', icon: 'people_outline'},
+        {key: 'mails', label: 'Mails', icon: 'mail'},
+        {key: 'api', label: 'API', icon: 'vpn_key'},
+    ],
+    [
+        {key: 'wallet', label: 'Wallet', icon: 'account_balance_wallet'},
+        {key: 'contracts', label: 'Contracts', icon: 'assignment'},
+        {key: 'assets', label: 'Assets', icon: 'inventory_2'},
+        {key: 'industry', label: 'Industry', icon: 'precision_manufacturing'},
+        {key: 'planets', label: 'PI', icon: 'public'},
+    ],
 ];
 
 export default class Character extends React.Component {
@@ -143,6 +152,12 @@ export default class Character extends React.Component {
             case 'skills':
                 component = <Skills characterId={characterId}/>;
                 break;
+            case 'clones':
+                component = <Clones key={characterId} characterId={characterId}/>;
+                break;
+            case 'wallet':
+                component = <Wallet key={characterId} characterId={characterId}/>;
+                break;
             case 'contracts':
                 component = <Contracts characterId={characterId}/>;
                 break;
@@ -170,17 +185,21 @@ export default class Character extends React.Component {
                 {this.renderHero(char)}
 
                 <div className="tabs">
-                    {pages.map(page =>
-                        <button
-                            key={page.key}
-                            className={`tab ${this.state.currentPage === page.key ? 'active' : ''}`}
-                            onClick={() => this.switchPage(page.key)}
-                        >
-                            <i className="material-icons">{page.icon}</i>
-                            {page.label}
-                            {page.key === 'mails' && char.getUnreadMailCount() > 0 &&
-                                <span className="tab-badge" title={`${char.getUnreadMailCount()} unread`}>{char.getUnreadMailCount()}</span>}
-                        </button>
+                    {pageRows.map((row, i) =>
+                        <div key={i} className="tab-row">
+                            {row.map(page =>
+                                <button
+                                    key={page.key}
+                                    className={`tab ${this.state.currentPage === page.key ? 'active' : ''}`}
+                                    onClick={() => this.switchPage(page.key)}
+                                >
+                                    <i className="material-icons">{page.icon}</i>
+                                    {page.label}
+                                    {page.key === 'mails' && char.getUnreadMailCount() > 0 &&
+                                        <span className="tab-badge" title={`${char.getUnreadMailCount()} unread`}>{char.getUnreadMailCount()}</span>}
+                                </button>
+                            )}
+                        </div>
                     )}
                 </div>
 

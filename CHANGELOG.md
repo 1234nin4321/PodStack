@@ -1,3 +1,12 @@
+## 0.2.11 Alpha (0.2.11-alpha)
+* Character tabs are now in two rows: the pilot (Summary, Skills, Plans, Clones, Mails, API) and ISK and stuff
+  (Wallet, Contracts, Assets, Industry, PI).
+* New Wallet tab: the last 30 days of the wallet journal and market transactions, with search, and income, expenses
+  and net for the period. Uses the existing Read Wallet permission, so no need to log in again.
+* New Clones tab: the active clone's implants, and every jump clone grouped by station in collapsible boxes, with
+  the home station and when the next clone jump is available.
+* Tranquility's status and player count are shown at the top of the left menu.
+
 ## 0.2.10 Alpha (0.2.10-alpha)
 * Fixed: skill plan times were doubled for Omega characters PodStack couldn't confirm as Omega (e.g. under 5M SP).
   Omega or Alpha is now read from the training speed in EVE's skill queue, and plans assume Omega unless a character

@@ -125,6 +125,8 @@ export default {
         'attributes': 3600,
         'loyalty_points': 3600,
         'wallet': 3600,
+        'wallet_journal': 3600,
+        'wallet_transactions': 3600,
         'implants': 3600,
         'clones': 3600,
         'skills': 3600,

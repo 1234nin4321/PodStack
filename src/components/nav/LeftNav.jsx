@@ -6,6 +6,7 @@ import {NavLink, withRouter} from 'react-router-dom';
 import Character from '../../models/Character';
 import AuthorizedCharacter from '../../models/AuthorizedCharacter';
 import {TokenStatusDot} from '../ui/CharacterBadges';
+import ServerStatus from './ServerStatus';
 import QueueHealthHelper from '../../helpers/QueueHealthHelper';
 import IndustryHelper from '../../helpers/IndustryHelper';
 import appProperties from '../../../resources/properties';
@@ -49,6 +50,8 @@ class LeftNav extends React.Component {
                         <div className="nav-brand-sub">Capsuleer Manager · {appProperties.display_version}</div>
                     </div>
                 </div>
+
+                <ServerStatus/>
 
                 <div className="nav-scroll">
                     <div className="nav-section">Command</div>

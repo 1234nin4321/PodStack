@@ -418,6 +418,8 @@ class Character {
             ['corporation', () => this.refreshCorporation()],
             ['alliance', () => this.refreshAlliance()],
             ['wallet', () => this.refreshWallet()],
+            ['wallet journal', () => this.refreshWalletJournal()],
+            ['wallet transactions', () => this.refreshWalletTransactions()],
             ['implants', () => this.refreshImplants()],
             ['jump clones', () => this.refreshJumpClones()],
             ['location', () => this.refreshLocation()],
@@ -728,6 +730,94 @@ class Character {
             this.balance = await client.get('characters/' + this.id + '/wallet');
             this.save();
             this.markRefreshed('wallet');
+        }
+    }
+
+    // The last 30 days of ISK movements (ESI keeps no more), newest first, with the parties' names resolved.
+    async refreshWalletJournal() {
+        if (this.shouldRefresh('wallet_journal')) {
+            const client = new EsiClient();
+            await client.authChar(AuthorizedCharacter.get(this.id));
+
+            try {
+                const raw = await client.getAllPages('characters/' + this.id + '/wallet/journal',
+                    'esi-wallet.read_character_wallet.v1'
+                );
+                const names = await NameHelper.resolve([
+                    ...raw.map(e => e.first_party_id),
+                    ...raw.map(e => e.second_party_id),
+                ]);
+
+                this.walletJournal = raw
+                    .map(e => ({
+                        id: e.id,
+                        date: e.date,
+                        ref_type: e.ref_type,
+                        amount: e.amount || 0,
+                        balance: e.balance,
+                        description: e.description,
+                        reason: e.reason,
+                        first_party: names[e.first_party_id],
+                        second_party: names[e.second_party_id],
+                        tax: e.tax,
+                    }))
+                    .sort((a, b) => new Date(b.date) - new Date(a.date));
+
+                this.markRefreshed('wallet_journal');
+            } catch (err) {
+                if (err === 'Scope missing') {
+                    this.markFailedNoScope('wallet_journal');
+                }
+            }
+
+            this.save();
+        }
+    }
+
+    // Market buys and sells, newest first (ESI returns the latest 2500), with item, client and location names.
+    async refreshWalletTransactions() {
+        if (this.shouldRefresh('wallet_transactions')) {
+            const client = new EsiClient();
+            await client.authChar(AuthorizedCharacter.get(this.id));
+
+            try {
+                const raw = await client.get('characters/' + this.id + '/wallet/transactions',
+                    'esi-wallet.read_character_wallet.v1'
+                ) || [];
+                const locationIds = [...new Set(raw.map(t => t.location_id))];
+                const names = await NameHelper.resolve([
+                    ...raw.map(t => t.type_id),
+                    ...raw.map(t => t.client_id),
+                    ...locationIds.filter(id => NameHelper.isStation(id)),
+                ]);
+
+                const locations = {};
+                for (const id of locationIds) {
+                    locations[id] = await resolveLocationName(id, client, this.id, names);
+                }
+
+                this.walletTransactions = raw
+                    .map(t => ({
+                        id: t.transaction_id,
+                        date: t.date,
+                        type_id: t.type_id,
+                        name: names[t.type_id] || `Type #${t.type_id}`,
+                        quantity: t.quantity,
+                        unit_price: t.unit_price,
+                        is_buy: t.is_buy,
+                        client: names[t.client_id],
+                        location: locations[t.location_id],
+                    }))
+                    .sort((a, b) => new Date(b.date) - new Date(a.date));
+
+                this.markRefreshed('wallet_transactions');
+            } catch (err) {
+                if (err === 'Scope missing') {
+                    this.markFailedNoScope('wallet_transactions');
+                }
+            }
+
+            this.save();
         }
     }
 
@@ -1225,6 +1315,8 @@ class Character {
             "attributes": "Attributes and Remaps",
             "loyalty_points": "Loyalty Points",
             "wallet": "Wallet",
+            "wallet_journal": "Wallet Journal",
+            "wallet_transactions": "Wallet Transactions",
             "implants": "Active Implants",
             "clones": "Jump Clones",
             "skills": "Skills",
