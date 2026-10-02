@@ -323,7 +323,10 @@ vec3 patternCoords(int i) {
 }`)
                 .replace('#include <map_fragment>', `#include <map_fragment>
 vec4 surfaceSample = texture2D(surfaceMap, vMapUv);
-int area = int(floor(surfaceSample.r * 3.0 + 0.5));
+// the mask's areas aren't evenly spaced: they sit at about 0, 85, 205 and 252 (of 255), and the third is spread out by
+// compression, so they're split halfway between those
+float maskValue = surfaceSample.r * 255.0;
+int area = maskValue < 42.0 ? 0 : maskValue < 145.0 ? 1 : maskValue < 232.0 ? 2 : 3;
 vec3 areaColor = mtlDiffuse[0];
 vec3 areaSpecular = mtlSpecular[0];
 float areaRough = mtlRough[0];
@@ -341,8 +344,8 @@ if (patternOn[1] > 0.5) {
     float m = texture2D(patternMask1, pc.xy).r * pc.z;
     areaColor = mix(areaColor, patternDiffuse[1], m); areaSpecular = mix(areaSpecular, patternSpecular[1], m); areaRough = mix(areaRough, patternRough[1], m);
 }
-// keep the texture's detail (its brightness) under the paint
-float detail = clamp(dot(diffuseColor.rgb, vec3(0.299, 0.587, 0.114)) * 2.0, 0.0, 1.6);
+// keep some of the texture's detail (its brightness) under the paint, without washing out the material's colour
+float detail = clamp(mix(1.0, dot(diffuseColor.rgb, vec3(0.299, 0.587, 0.114)) * 2.0, 0.5), 0.6, 1.15);
 diffuseColor.rgb = mix(diffuseColor.rgb, areaColor * detail, paintAmount);`)
                 .replace('#include <roughnessmap_fragment>', `float roughnessFactor = roughness;
 float hullRough = surfaceSample.g;
