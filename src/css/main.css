@@ -2107,3 +2107,21 @@ a:hover {
     margin-top: 16px;
     margin-bottom: 0;
 }
+
+.update-progress {
+    min-width: 0;
+}
+
+.update-progress-text {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 4px 16px;
+    margin-bottom: 6px;
+    font-size: 12px;
+}
+
+.update-settings-text {
+    flex: 1;
+    min-width: 0;
+}

@@ -1,3 +1,8 @@
+## 0.1.2 Alpha (0.1.2-alpha)
+* New app icon.
+* Update downloads show progress: percentage, size, speed and time left, then install progress.
+* Updates are downloaded straight from the GitHub release and checked against its checksum before installing.
+
 ## 0.1.1 Alpha (0.1.1-alpha)
 * Remap optimiser: compares your current attributes with the fastest possible remap for the plan, tells you exactly
   what to change and how much time it saves, and shows bonus/yearly remap availability.

@@ -7,6 +7,7 @@ import RaisedButton from 'material-ui/RaisedButton';
 
 import ThemeHelper, {THEMES} from '../../helpers/ThemeHelper';
 import UpdateHelper from '../../helpers/UpdateHelper';
+import UpdateProgress from '../ui/UpdateProgress';
 import DateTimeHelper from '../../helpers/DateTimeHelper';
 import appProperties from '../../../resources/properties';
 import PageHeader from '../ui/PageHeader';
@@ -46,13 +47,15 @@ export default class Settings extends React.Component {
             case 'up-to-date':
                 return <span style={{color: 'var(--good)'}}>You're on the latest version.{checked}</span>;
             case 'downloading':
-                return <span>Downloading {update.version}…</span>;
+            case 'installing':
+                return <UpdateProgress status={update}/>;
             case 'ready':
-                return <span style={{color: 'var(--good)'}}>{update.version} is downloaded and ready to install.</span>;
+                return <span style={{color: 'var(--good)'}}>{update.version} is installed. Restart to start using it.</span>;
             case 'available':
                 return (
                     <span>
                         {update.version} is available.{' '}
+                        {update.error && <span style={{color: 'var(--warn)'}}>Automatic update failed: {update.error} </span>}
                         {update.canAutoInstall ? '' : 'This copy can\'t update itself (portable or unsigned build), so download it from the release page.'}
                     </span>
                 );
@@ -82,7 +85,7 @@ export default class Settings extends React.Component {
         return (
             <RaisedButton
                 label="Check for updates"
-                disabled={update.status === 'checking' || update.status === 'downloading'}
+                disabled={['checking', 'downloading', 'installing'].includes(update.status)}
                 onClick={() => UpdateHelper.check()}
                 icon={<FontIcon className="material-icons">sync</FontIcon>}
             />
@@ -96,15 +99,15 @@ export default class Settings extends React.Component {
 
                 <Panel title="Updates" icon="system_update" style={{maxWidth: 960, marginBottom: 16}}>
                     <div className="update-settings">
-                        <div>
+                        <div className="update-settings-text">
                             <div className="update-version">
                                 PodStack {appProperties.display_version}
                                 <span className="muted"> ({appProperties.version})</span>
                             </div>
                             <div className="update-status">{this.renderUpdateStatus()}</div>
                             <div className="muted update-note">
-                                PodStack checks for new versions at startup and every 4 hours, downloads them in the
-                                background and asks before restarting.
+                                PodStack checks for new versions at startup and every 4 hours, downloads and installs them
+                                in the background, then asks before restarting.
                             </div>
                         </div>
                         {this.renderUpdateAction()}

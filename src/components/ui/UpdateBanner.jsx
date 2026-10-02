@@ -3,8 +3,10 @@
 import React from 'react';
 
 import UpdateHelper from '../../helpers/UpdateHelper';
+import UpdateProgress from './UpdateProgress';
 
-// Strip across the top of the app when an update is ready to install, or available to download.
+// Strip across the top of the app while an update downloads and installs, when it's ready, or when one is available
+// to download (copies that can't update themselves).
 export default class UpdateBanner extends React.Component {
     constructor(props) {
         super(props);
@@ -24,19 +26,37 @@ export default class UpdateBanner extends React.Component {
     render() {
         const {status, dismissed} = this.state;
 
-        if (status === undefined || !['ready', 'available'].includes(status.status)
-            || dismissed === `${status.status}:${status.version}`) {
+        if (status === undefined || !['downloading', 'installing', 'ready', 'available'].includes(status.status)) {
+            return null;
+        }
+
+        // "Later" hides the banner for this version until it moves to the next step (e.g. downloaded -> ready)
+        const busy = status.status === 'downloading' || status.status === 'installing';
+        if (dismissed === `${busy ? 'busy' : status.status}:${status.version}`) {
             return null;
         }
 
         const ready = status.status === 'ready';
+
+        if (busy) {
+            return (
+                <div className="update-banner" role="status">
+                    <i className="material-icons">downloading</i>
+                    <div className="update-banner-text"><UpdateProgress status={status}/></div>
+                    <button type="button" className="text-button"
+                            onClick={() => this.setState({dismissed: `busy:${status.version}`})}>
+                        Hide
+                    </button>
+                </div>
+            );
+        }
 
         return (
             <div className="update-banner" role="status">
                 <i className="material-icons">{ready ? 'system_update' : 'new_releases'}</i>
                 <span className="update-banner-text">
                     {ready ?
-                        `PodStack ${status.version} has been downloaded and is ready to install.` :
+                        `PodStack ${status.version} is installed. Restart to start using it.` :
                         `PodStack ${status.version} is available.`}
                 </span>
                 <button type="button" className="update-banner-action"
