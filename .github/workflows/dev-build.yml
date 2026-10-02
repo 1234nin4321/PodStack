@@ -1,0 +1,40 @@
+# Builds the Windows installer and zip from the dev branch, for testing before a release. The builds are kept as the
+# run's artifacts (download them from the run's page on GitHub's Actions tab); nothing is tagged or released, so
+# installed copies never see them as an update.
+#
+# A dev build is versioned <package version without its pre-release tag>-dev<run number>, e.g. 0.2.16-dev0007: newer
+# than that version's alpha, so its installer installs over it, and older than the next release, so a dev install
+# moves back onto releases by itself when one comes out.
+name: Dev build
+
+on:
+  push:
+    branches: [dev]
+  workflow_dispatch:
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Set the dev version
+        id: version
+        shell: bash
+        run: |
+          base="$(node -p "require('./package.json').version.split('-')[0]")"
+          version="${base}-dev$(printf '%04d' "$GITHUB_RUN_NUMBER")"
+          npm version "$version" --no-git-tag-version
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+      - run: npm run make
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PodStack-${{ steps.version.outputs.version }}-windows
+          path: |
+            out/make/squirrel.windows/x64/*.exe
+            out/make/zip/win32/x64/*.zip
+          retention-days: 30

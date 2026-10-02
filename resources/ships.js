@@ -15,7 +15,11 @@ export default {
      "id": 3330,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/frigate/cf1",
+    "hull": "cf1_t1"
+   }
   },
   "583": {
    "type_id": 583,
@@ -29,7 +33,11 @@ export default {
      "id": 3330,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/frigate/cf2",
+    "hull": "cf2_t1"
+   }
   },
   "584": {
    "type_id": 584,
@@ -43,7 +51,11 @@ export default {
      "id": 3330,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/frigate/cf4",
+    "hull": "cf4_t1"
+   }
   },
   "585": {
    "type_id": 585,
@@ -57,7 +69,11 @@ export default {
      "id": 3329,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/minmatar/frigate/mf1",
+    "hull": "mf1_t1"
+   }
   },
   "586": {
    "type_id": 586,
@@ -71,7 +87,11 @@ export default {
      "id": 3329,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/minmatar/frigate/mf2",
+    "hull": "mf2_t1"
+   }
   },
   "587": {
    "type_id": 587,
@@ -85,7 +105,11 @@ export default {
      "id": 3329,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/minmatar/frigate/mf4",
+    "hull": "mf4_t1"
+   }
   },
   "588": {
    "type_id": 588,
@@ -99,7 +123,11 @@ export default {
      "id": 3327,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/minmatar/frigate/mf3",
+    "hull": "mf3_t1"
+   }
   },
   "589": {
    "type_id": 589,
@@ -113,7 +141,11 @@ export default {
      "id": 3331,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/amarr/frigate/af4",
+    "hull": "af4_t1"
+   }
   },
   "590": {
    "type_id": 590,
@@ -127,7 +159,11 @@ export default {
      "id": 3331,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/amarr/frigate/af5",
+    "hull": "af5_t1"
+   }
   },
   "591": {
    "type_id": 591,
@@ -141,7 +177,11 @@ export default {
      "id": 3331,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/amarr/frigate/af6",
+    "hull": "af6_t1"
+   }
   },
   "592": {
    "type_id": 592,
@@ -155,7 +195,11 @@ export default {
      "id": 3328,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/frigate/gf2",
+    "hull": "gf2_t1"
+   }
   },
   "593": {
    "type_id": 593,
@@ -169,7 +213,11 @@ export default {
      "id": 3328,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/frigate/gf3",
+    "hull": "gf3_t1"
+   }
   },
   "594": {
    "type_id": 594,
@@ -183,7 +231,11 @@ export default {
      "id": 3328,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/frigate/gf4",
+    "hull": "gf4_t1"
+   }
   },
   "596": {
    "type_id": 596,
@@ -197,7 +249,11 @@ export default {
      "id": 3327,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/amarr/frigate/af1",
+    "hull": "af1_t1"
+   }
   },
   "597": {
    "type_id": 597,
@@ -211,7 +267,11 @@ export default {
      "id": 3331,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/amarr/frigate/af3",
+    "hull": "af3_t1"
+   }
   },
   "598": {
    "type_id": 598,
@@ -225,7 +285,11 @@ export default {
      "id": 3329,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/minmatar/frigate/mf5",
+    "hull": "mf5_t1"
+   }
   },
   "599": {
    "type_id": 599,
@@ -239,7 +303,11 @@ export default {
      "id": 3329,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/minmatar/frigate/mf6",
+    "hull": "mf6_t1"
+   }
   },
   "601": {
    "type_id": 601,
@@ -253,7 +321,11 @@ export default {
      "id": 3327,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/frigate/cf5",
+    "hull": "cf5_t1"
+   }
   },
   "602": {
    "type_id": 602,
@@ -267,7 +339,11 @@ export default {
      "id": 3330,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/frigate/cf6",
+    "hull": "cf6_t1"
+   }
   },
   "603": {
    "type_id": 603,
@@ -281,7 +357,11 @@ export default {
      "id": 3330,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/frigate/cf7",
+    "hull": "cf7_t1"
+   }
   },
   "605": {
    "type_id": 605,
@@ -295,7 +375,11 @@ export default {
      "id": 3330,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/frigate/cf3",
+    "hull": "cf3_t1"
+   }
   },
   "606": {
    "type_id": 606,
@@ -309,7 +393,11 @@ export default {
      "id": 3327,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/frigate/gf1",
+    "hull": "gf1_t1"
+   }
   },
   "607": {
    "type_id": 607,
@@ -323,7 +411,11 @@ export default {
      "id": 3328,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/frigate/gf5",
+    "hull": "gf5_t1"
+   }
   },
   "608": {
    "type_id": 608,
@@ -337,7 +429,11 @@ export default {
      "id": 3328,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/frigate/gf6",
+    "hull": "gf6_t1"
+   }
   },
   "609": {
    "type_id": 609,
@@ -351,7 +447,11 @@ export default {
      "id": 3328,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/frigate/gf7",
+    "hull": "gf7_t1"
+   }
   },
   "615": {
    "type_id": 615,
@@ -365,7 +465,11 @@ export default {
      "id": 3327,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/sansha/frigate/sf3",
+    "hull": "sf3_t1"
+   }
   },
   "617": {
    "type_id": 617,
@@ -379,7 +483,11 @@ export default {
      "id": 3327,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/angel/frigate/angf6",
+    "hull": "angf6_t1"
+   }
   },
   "620": {
    "type_id": 620,
@@ -393,7 +501,11 @@ export default {
      "id": 3334,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/cruiser/cc1",
+    "hull": "cc1_t1"
+   }
   },
   "621": {
    "type_id": 621,
@@ -407,7 +519,11 @@ export default {
      "id": 3334,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/cruiser/cc3",
+    "hull": "cc3_t1"
+   }
   },
   "622": {
    "type_id": 622,
@@ -421,7 +537,11 @@ export default {
      "id": 3333,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/minmatar/cruiser/mc1",
+    "hull": "mc1_t1"
+   }
   },
   "623": {
    "type_id": 623,
@@ -435,7 +555,11 @@ export default {
      "id": 3334,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/cruiser/cc2",
+    "hull": "cc2_t1"
+   }
   },
   "624": {
    "type_id": 624,
@@ -449,7 +573,11 @@ export default {
      "id": 3335,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/amarr/cruiser/ac2",
+    "hull": "ac2_t1"
+   }
   },
   "625": {
    "type_id": 625,
@@ -463,7 +591,11 @@ export default {
      "id": 3335,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/amarr/cruiser/ac3",
+    "hull": "ac3_t1"
+   }
   },
   "626": {
    "type_id": 626,
@@ -477,7 +609,11 @@ export default {
      "id": 3332,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/cruiser/gc3",
+    "hull": "gc3_t1"
+   }
   },
   "627": {
    "type_id": 627,
@@ -491,7 +627,11 @@ export default {
      "id": 3332,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/cruiser/gc4",
+    "hull": "gc4_t1"
+   }
   },
   "628": {
    "type_id": 628,
@@ -505,7 +645,11 @@ export default {
      "id": 3335,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/amarr/cruiser/ac1",
+    "hull": "ac1_t1"
+   }
   },
   "629": {
    "type_id": 629,
@@ -519,7 +663,11 @@ export default {
      "id": 3333,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/minmatar/cruiser/mc2",
+    "hull": "mc2_t1"
+   }
   },
   "630": {
    "type_id": 630,
@@ -533,7 +681,11 @@ export default {
      "id": 3333,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/minmatar/cruiser/mc3",
+    "hull": "mc3_t1"
+   }
   },
   "631": {
    "type_id": 631,
@@ -547,7 +699,11 @@ export default {
      "id": 3333,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/minmatar/cruiser/mc4",
+    "hull": "mc4_t1"
+   }
   },
   "632": {
    "type_id": 632,
@@ -561,7 +717,11 @@ export default {
      "id": 3334,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/cruiser/cc4",
+    "hull": "cc4_t1"
+   }
   },
   "633": {
    "type_id": 633,
@@ -575,7 +735,11 @@ export default {
      "id": 3332,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/cruiser/gc1",
+    "hull": "gc1_t1"
+   }
   },
   "634": {
    "type_id": 634,
@@ -589,7 +753,11 @@ export default {
      "id": 3332,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/cruiser/gc2",
+    "hull": "gc2_t1"
+   }
   },
   "635": {
    "type_id": 635,
@@ -603,7 +771,11 @@ export default {
      "id": 3332,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/shuttle/gy1",
+    "hull": "gy1_t1"
+   }
   },
   "638": {
    "type_id": 638,
@@ -617,7 +789,11 @@ export default {
      "id": 3338,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/battleship/cb1",
+    "hull": "cb1_t1"
+   }
   },
   "639": {
    "type_id": 639,
@@ -631,7 +807,11 @@ export default {
      "id": 3337,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/minmatar/battleship/mb2",
+    "hull": "mb2_t1"
+   }
   },
   "640": {
    "type_id": 640,
@@ -645,7 +825,11 @@ export default {
      "id": 3338,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/battleship/cb2",
+    "hull": "cb2_t1"
+   }
   },
   "641": {
    "type_id": 641,
@@ -659,7 +843,11 @@ export default {
      "id": 3336,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/battleship/gb2",
+    "hull": "gb2_t1"
+   }
   },
   "642": {
    "type_id": 642,
@@ -673,7 +861,11 @@ export default {
      "id": 3339,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/amarr/battleship/ab1",
+    "hull": "ab1_t1"
+   }
   },
   "643": {
    "type_id": 643,
@@ -687,7 +879,11 @@ export default {
      "id": 3339,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/amarr/battleship/ab2",
+    "hull": "ab2_t1"
+   }
   },
   "644": {
    "type_id": 644,
@@ -701,7 +897,11 @@ export default {
      "id": 3337,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/minmatar/battleship/mb1",
+    "hull": "mb1_t1"
+   }
   },
   "645": {
    "type_id": 645,
@@ -715,7 +915,11 @@ export default {
      "id": 3336,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/battleship/gb1",
+    "hull": "gb1_t1"
+   }
   },
   "648": {
    "type_id": 648,
@@ -729,7 +933,11 @@ export default {
      "id": 3342,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/industrial/ci1",
+    "hull": "ci1_t1"
+   }
   },
   "649": {
    "type_id": 649,
@@ -743,7 +951,11 @@ export default {
      "id": 3342,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/industrial/ci2",
+    "hull": "ci2_t1"
+   }
   },
   "650": {
    "type_id": 650,
@@ -757,7 +969,11 @@ export default {
      "id": 3340,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/industrial/gi1",
+    "hull": "gi1_t1"
+   }
   },
   "651": {
    "type_id": 651,
@@ -771,7 +987,11 @@ export default {
      "id": 3341,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/minmatar/industrial/mi1",
+    "hull": "mi1_t1"
+   }
   },
   "652": {
    "type_id": 652,
@@ -785,7 +1005,11 @@ export default {
      "id": 3341,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/minmatar/industrial/mi2",
+    "hull": "mi2_t1"
+   }
   },
   "653": {
    "type_id": 653,
@@ -799,7 +1023,11 @@ export default {
      "id": 3341,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/minmatar/industrial/mi3",
+    "hull": "mi3_t1"
+   }
   },
   "654": {
    "type_id": 654,
@@ -813,7 +1041,11 @@ export default {
      "id": 3340,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/industrial/gi2",
+    "hull": "gi2_t1"
+   }
   },
   "655": {
    "type_id": 655,
@@ -827,7 +1059,11 @@ export default {
      "id": 3340,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/industrial/gi3",
+    "hull": "gi3_t1"
+   }
   },
   "656": {
    "type_id": 656,
@@ -841,7 +1077,11 @@ export default {
      "id": 3340,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/industrial/gi4",
+    "hull": "gi4_t1"
+   }
   },
   "657": {
    "type_id": 657,
@@ -855,7 +1095,11 @@ export default {
      "id": 3340,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/industrial/gi5",
+    "hull": "gi5_t1"
+   }
   },
   "671": {
    "type_id": 671,
@@ -873,7 +1117,11 @@ export default {
      "id": 3344,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/titan/gt1",
+    "hull": "gt1_t1"
+   }
   },
   "672": {
    "type_id": 672,
@@ -887,7 +1135,11 @@ export default {
      "id": 3327,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/shuttle/cs1",
+    "hull": "cs1_t1"
+   }
   },
   "1944": {
    "type_id": 1944,
@@ -901,7 +1153,11 @@ export default {
      "id": 3343,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/amarr/industrial/ai1",
+    "hull": "ai1_t1"
+   }
   },
   "2006": {
    "type_id": 2006,
@@ -915,7 +1171,11 @@ export default {
      "id": 3335,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/amarr/cruiser/ac4",
+    "hull": "ac4_t1"
+   }
   },
   "2078": {
    "type_id": 2078,
@@ -929,7 +1189,11 @@ export default {
      "id": 3327,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/concord/frigate/conf5",
+    "hull": "conf5_t1"
+   }
   },
   "2161": {
    "type_id": 2161,
@@ -943,7 +1207,11 @@ export default {
      "id": 3331,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/amarr/frigate/af2",
+    "hull": "af2_t1"
+   }
   },
   "2834": {
    "type_id": 2834,
@@ -961,7 +1229,11 @@ export default {
      "id": 12095,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/frigate/gf4",
+    "hull": "gf4_tournament"
+   }
   },
   "2836": {
    "type_id": 2836,
@@ -979,7 +1251,11 @@ export default {
      "id": 16591,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/cruiser/gc4",
+    "hull": "gc4_tournament"
+   }
   },
   "2863": {
    "type_id": 2863,
@@ -988,7 +1264,11 @@ export default {
    "group": "Hauler",
    "race_id": 128,
    "meta": "Tech I",
-   "skills": []
+   "skills": [],
+   "model": {
+    "folder": "res:/dx9/model/ship/ore/battleship/oreb1",
+    "hull": "oreb1_t1a"
+   }
   },
   "2998": {
    "type_id": 2998,
@@ -1010,7 +1290,11 @@ export default {
      "id": 25863,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/ore/battleship/oreb1",
+    "hull": "oreb1_t1b"
+   }
   },
   "3514": {
    "type_id": 3514,
@@ -1032,7 +1316,11 @@ export default {
      "id": 24312,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/sansha/carrier/sca1",
+    "hull": "sca1_t1"
+   }
   },
   "3516": {
    "type_id": 3516,
@@ -1050,7 +1338,11 @@ export default {
      "id": 12095,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/amarr/frigate/af3",
+    "hull": "af3_ix"
+   }
   },
   "3518": {
    "type_id": 3518,
@@ -1068,7 +1360,11 @@ export default {
      "id": 16591,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/amarr/cruiser/ac2",
+    "hull": "ac2_ix"
+   }
   },
   "3532": {
    "type_id": 3532,
@@ -1077,7 +1373,11 @@ export default {
    "group": "Frigate",
    "race_id": 4,
    "meta": "Faction",
-   "skills": []
+   "skills": [],
+   "model": {
+    "folder": "res:/dx9/model/ship/concord/frigate/conf3",
+    "hull": "conf3_t1"
+   }
   },
   "3756": {
    "type_id": 3756,
@@ -1091,7 +1391,11 @@ export default {
      "id": 3327,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/soct/battlecruiser/soctbc1",
+    "hull": "soctbc1_t1"
+   }
   },
   "3764": {
    "type_id": 3764,
@@ -1109,7 +1413,11 @@ export default {
      "id": 3346,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/titan/ct1",
+    "hull": "ct1_t1"
+   }
   },
   "3766": {
    "type_id": 3766,
@@ -1123,7 +1431,11 @@ export default {
      "id": 3329,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/minmatar/frigate/mf7",
+    "hull": "mf7_t1"
+   }
   },
   "4302": {
    "type_id": 4302,
@@ -1137,7 +1449,11 @@ export default {
      "id": 33095,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/amarr/battlecruiser/abc3",
+    "hull": "abc3_t1"
+   }
   },
   "4306": {
    "type_id": 4306,
@@ -1151,7 +1467,11 @@ export default {
      "id": 33096,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/battlecruiser/cbc3",
+    "hull": "cbc3_t1"
+   }
   },
   "4308": {
    "type_id": 4308,
@@ -1165,7 +1485,11 @@ export default {
      "id": 33097,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/battlecruiser/gbc3",
+    "hull": "gbc3_t1"
+   }
   },
   "4310": {
    "type_id": 4310,
@@ -1179,7 +1503,11 @@ export default {
      "id": 33098,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/minmatar/battlecruiser/mbc3",
+    "hull": "mbc3_t1"
+   }
   },
   "4363": {
    "type_id": 4363,
@@ -1193,7 +1521,11 @@ export default {
      "id": 3340,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/industrial/gi4",
+    "hull": "gi4_t1"
+   }
   },
   "4388": {
    "type_id": 4388,
@@ -1207,7 +1539,11 @@ export default {
      "id": 3340,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/industrial/gi4",
+    "hull": "gi4_t1"
+   }
   },
   "11011": {
    "type_id": 11011,
@@ -1221,7 +1557,11 @@ export default {
      "id": 3332,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/cruiser/gc3",
+    "hull": "gc3_t1"
+   }
   },
   "11129": {
    "type_id": 11129,
@@ -1235,7 +1575,11 @@ export default {
      "id": 3327,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/shuttle/gs1",
+    "hull": "gs1_t1"
+   }
   },
   "11132": {
    "type_id": 11132,
@@ -1249,7 +1593,11 @@ export default {
      "id": 3327,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/minmatar/shuttle/ms1",
+    "hull": "ms1_t1"
+   }
   },
   "11134": {
    "type_id": 11134,
@@ -1263,7 +1611,11 @@ export default {
      "id": 3327,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/amarr/shuttle/as1",
+    "hull": "as1_t1"
+   }
   },
   "11172": {
    "type_id": 11172,
@@ -1281,7 +1633,11 @@ export default {
      "id": 12093,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/frigate/gf5",
+    "hull": "gf5_t2"
+   }
   },
   "11174": {
    "type_id": 11174,
@@ -1299,7 +1655,11 @@ export default {
      "id": 28615,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/frigate/gf7",
+    "hull": "gf7_t2"
+   }
   },
   "11176": {
    "type_id": 11176,
@@ -1317,7 +1677,11 @@ export default {
      "id": 12092,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/frigate/cf2",
+    "hull": "cf2_t2a"
+   }
   },
   "11178": {
    "type_id": 11178,
@@ -1335,7 +1699,11 @@ export default {
      "id": 12092,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/frigate/cf2",
+    "hull": "cf2_t2b"
+   }
   },
   "11182": {
    "type_id": 11182,
@@ -1353,7 +1721,11 @@ export default {
      "id": 12093,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/minmatar/frigate/mf2",
+    "hull": "mf2_t2b"
+   }
   },
   "11184": {
    "type_id": 11184,
@@ -1371,7 +1743,11 @@ export default {
      "id": 12092,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/amarr/frigate/af4",
+    "hull": "af4_t2b"
+   }
   },
   "11186": {
    "type_id": 11186,
@@ -1389,7 +1765,11 @@ export default {
      "id": 12092,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/amarr/frigate/af4",
+    "hull": "af4_t2a"
+   }
   },
   "11188": {
    "type_id": 11188,
@@ -1407,7 +1787,11 @@ export default {
      "id": 12093,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/amarr/frigate/af7",
+    "hull": "af7_t2"
+   }
   },
   "11190": {
    "type_id": 11190,
@@ -1425,7 +1809,11 @@ export default {
      "id": 28615,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/amarr/frigate/af2",
+    "hull": "af2_t2"
+   }
   },
   "11192": {
    "type_id": 11192,
@@ -1443,7 +1831,11 @@ export default {
      "id": 12093,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/frigate/cf3",
+    "hull": "cf3_t2"
+   }
   },
   "11194": {
    "type_id": 11194,
@@ -1461,7 +1853,11 @@ export default {
      "id": 28615,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/frigate/cf4",
+    "hull": "cf4_t2"
+   }
   },
   "11196": {
    "type_id": 11196,
@@ -1479,7 +1875,11 @@ export default {
      "id": 12092,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/minmatar/frigate/mf1",
+    "hull": "mf1_t2a"
+   }
   },
   "11198": {
    "type_id": 11198,
@@ -1497,7 +1897,11 @@ export default {
      "id": 12092,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/minmatar/frigate/mf1",
+    "hull": "mf1_t2c"
+   }
   },
   "11200": {
    "type_id": 11200,
@@ -1515,7 +1919,11 @@ export default {
      "id": 12092,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/frigate/gf6",
+    "hull": "gf6_t2b"
+   }
   },
   "11202": {
    "type_id": 11202,
@@ -1533,7 +1941,11 @@ export default {
      "id": 12092,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/frigate/gf6",
+    "hull": "gf6_t2a"
+   }
   },
   "11365": {
    "type_id": 11365,
@@ -1551,7 +1963,11 @@ export default {
      "id": 12095,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/amarr/frigate/af3",
+    "hull": "af3_t2a"
+   }
   },
   "11371": {
    "type_id": 11371,
@@ -1569,7 +1985,11 @@ export default {
      "id": 12095,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/minmatar/frigate/mf4",
+    "hull": "mf4_t2a"
+   }
   },
   "11377": {
    "type_id": 11377,
@@ -1587,7 +2007,11 @@ export default {
      "id": 12093,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/frigate/gf3",
+    "hull": "gf3_t2"
+   }
   },
   "11379": {
    "type_id": 11379,
@@ -1605,7 +2029,11 @@ export default {
      "id": 12095,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/frigate/cf7",
+    "hull": "cf7_t2a"
+   }
   },
   "11381": {
    "type_id": 11381,
@@ -1623,7 +2051,11 @@ export default {
      "id": 12095,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/frigate/cf7",
+    "hull": "cf7_t2b"
+   }
   },
   "11387": {
    "type_id": 11387,
@@ -1641,7 +2073,11 @@ export default {
      "id": 28615,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/minmatar/frigate/mf7",
+    "hull": "mf7_t2c"
+   }
   },
   "11393": {
    "type_id": 11393,
@@ -1659,7 +2095,11 @@ export default {
      "id": 12095,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/amarr/frigate/af3",
+    "hull": "af3_t2b"
+   }
   },
   "11400": {
    "type_id": 11400,
@@ -1677,7 +2117,11 @@ export default {
      "id": 12095,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/minmatar/frigate/mf4",
+    "hull": "mf4_t2b"
+   }
   },
   "11567": {
    "type_id": 11567,
@@ -1695,7 +2139,11 @@ export default {
      "id": 3347,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/amarr/titan/at1",
+    "hull": "at1_t1"
+   }
   },
   "11936": {
    "type_id": 11936,
@@ -1709,7 +2157,11 @@ export default {
      "id": 3339,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/amarr/battleship/ab1",
+    "hull": "ab1_t1"
+   }
   },
   "11938": {
    "type_id": 11938,
@@ -1723,7 +2175,11 @@ export default {
      "id": 3339,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/amarr/battleship/ab2",
+    "hull": "ab2_t1"
+   }
   },
   "11940": {
    "type_id": 11940,
@@ -1737,7 +2193,11 @@ export default {
      "id": 3331,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/amarr/frigate/af7",
+    "hull": "af7_i"
+   }
   },
   "11942": {
    "type_id": 11942,
@@ -1751,7 +2211,11 @@ export default {
      "id": 3331,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/amarr/frigate/af7",
+    "hull": "af7_i"
+   }
   },
   "11957": {
    "type_id": 11957,
@@ -1769,7 +2233,11 @@ export default {
      "id": 22761,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/cruiser/cc4",
+    "hull": "cc4_t2a"
+   }
   },
   "11959": {
    "type_id": 11959,
@@ -1787,7 +2255,11 @@ export default {
      "id": 22761,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/cruiser/cc4",
+    "hull": "cc4_t2b"
+   }
   },
   "11961": {
    "type_id": 11961,
@@ -1805,7 +2277,11 @@ export default {
      "id": 22761,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/minmatar/cruiser/mc3",
+    "hull": "mc3_t2a"
+   }
   },
   "11963": {
    "type_id": 11963,
@@ -1823,7 +2299,11 @@ export default {
      "id": 22761,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/minmatar/cruiser/mc3",
+    "hull": "mc3_t2c"
+   }
   },
   "11965": {
    "type_id": 11965,
@@ -1841,7 +2321,11 @@ export default {
      "id": 22761,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/amarr/cruiser/ac1",
+    "hull": "ac1_t2b"
+   }
   },
   "11969": {
    "type_id": 11969,
@@ -1859,7 +2343,11 @@ export default {
      "id": 22761,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/cruiser/gc1",
+    "hull": "gc1_t2a"
+   }
   },
   "11971": {
    "type_id": 11971,
@@ -1877,7 +2365,11 @@ export default {
      "id": 22761,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/cruiser/gc1",
+    "hull": "gc1_t2b"
+   }
   },
   "11978": {
    "type_id": 11978,
@@ -1895,7 +2387,11 @@ export default {
      "id": 12096,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/minmatar/cruiser/mc4",
+    "hull": "mc4_t2c"
+   }
   },
   "11985": {
    "type_id": 11985,
@@ -1913,7 +2409,11 @@ export default {
      "id": 12096,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/cruiser/cc1",
+    "hull": "cc1_t2a"
+   }
   },
   "11987": {
    "type_id": 11987,
@@ -1931,7 +2431,11 @@ export default {
      "id": 12096,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/amarr/cruiser/ac3",
+    "hull": "ac3_t2"
+   }
   },
   "11989": {
    "type_id": 11989,
@@ -1949,7 +2453,11 @@ export default {
      "id": 12096,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/cruiser/gc2",
+    "hull": "gc2_t2"
+   }
   },
   "11993": {
    "type_id": 11993,
@@ -1967,7 +2475,11 @@ export default {
      "id": 16591,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/cruiser/cc3",
+    "hull": "cc3_t2"
+   }
   },
   "11995": {
    "type_id": 11995,
@@ -1985,7 +2497,11 @@ export default {
      "id": 28609,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/cruiser/cc2",
+    "hull": "cc2_t2a"
+   }
   },
   "11999": {
    "type_id": 11999,
@@ -2003,7 +2519,11 @@ export default {
      "id": 16591,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/minmatar/cruiser/mc1",
+    "hull": "mc1_t2b"
+   }
   },
   "12003": {
    "type_id": 12003,
@@ -2021,7 +2541,11 @@ export default {
      "id": 16591,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/amarr/cruiser/ac4",
+    "hull": "ac4_t2"
+   }
   },
   "12005": {
    "type_id": 12005,
@@ -2039,7 +2563,11 @@ export default {
      "id": 16591,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/cruiser/gc3",
+    "hull": "gc3_t2"
+   }
   },
   "12011": {
    "type_id": 12011,
@@ -2057,7 +2585,11 @@ export default {
      "id": 16591,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/cruiser/cc2",
+    "hull": "cc2_t2b"
+   }
   },
   "12013": {
    "type_id": 12013,
@@ -2075,7 +2607,11 @@ export default {
      "id": 28609,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/minmatar/cruiser/mc2",
+    "hull": "mc2_t2c"
+   }
   },
   "12015": {
    "type_id": 12015,
@@ -2093,7 +2629,11 @@ export default {
      "id": 16591,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/minmatar/cruiser/mc2",
+    "hull": "mc2_t2a"
+   }
   },
   "12017": {
    "type_id": 12017,
@@ -2111,7 +2651,11 @@ export default {
      "id": 28609,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/amarr/cruiser/ac2",
+    "hull": "ac2_t2b"
+   }
   },
   "12019": {
    "type_id": 12019,
@@ -2129,7 +2673,11 @@ export default {
      "id": 16591,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/amarr/cruiser/ac2",
+    "hull": "ac2_t2a"
+   }
   },
   "12021": {
    "type_id": 12021,
@@ -2147,7 +2695,11 @@ export default {
      "id": 28609,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/cruiser/gc4",
+    "hull": "gc4_t2b"
+   }
   },
   "12023": {
    "type_id": 12023,
@@ -2165,7 +2717,11 @@ export default {
      "id": 16591,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/cruiser/gc4",
+    "hull": "gc4_t2a"
+   }
   },
   "12032": {
    "type_id": 12032,
@@ -2183,7 +2739,11 @@ export default {
      "id": 12093,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/frigate/cf6",
+    "hull": "cf6_t2"
+   }
   },
   "12034": {
    "type_id": 12034,
@@ -2201,7 +2761,11 @@ export default {
      "id": 12093,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/minmatar/frigate/mf5",
+    "hull": "mf5_t2a"
+   }
   },
   "12038": {
    "type_id": 12038,
@@ -2219,7 +2783,11 @@ export default {
      "id": 12093,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/amarr/frigate/af5",
+    "hull": "af5_t2"
+   }
   },
   "12042": {
    "type_id": 12042,
@@ -2237,7 +2805,11 @@ export default {
      "id": 12095,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/frigate/gf4",
+    "hull": "gf4_t2a"
+   }
   },
   "12044": {
    "type_id": 12044,
@@ -2255,7 +2827,11 @@ export default {
      "id": 12095,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/frigate/gf4",
+    "hull": "gf4_t2b"
+   }
   },
   "12729": {
    "type_id": 12729,
@@ -2273,7 +2849,11 @@ export default {
      "id": 19719,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/industrial/ci1",
+    "hull": "ci1_t2"
+   }
   },
   "12731": {
    "type_id": 12731,
@@ -2291,7 +2871,11 @@ export default {
      "id": 19719,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/industrial/ci2",
+    "hull": "ci2_t2"
+   }
   },
   "12733": {
    "type_id": 12733,
@@ -2309,7 +2893,11 @@ export default {
      "id": 19719,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/amarr/industrial/ai2",
+    "hull": "ai2_t2"
+   }
   },
   "12735": {
    "type_id": 12735,
@@ -2327,7 +2915,11 @@ export default {
      "id": 19719,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/minmatar/industrial/mi3",
+    "hull": "mi3_t2c"
+   }
   },
   "12743": {
    "type_id": 12743,
@@ -2345,7 +2937,11 @@ export default {
      "id": 19719,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/industrial/gi4",
+    "hull": "gi4_t2"
+   }
   },
   "12745": {
    "type_id": 12745,
@@ -2363,7 +2959,11 @@ export default {
      "id": 19719,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/industrial/gi2",
+    "hull": "gi2_t2"
+   }
   },
   "12747": {
    "type_id": 12747,
@@ -2381,7 +2981,11 @@ export default {
      "id": 19719,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/minmatar/industrial/mi2",
+    "hull": "mi2_t2b"
+   }
   },
   "12753": {
    "type_id": 12753,
@@ -2399,7 +3003,11 @@ export default {
      "id": 19719,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/amarr/industrial/ai1",
+    "hull": "ai1_t2"
+   }
   },
   "13202": {
    "type_id": 13202,
@@ -2413,7 +3021,11 @@ export default {
      "id": 3336,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/battleship/gb2",
+    "hull": "gb2_t1"
+   }
   },
   "16227": {
    "type_id": 16227,
@@ -2427,7 +3039,11 @@ export default {
      "id": 33096,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/battlecruiser/cbc1",
+    "hull": "cbc1_t1"
+   }
   },
   "16229": {
    "type_id": 16229,
@@ -2441,7 +3057,11 @@ export default {
      "id": 33097,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/battlecruiser/gbc1",
+    "hull": "gbc1_t1"
+   }
   },
   "16231": {
    "type_id": 16231,
@@ -2455,7 +3075,11 @@ export default {
      "id": 33098,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/minmatar/battlecruiser/mbc1",
+    "hull": "mbc1_t1"
+   }
   },
   "16233": {
    "type_id": 16233,
@@ -2469,7 +3093,11 @@ export default {
      "id": 33095,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/amarr/battlecruiser/abc1",
+    "hull": "abc1_t1"
+   }
   },
   "16236": {
    "type_id": 16236,
@@ -2483,7 +3111,11 @@ export default {
      "id": 33091,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/amarr/destroyer/ade1",
+    "hull": "ade1_t1"
+   }
   },
   "16238": {
    "type_id": 16238,
@@ -2497,7 +3129,11 @@ export default {
      "id": 33092,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/destroyer/cde1",
+    "hull": "cde1_t1"
+   }
   },
   "16240": {
    "type_id": 16240,
@@ -2511,7 +3147,11 @@ export default {
      "id": 33093,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/destroyer/gde1",
+    "hull": "gde1_t1"
+   }
   },
   "16242": {
    "type_id": 16242,
@@ -2525,7 +3165,11 @@ export default {
      "id": 33094,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/minmatar/destroyer/mde1",
+    "hull": "mde1_t1"
+   }
   },
   "17476": {
    "type_id": 17476,
@@ -2543,7 +3187,11 @@ export default {
      "id": 3410,
      "level": 3
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/ore/barge/oreba3",
+    "hull": "oreba3_t1"
+   }
   },
   "17478": {
    "type_id": 17478,
@@ -2561,7 +3209,11 @@ export default {
      "id": 3410,
      "level": 3
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/ore/barge/oreba2",
+    "hull": "oreba2_t1"
+   }
   },
   "17480": {
    "type_id": 17480,
@@ -2579,7 +3231,11 @@ export default {
      "id": 3410,
      "level": 3
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/ore/barge/oreba1",
+    "hull": "oreba1_t1"
+   }
   },
   "17619": {
    "type_id": 17619,
@@ -2593,7 +3249,11 @@ export default {
      "id": 3330,
      "level": 2
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/frigate/cf8",
+    "hull": "cf8_t1"
+   }
   },
   "17634": {
    "type_id": 17634,
@@ -2607,7 +3267,11 @@ export default {
      "id": 3334,
      "level": 2
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/cruiser/cc3",
+    "hull": "cc3_t1"
+   }
   },
   "17636": {
    "type_id": 17636,
@@ -2621,7 +3285,11 @@ export default {
      "id": 3338,
      "level": 2
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/battleship/cb1",
+    "hull": "cb1_t1"
+   }
   },
   "17703": {
    "type_id": 17703,
@@ -2635,7 +3303,11 @@ export default {
      "id": 3331,
      "level": 2
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/amarr/frigate/af9",
+    "hull": "af9_t1"
+   }
   },
   "17709": {
    "type_id": 17709,
@@ -2649,7 +3321,11 @@ export default {
      "id": 3335,
      "level": 2
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/amarr/cruiser/ac4",
+    "hull": "ac4_t1"
+   }
   },
   "17713": {
    "type_id": 17713,
@@ -2663,7 +3339,11 @@ export default {
      "id": 3333,
      "level": 2
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/minmatar/cruiser/mc1",
+    "hull": "mc1_t1"
+   }
   },
   "17715": {
    "type_id": 17715,
@@ -2681,7 +3361,11 @@ export default {
      "id": 3332,
      "level": 2
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/cruiser/cc2",
+    "hull": "cc2_t1"
+   }
   },
   "17718": {
    "type_id": 17718,
@@ -2699,7 +3383,11 @@ export default {
      "id": 3334,
      "level": 2
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/sansha/cruiser/sc1",
+    "hull": "sc1_t1"
+   }
   },
   "17720": {
    "type_id": 17720,
@@ -2717,7 +3405,11 @@ export default {
      "id": 3332,
      "level": 2
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/angel/battlecruiser/angbc1",
+    "hull": "angbc1_t1"
+   }
   },
   "17722": {
    "type_id": 17722,
@@ -2735,7 +3427,11 @@ export default {
      "id": 3333,
      "level": 2
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/cruiser/gc4",
+    "hull": "gc4_t1"
+   }
   },
   "17726": {
    "type_id": 17726,
@@ -2749,7 +3445,11 @@ export default {
      "id": 3339,
      "level": 2
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/amarr/battleship/ab1",
+    "hull": "ab1_t1"
+   }
   },
   "17728": {
    "type_id": 17728,
@@ -2763,7 +3463,11 @@ export default {
      "id": 3336,
      "level": 2
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/battleship/gb2",
+    "hull": "gb2_t1"
+   }
   },
   "17732": {
    "type_id": 17732,
@@ -2777,7 +3481,11 @@ export default {
      "id": 3337,
      "level": 2
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/minmatar/battleship/mb2",
+    "hull": "mb2_t1"
+   }
   },
   "17736": {
    "type_id": 17736,
@@ -2795,7 +3503,11 @@ export default {
      "id": 3338,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/sansha/battleship/sb1",
+    "hull": "sb1_t1"
+   }
   },
   "17738": {
    "type_id": 17738,
@@ -2813,7 +3525,11 @@ export default {
      "id": 3336,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/angel/battleship/angb1",
+    "hull": "angb1_t1"
+   }
   },
   "17740": {
    "type_id": 17740,
@@ -2831,7 +3547,11 @@ export default {
      "id": 3337,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/battleship/gb2",
+    "hull": "gb2_t1"
+   }
   },
   "17812": {
    "type_id": 17812,
@@ -2845,7 +3565,11 @@ export default {
      "id": 3329,
      "level": 2
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/minmatar/frigate/mf8",
+    "hull": "mf8_t1"
+   }
   },
   "17841": {
    "type_id": 17841,
@@ -2859,7 +3583,11 @@ export default {
      "id": 3328,
      "level": 2
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/frigate/gf8",
+    "hull": "gf8_t1"
+   }
   },
   "17843": {
    "type_id": 17843,
@@ -2873,7 +3601,11 @@ export default {
      "id": 3332,
      "level": 2
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/cruiser/gc3",
+    "hull": "gc3_t1"
+   }
   },
   "17918": {
    "type_id": 17918,
@@ -2891,7 +3623,11 @@ export default {
      "id": 3336,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/battleship/cb2",
+    "hull": "cb2_t1"
+   }
   },
   "17920": {
    "type_id": 17920,
@@ -2909,7 +3645,11 @@ export default {
      "id": 3337,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/amarr/battleship/ab2",
+    "hull": "ab2_t1"
+   }
   },
   "17922": {
    "type_id": 17922,
@@ -2927,7 +3667,11 @@ export default {
      "id": 3333,
      "level": 2
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/amarr/cruiser/ac6",
+    "hull": "ac6_t1"
+   }
   },
   "17924": {
    "type_id": 17924,
@@ -2945,7 +3689,11 @@ export default {
      "id": 3330,
      "level": 3
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/sansha/frigate/sf1",
+    "hull": "sf1_t1"
+   }
   },
   "17926": {
    "type_id": 17926,
@@ -2963,7 +3711,11 @@ export default {
      "id": 3329,
      "level": 3
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/amarr/frigate/af8",
+    "hull": "af8_t1"
+   }
   },
   "17928": {
    "type_id": 17928,
@@ -2981,7 +3733,11 @@ export default {
      "id": 3329,
      "level": 3
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/angel/frigate/angf2",
+    "hull": "angf2_t1"
+   }
   },
   "17930": {
    "type_id": 17930,
@@ -2999,7 +3755,11 @@ export default {
      "id": 3328,
      "level": 3
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/frigate/cf7",
+    "hull": "cf7_t1"
+   }
   },
   "17932": {
    "type_id": 17932,
@@ -3017,7 +3777,11 @@ export default {
      "id": 3328,
      "level": 3
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/angel/frigate/angf1",
+    "hull": "angf1_t1"
+   }
   },
   "19720": {
    "type_id": 19720,
@@ -3039,7 +3803,11 @@ export default {
      "id": 3456,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/amarr/dreadnought/adn1",
+    "hull": "adn1_t1"
+   }
   },
   "19722": {
    "type_id": 19722,
@@ -3061,7 +3829,11 @@ export default {
      "id": 3456,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/minmatar/dreadnought/mdn1",
+    "hull": "mdn1_t1"
+   }
   },
   "19724": {
    "type_id": 19724,
@@ -3083,7 +3855,11 @@ export default {
      "id": 3456,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/dreadnought/gdn1",
+    "hull": "gdn1_t1"
+   }
   },
   "19726": {
    "type_id": 19726,
@@ -3105,7 +3881,11 @@ export default {
      "id": 3456,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/dreadnought/cdn1",
+    "hull": "cdn1_t1"
+   }
   },
   "19744": {
    "type_id": 19744,
@@ -3119,7 +3899,11 @@ export default {
      "id": 3343,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/amarr/industrial/ai2",
+    "hull": "ai2_t1"
+   }
   },
   "20125": {
    "type_id": 20125,
@@ -3137,7 +3921,11 @@ export default {
      "id": 22761,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/amarr/cruiser/ac1",
+    "hull": "ac1_t2a"
+   }
   },
   "20183": {
    "type_id": 20183,
@@ -3155,7 +3943,11 @@ export default {
      "id": 20524,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/amarr/freighter/afr1",
+    "hull": "afr1_t1"
+   }
   },
   "20185": {
    "type_id": 20185,
@@ -3173,7 +3965,11 @@ export default {
      "id": 20526,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/freighter/cfr1",
+    "hull": "cfr1_t1"
+   }
   },
   "20187": {
    "type_id": 20187,
@@ -3191,7 +3987,11 @@ export default {
      "id": 20527,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/freighter/gfr1",
+    "hull": "gfr1_t1"
+   }
   },
   "20189": {
    "type_id": 20189,
@@ -3209,7 +4009,11 @@ export default {
      "id": 20528,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/minmatar/freighter/mfr1",
+    "hull": "mfr1_t1"
+   }
   },
   "21097": {
    "type_id": 21097,
@@ -3223,7 +4027,11 @@ export default {
      "id": 3327,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/shuttle/cs1",
+    "hull": "cs1_t1"
+   }
   },
   "21628": {
    "type_id": 21628,
@@ -3237,7 +4045,11 @@ export default {
      "id": 3327,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/shuttle/cs1",
+    "hull": "cs1_t1"
+   }
   },
   "22428": {
    "type_id": 22428,
@@ -3255,7 +4067,11 @@ export default {
      "id": 28656,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/amarr/battleship/ab2",
+    "hull": "ab2_t2"
+   }
   },
   "22430": {
    "type_id": 22430,
@@ -3273,7 +4089,11 @@ export default {
      "id": 28656,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/battleship/gb1",
+    "hull": "gb1_t2"
+   }
   },
   "22436": {
    "type_id": 22436,
@@ -3291,7 +4111,11 @@ export default {
      "id": 28656,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/battleship/cb2",
+    "hull": "cb2_t2"
+   }
   },
   "22440": {
    "type_id": 22440,
@@ -3309,7 +4133,11 @@ export default {
      "id": 28656,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/minmatar/battleship/mb1",
+    "hull": "mb1_t2b"
+   }
   },
   "22442": {
    "type_id": 22442,
@@ -3327,7 +4155,11 @@ export default {
      "id": 23950,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/battlecruiser/gbc2",
+    "hull": "gbc2_t2"
+   }
   },
   "22444": {
    "type_id": 22444,
@@ -3345,7 +4177,11 @@ export default {
      "id": 23950,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/minmatar/battlecruiser/mbc2",
+    "hull": "mbc2_t2"
+   }
   },
   "22446": {
    "type_id": 22446,
@@ -3363,7 +4199,11 @@ export default {
      "id": 23950,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/battlecruiser/cbc1",
+    "hull": "cbc1_t2b"
+   }
   },
   "22448": {
    "type_id": 22448,
@@ -3381,7 +4221,11 @@ export default {
      "id": 23950,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/amarr/battlecruiser/abc2",
+    "hull": "abc2_t2"
+   }
   },
   "22452": {
    "type_id": 22452,
@@ -3399,7 +4243,11 @@ export default {
      "id": 12098,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/amarr/destroyer/ade1",
+    "hull": "ade1_t2"
+   }
   },
   "22456": {
    "type_id": 22456,
@@ -3417,7 +4265,11 @@ export default {
      "id": 12098,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/minmatar/destroyer/mde1",
+    "hull": "mde1_t2c"
+   }
   },
   "22460": {
    "type_id": 22460,
@@ -3435,7 +4287,11 @@ export default {
      "id": 12098,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/destroyer/gde1",
+    "hull": "gde1_t2"
+   }
   },
   "22464": {
    "type_id": 22464,
@@ -3453,7 +4309,11 @@ export default {
      "id": 12098,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/destroyer/cde1",
+    "hull": "cde1_t2"
+   }
   },
   "22466": {
    "type_id": 22466,
@@ -3471,7 +4331,11 @@ export default {
      "id": 23950,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/battlecruiser/gbc1",
+    "hull": "gbc1_t2a"
+   }
   },
   "22468": {
    "type_id": 22468,
@@ -3489,7 +4353,11 @@ export default {
      "id": 23950,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/minmatar/battlecruiser/mbc1",
+    "hull": "mbc1_t2c"
+   }
   },
   "22470": {
    "type_id": 22470,
@@ -3507,7 +4375,11 @@ export default {
      "id": 23950,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/battlecruiser/cbc2",
+    "hull": "cbc2_t2"
+   }
   },
   "22474": {
    "type_id": 22474,
@@ -3525,7 +4397,11 @@ export default {
      "id": 23950,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/amarr/battlecruiser/abc1",
+    "hull": "abc1_t2a"
+   }
   },
   "22544": {
    "type_id": 22544,
@@ -3543,7 +4419,11 @@ export default {
      "id": 17940,
      "level": 5
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/ore/barge/oreba3",
+    "hull": "oreba3_t2"
+   }
   },
   "22546": {
    "type_id": 22546,
@@ -3561,7 +4441,11 @@ export default {
      "id": 17940,
      "level": 5
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/ore/barge/oreba1",
+    "hull": "oreba1_t2"
+   }
   },
   "22548": {
    "type_id": 22548,
@@ -3579,7 +4463,11 @@ export default {
      "id": 17940,
      "level": 5
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/ore/barge/oreba2",
+    "hull": "oreba2_t2"
+   }
   },
   "22852": {
    "type_id": 22852,
@@ -3597,7 +4485,11 @@ export default {
      "id": 24314,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/minmatar/carrier/mca1",
+    "hull": "mca1_t1"
+   }
   },
   "23757": {
    "type_id": 23757,
@@ -3615,7 +4507,11 @@ export default {
      "id": 24311,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/amarr/carrier/aca2",
+    "hull": "aca2_t1"
+   }
   },
   "23773": {
    "type_id": 23773,
@@ -3633,7 +4529,11 @@ export default {
      "id": 3345,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/minmatar/titan/mt1",
+    "hull": "mt1_t1"
+   }
   },
   "23911": {
    "type_id": 23911,
@@ -3651,7 +4551,11 @@ export default {
      "id": 24313,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/carrier/gca2",
+    "hull": "gca2_t1"
+   }
   },
   "23913": {
    "type_id": 23913,
@@ -3669,7 +4573,11 @@ export default {
      "id": 24313,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/carrier/gca1",
+    "hull": "gca1_t1"
+   }
   },
   "23915": {
    "type_id": 23915,
@@ -3687,7 +4595,11 @@ export default {
      "id": 24312,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/carrier/cca1",
+    "hull": "cca1_t1"
+   }
   },
   "23917": {
    "type_id": 23917,
@@ -3705,7 +4617,11 @@ export default {
      "id": 24312,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/carrier/cca2",
+    "hull": "cca2_t1"
+   }
   },
   "23919": {
    "type_id": 23919,
@@ -3723,7 +4639,11 @@ export default {
      "id": 24311,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/amarr/carrier/aca1",
+    "hull": "aca1_t1"
+   }
   },
   "24483": {
    "type_id": 24483,
@@ -3741,7 +4661,11 @@ export default {
      "id": 24314,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/minmatar/carrier/mca2",
+    "hull": "mca2_t1"
+   }
   },
   "24688": {
    "type_id": 24688,
@@ -3755,7 +4679,11 @@ export default {
      "id": 3338,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/battleship/cb3",
+    "hull": "cb3_t1"
+   }
   },
   "24690": {
    "type_id": 24690,
@@ -3769,7 +4697,11 @@ export default {
      "id": 3336,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/battleship/gb3",
+    "hull": "gb3_t1"
+   }
   },
   "24692": {
    "type_id": 24692,
@@ -3783,7 +4715,11 @@ export default {
      "id": 3339,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/amarr/battleship/ab3",
+    "hull": "ab3_t1"
+   }
   },
   "24694": {
    "type_id": 24694,
@@ -3797,7 +4733,11 @@ export default {
      "id": 3337,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/minmatar/battleship/mb3",
+    "hull": "mb3_t1"
+   }
   },
   "24696": {
    "type_id": 24696,
@@ -3811,7 +4751,11 @@ export default {
      "id": 33095,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/amarr/battlecruiser/abc2",
+    "hull": "abc2_t1"
+   }
   },
   "24698": {
    "type_id": 24698,
@@ -3825,7 +4769,11 @@ export default {
      "id": 33096,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/battlecruiser/cbc2",
+    "hull": "cbc2_t1"
+   }
   },
   "24700": {
    "type_id": 24700,
@@ -3839,7 +4787,11 @@ export default {
      "id": 33097,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/battlecruiser/gbc2",
+    "hull": "gbc2_t1"
+   }
   },
   "24702": {
    "type_id": 24702,
@@ -3853,7 +4805,11 @@ export default {
      "id": 33098,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/minmatar/battlecruiser/mbc2",
+    "hull": "mbc2_t1"
+   }
   },
   "26840": {
    "type_id": 26840,
@@ -3867,7 +4823,11 @@ export default {
      "id": 3338,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/battleship/cb1",
+    "hull": "cb1_t1"
+   }
   },
   "26842": {
    "type_id": 26842,
@@ -3881,7 +4841,11 @@ export default {
      "id": 3337,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/minmatar/battleship/mb2",
+    "hull": "mb2_t1"
+   }
   },
   "28352": {
    "type_id": 28352,
@@ -3903,7 +4867,11 @@ export default {
      "id": 3456,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/ore/capital/orecs1",
+    "hull": "orecs1_t1"
+   }
   },
   "28606": {
    "type_id": 28606,
@@ -3917,7 +4885,11 @@ export default {
      "id": 29637,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/ore/freighter/orefr1",
+    "hull": "orefr1_t1"
+   }
   },
   "28659": {
    "type_id": 28659,
@@ -3935,7 +4907,11 @@ export default {
      "id": 28667,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/amarr/battleship/ab1",
+    "hull": "ab1_t2"
+   }
   },
   "28661": {
    "type_id": 28661,
@@ -3953,7 +4929,11 @@ export default {
      "id": 28667,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/battleship/gb2",
+    "hull": "gb2_t2"
+   }
   },
   "28665": {
    "type_id": 28665,
@@ -3971,7 +4951,11 @@ export default {
      "id": 28667,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/minmatar/battleship/mb2",
+    "hull": "mb2_t2a"
+   }
   },
   "28710": {
    "type_id": 28710,
@@ -3989,7 +4973,11 @@ export default {
      "id": 28667,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/battleship/cb1",
+    "hull": "cb1_t2"
+   }
   },
   "28844": {
    "type_id": 28844,
@@ -4011,7 +4999,11 @@ export default {
      "id": 21611,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/freighter/cfr1",
+    "hull": "cfr1_t2"
+   }
   },
   "28846": {
    "type_id": 28846,
@@ -4033,7 +5025,11 @@ export default {
      "id": 21611,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/minmatar/freighter/mfr1",
+    "hull": "mfr1_t2"
+   }
   },
   "28848": {
    "type_id": 28848,
@@ -4055,7 +5051,11 @@ export default {
      "id": 21611,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/freighter/gfr1",
+    "hull": "gfr1_t2"
+   }
   },
   "28850": {
    "type_id": 28850,
@@ -4077,7 +5077,11 @@ export default {
      "id": 21611,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/amarr/freighter/afr1",
+    "hull": "afr1_t2"
+   }
   },
   "29248": {
    "type_id": 29248,
@@ -4091,7 +5095,11 @@ export default {
      "id": 3331,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/amarr/frigate/af7",
+    "hull": "af7_t1"
+   }
   },
   "29266": {
    "type_id": 29266,
@@ -4105,7 +5113,11 @@ export default {
      "id": 3327,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/soct/frigate/soctf1",
+    "hull": "soctf1_t1"
+   }
   },
   "29336": {
    "type_id": 29336,
@@ -4119,7 +5131,11 @@ export default {
      "id": 3333,
      "level": 2
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/minmatar/cruiser/mc4",
+    "hull": "mc4_t1"
+   }
   },
   "29337": {
    "type_id": 29337,
@@ -4133,7 +5149,11 @@ export default {
      "id": 3335,
      "level": 2
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/amarr/cruiser/ac3",
+    "hull": "ac3_t1"
+   }
   },
   "29340": {
    "type_id": 29340,
@@ -4147,7 +5167,11 @@ export default {
      "id": 3334,
      "level": 2
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/cruiser/cc1",
+    "hull": "cc1_fn"
+   }
   },
   "29344": {
    "type_id": 29344,
@@ -4161,7 +5185,11 @@ export default {
      "id": 3332,
      "level": 2
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/cruiser/gc2",
+    "hull": "gc2_t1"
+   }
   },
   "29984": {
    "type_id": 29984,
@@ -4191,7 +5219,11 @@ export default {
      "id": 30549,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/strategiccruiser/csc1",
+    "hull": "csc1_t3"
+   }
   },
   "29986": {
    "type_id": 29986,
@@ -4221,7 +5253,11 @@ export default {
      "id": 30537,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/amarr/strategiccruiser/asc1",
+    "hull": "asc1_t3"
+   }
   },
   "29988": {
    "type_id": 29988,
@@ -4251,7 +5287,11 @@ export default {
      "id": 30550,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/strategiccruiser/gsc1",
+    "hull": "gsc1_t3"
+   }
   },
   "29990": {
    "type_id": 29990,
@@ -4281,7 +5321,11 @@ export default {
      "id": 30551,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/minmatar/strategiccruiser/msc1",
+    "hull": "msc1_t3"
+   }
   },
   "30842": {
    "type_id": 30842,
@@ -4295,7 +5339,11 @@ export default {
      "id": 3327,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/shuttle/gs1",
+    "hull": "gs1_t1"
+   }
   },
   "32207": {
    "type_id": 32207,
@@ -4313,7 +5361,11 @@ export default {
      "id": 12095,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/minmatar/frigate/mf4",
+    "hull": "mf4_xviii"
+   }
   },
   "32209": {
    "type_id": 32209,
@@ -4331,7 +5383,11 @@ export default {
      "id": 16591,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/minmatar/cruiser/mc2",
+    "hull": "mc2_vii"
+   }
   },
   "32305": {
    "type_id": 32305,
@@ -4345,7 +5401,11 @@ export default {
      "id": 3339,
      "level": 2
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/amarr/battleship/ab2",
+    "hull": "ab2_t1"
+   }
   },
   "32307": {
    "type_id": 32307,
@@ -4359,7 +5419,11 @@ export default {
      "id": 3336,
      "level": 2
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/battleship/gb1",
+    "hull": "gb1_t1"
+   }
   },
   "32309": {
    "type_id": 32309,
@@ -4373,7 +5437,11 @@ export default {
      "id": 3338,
      "level": 2
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/battleship/cb2",
+    "hull": "cb2_t1"
+   }
   },
   "32311": {
    "type_id": 32311,
@@ -4387,7 +5455,11 @@ export default {
      "id": 3337,
      "level": 2
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/minmatar/battleship/mb1",
+    "hull": "mb1_t1"
+   }
   },
   "32788": {
    "type_id": 32788,
@@ -4405,7 +5477,11 @@ export default {
      "id": 12095,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/frigate/cf7",
+    "hull": "cf7_x"
+   }
   },
   "32790": {
    "type_id": 32790,
@@ -4423,7 +5499,11 @@ export default {
      "id": 12096,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/cruiser/cc1",
+    "hull": "cc1_x"
+   }
   },
   "32811": {
    "type_id": 32811,
@@ -4437,7 +5517,11 @@ export default {
      "id": 3340,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/industrial/gi4",
+    "hull": "gi4_t1"
+   }
   },
   "32872": {
    "type_id": 32872,
@@ -4451,7 +5535,11 @@ export default {
      "id": 33093,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/destroyer/gde2",
+    "hull": "gde2_t1"
+   }
   },
   "32874": {
    "type_id": 32874,
@@ -4465,7 +5553,11 @@ export default {
      "id": 33091,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/amarr/destroyer/ade2",
+    "hull": "ade2_t1"
+   }
   },
   "32876": {
    "type_id": 32876,
@@ -4479,7 +5571,11 @@ export default {
      "id": 33092,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/destroyer/cde2",
+    "hull": "cde2_t1"
+   }
   },
   "32878": {
    "type_id": 32878,
@@ -4493,7 +5589,11 @@ export default {
      "id": 33094,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/minmatar/destroyer/mde2",
+    "hull": "mde2_t1"
+   }
   },
   "32880": {
    "type_id": 32880,
@@ -4507,7 +5607,11 @@ export default {
      "id": 32918,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/ore/frigate/oref1",
+    "hull": "oref1_t1"
+   }
   },
   "33079": {
    "type_id": 33079,
@@ -4521,7 +5625,11 @@ export default {
      "id": 3327,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/amarr/frigate/af1",
+    "hull": "af1_t1"
+   }
   },
   "33081": {
    "type_id": 33081,
@@ -4535,7 +5643,11 @@ export default {
      "id": 3327,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/frigate/cf5",
+    "hull": "cf5_t1"
+   }
   },
   "33083": {
    "type_id": 33083,
@@ -4549,7 +5661,11 @@ export default {
      "id": 3327,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/frigate/gf1",
+    "hull": "gf1_t1"
+   }
   },
   "33151": {
    "type_id": 33151,
@@ -4563,7 +5679,11 @@ export default {
      "id": 33097,
      "level": 2
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/battlecruiser/gbc1",
+    "hull": "gbc1_t1"
+   }
   },
   "33153": {
    "type_id": 33153,
@@ -4577,7 +5697,11 @@ export default {
      "id": 33096,
      "level": 2
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/battlecruiser/cbc2",
+    "hull": "cbc2_t1"
+   }
   },
   "33155": {
    "type_id": 33155,
@@ -4591,7 +5715,11 @@ export default {
      "id": 33095,
      "level": 2
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/amarr/battlecruiser/abc2",
+    "hull": "abc2_t1"
+   }
   },
   "33157": {
    "type_id": 33157,
@@ -4605,7 +5733,11 @@ export default {
      "id": 33098,
      "level": 2
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/minmatar/battlecruiser/mbc2",
+    "hull": "mbc2_t1"
+   }
   },
   "33395": {
    "type_id": 33395,
@@ -4627,7 +5759,11 @@ export default {
      "id": 22761,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/angel/cruiser/angc1",
+    "hull": "angc1_xi"
+   }
   },
   "33397": {
    "type_id": 33397,
@@ -4649,7 +5785,11 @@ export default {
      "id": 12093,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/angel/frigate/angf1",
+    "hull": "angf1_xi"
+   }
   },
   "33468": {
    "type_id": 33468,
@@ -4667,7 +5807,11 @@ export default {
      "id": 3328,
      "level": 3
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/soe/frigate/soef1",
+    "hull": "soef1_t1"
+   }
   },
   "33470": {
    "type_id": 33470,
@@ -4685,7 +5829,11 @@ export default {
      "id": 3332,
      "level": 2
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/soe/cruiser/soec1",
+    "hull": "soec1_t1"
+   }
   },
   "33472": {
    "type_id": 33472,
@@ -4703,7 +5851,11 @@ export default {
      "id": 3336,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/soe/battleship/soeb1",
+    "hull": "soeb1_t1"
+   }
   },
   "33513": {
    "type_id": 33513,
@@ -4717,7 +5869,11 @@ export default {
      "id": 3327,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/minmatar/shuttle/ms1",
+    "hull": "ms1_t1"
+   }
   },
   "33673": {
    "type_id": 33673,
@@ -4739,7 +5895,11 @@ export default {
      "id": 12092,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/frigate/cf2",
+    "hull": "cf2_xii"
+   }
   },
   "33675": {
    "type_id": 33675,
@@ -4761,7 +5921,11 @@ export default {
      "id": 22761,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/cruiser/cc2",
+    "hull": "cc2_xii"
+   }
   },
   "33697": {
    "type_id": 33697,
@@ -4779,7 +5943,11 @@ export default {
      "id": 33856,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/ore/frigate/oref1",
+    "hull": "oref1_t2b"
+   }
   },
   "33816": {
    "type_id": 33816,
@@ -4797,7 +5965,11 @@ export default {
      "id": 3328,
      "level": 3
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/mordu/frigate/morf1",
+    "hull": "morf1_t1"
+   }
   },
   "33818": {
    "type_id": 33818,
@@ -4815,7 +5987,11 @@ export default {
      "id": 3332,
      "level": 2
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/mordu/cruiser/morc1",
+    "hull": "morc1_t1"
+   }
   },
   "33820": {
    "type_id": 33820,
@@ -4833,7 +6009,11 @@ export default {
      "id": 3336,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/mordu/battleship/morb1",
+    "hull": "morb1_t1"
+   }
   },
   "34317": {
    "type_id": 34317,
@@ -4847,7 +6027,11 @@ export default {
      "id": 34390,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/amarr/destroyer/ade3",
+    "hull": "ade3_t3"
+   }
   },
   "34328": {
    "type_id": 34328,
@@ -4861,7 +6045,11 @@ export default {
      "id": 34327,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/ore/capital/orecs2",
+    "hull": "orecs2_t1"
+   }
   },
   "34496": {
    "type_id": 34496,
@@ -4874,7 +6062,11 @@ export default {
      "id": 3327,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/concord/frigate/conf1",
+    "hull": "conf1_t1"
+   }
   },
   "34562": {
    "type_id": 34562,
@@ -4888,7 +6080,11 @@ export default {
      "id": 34533,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/minmatar/destroyer/mde3",
+    "hull": "mde3_t3"
+   }
   },
   "34590": {
    "type_id": 34590,
@@ -4902,7 +6098,11 @@ export default {
      "id": 3327,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/shuttle/gy1",
+    "hull": "gy1_t1"
+   }
   },
   "34828": {
    "type_id": 34828,
@@ -4916,7 +6116,11 @@ export default {
      "id": 35680,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/destroyer/cde3",
+    "hull": "cde3_t3"
+   }
   },
   "35683": {
    "type_id": 35683,
@@ -4930,7 +6134,11 @@ export default {
      "id": 35685,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/destroyer/gde3",
+    "hull": "gde3_t3"
+   }
   },
   "35779": {
    "type_id": 35779,
@@ -4952,7 +6160,11 @@ export default {
      "id": 12092,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/sansha/frigate/sf2",
+    "hull": "sf2_xiii"
+   }
   },
   "35781": {
    "type_id": 35781,
@@ -4974,7 +6186,11 @@ export default {
      "id": 28609,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/sansha/cruiser/sc1",
+    "hull": "sc1_xiii"
+   }
   },
   "37135": {
    "type_id": 37135,
@@ -4992,7 +6208,11 @@ export default {
      "id": 33856,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/ore/frigate/oref1",
+    "hull": "oref1_t2c"
+   }
   },
   "37453": {
    "type_id": 37453,
@@ -5006,7 +6226,11 @@ export default {
      "id": 3331,
      "level": 2
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/amarr/frigate/af2",
+    "hull": "af2_t1"
+   }
   },
   "37454": {
    "type_id": 37454,
@@ -5020,7 +6244,11 @@ export default {
      "id": 3329,
      "level": 2
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/minmatar/frigate/mf7",
+    "hull": "mf7_t1"
+   }
   },
   "37455": {
    "type_id": 37455,
@@ -5034,7 +6262,11 @@ export default {
      "id": 3330,
      "level": 2
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/frigate/cf4",
+    "hull": "cf4_t1"
+   }
   },
   "37456": {
    "type_id": 37456,
@@ -5048,7 +6280,11 @@ export default {
      "id": 3328,
      "level": 2
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/frigate/gf7",
+    "hull": "gf7_t1"
+   }
   },
   "37457": {
    "type_id": 37457,
@@ -5066,7 +6302,11 @@ export default {
      "id": 40328,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/amarr/frigate/af5",
+    "hull": "af5_t2b"
+   }
   },
   "37458": {
    "type_id": 37458,
@@ -5084,7 +6324,11 @@ export default {
      "id": 40328,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/frigate/cf1",
+    "hull": "cf1_t2"
+   }
   },
   "37459": {
    "type_id": 37459,
@@ -5102,7 +6346,11 @@ export default {
      "id": 40328,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/frigate/gf2",
+    "hull": "gf2_t2"
+   }
   },
   "37460": {
    "type_id": 37460,
@@ -5120,7 +6368,11 @@ export default {
      "id": 40328,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/minmatar/frigate/mf6",
+    "hull": "mf6_t2"
+   }
   },
   "37480": {
    "type_id": 37480,
@@ -5138,7 +6390,11 @@ export default {
      "id": 37615,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/minmatar/destroyer/mde2",
+    "hull": "mde2_t2"
+   }
   },
   "37481": {
    "type_id": 37481,
@@ -5156,7 +6412,11 @@ export default {
      "id": 37615,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/amarr/destroyer/ade2",
+    "hull": "ade2_t2"
+   }
   },
   "37482": {
    "type_id": 37482,
@@ -5174,7 +6434,11 @@ export default {
      "id": 37615,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/destroyer/cde2",
+    "hull": "cde2_t2"
+   }
   },
   "37483": {
    "type_id": 37483,
@@ -5192,7 +6456,11 @@ export default {
      "id": 37615,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/destroyer/gde2",
+    "hull": "gde2_t2"
+   }
   },
   "37604": {
    "type_id": 37604,
@@ -5210,7 +6478,11 @@ export default {
      "id": 24311,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/amarr/forceauxillary/afaux1",
+    "hull": "afaux1_t1"
+   }
   },
   "37605": {
    "type_id": 37605,
@@ -5228,7 +6500,11 @@ export default {
      "id": 24312,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/forceauxillary/cfaux1",
+    "hull": "cfaux1_t1"
+   }
   },
   "37606": {
    "type_id": 37606,
@@ -5246,7 +6522,11 @@ export default {
      "id": 24314,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/minmatar/forceauxillary/mfaux1",
+    "hull": "mfaux1_t1"
+   }
   },
   "37607": {
    "type_id": 37607,
@@ -5264,7 +6544,11 @@ export default {
      "id": 24313,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/forceauxillary/gfaux1",
+    "hull": "gfaux1_t1"
+   }
   },
   "42124": {
    "type_id": 42124,
@@ -5290,7 +6574,11 @@ export default {
      "id": 3456,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/dreadnought/gdn1",
+    "hull": "gdn1_t1"
+   }
   },
   "42125": {
    "type_id": 42125,
@@ -5312,7 +6600,11 @@ export default {
      "id": 24314,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/carrier/gca1",
+    "hull": "gca1_t1"
+   }
   },
   "42126": {
    "type_id": 42126,
@@ -5334,7 +6626,11 @@ export default {
      "id": 3345,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/titan/gt1",
+    "hull": "gt1_t1"
+   }
   },
   "42241": {
    "type_id": 42241,
@@ -5356,7 +6652,11 @@ export default {
      "id": 3345,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/amarr/titan/at1",
+    "hull": "at1_t1"
+   }
   },
   "42242": {
    "type_id": 42242,
@@ -5378,7 +6678,11 @@ export default {
      "id": 24314,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/amarr/forceauxillary/afaux1",
+    "hull": "afaux1_t1"
+   }
   },
   "42243": {
    "type_id": 42243,
@@ -5404,7 +6708,11 @@ export default {
      "id": 3456,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/amarr/dreadnought/adn1",
+    "hull": "adn1_t1"
+   }
   },
   "42244": {
    "type_id": 42244,
@@ -5418,7 +6726,11 @@ export default {
      "id": 29637,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/ore/battleship/oreb1",
+    "hull": "oreb1_t1c"
+   }
   },
   "42245": {
    "type_id": 42245,
@@ -5440,7 +6752,11 @@ export default {
      "id": 12096,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/amarr/cruiser/ac6",
+    "hull": "ac6_xiv"
+   }
   },
   "42246": {
    "type_id": 42246,
@@ -5462,7 +6778,11 @@ export default {
      "id": 12093,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/amarr/frigate/af8",
+    "hull": "af8_xiv"
+   }
   },
   "42685": {
    "type_id": 42685,
@@ -5476,7 +6796,11 @@ export default {
      "id": 3327,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/soct/destroyer/soctde1",
+    "hull": "soctde1_t1"
+   }
   },
   "44993": {
    "type_id": 44993,
@@ -5505,7 +6829,11 @@ export default {
      "id": 12093,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/concord/frigate/conf1",
+    "hull": "conf1_t1"
+   }
   },
   "44995": {
    "type_id": 44995,
@@ -5534,7 +6862,11 @@ export default {
      "id": 22761,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/concord/cruiser/conc1",
+    "hull": "conc1_t1"
+   }
   },
   "44996": {
    "type_id": 44996,
@@ -5563,7 +6895,11 @@ export default {
      "id": 28656,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/concord/battleship/conb1",
+    "hull": "conb1_t1"
+   }
   },
   "45530": {
    "type_id": 45530,
@@ -5585,7 +6921,11 @@ export default {
      "id": 12093,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/frigate/gf3",
+    "hull": "gf3_t2"
+   }
   },
   "45531": {
    "type_id": 45531,
@@ -5607,7 +6947,11 @@ export default {
      "id": 22761,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/cruiser/gc1",
+    "hull": "gc1_t1"
+   }
   },
   "45534": {
    "type_id": 45534,
@@ -5636,7 +6980,11 @@ export default {
      "id": 47445,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/concord/cruiser/conc1",
+    "hull": "conc1_t2b"
+   }
   },
   "45645": {
    "type_id": 45645,
@@ -5658,7 +7006,11 @@ export default {
      "id": 24313,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/forceauxillary/cfaux1",
+    "hull": "cfaux1_t1"
+   }
   },
   "45647": {
    "type_id": 45647,
@@ -5684,7 +7036,11 @@ export default {
      "id": 3456,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/dreadnought/cdn1",
+    "hull": "cdn1_t1"
+   }
   },
   "45649": {
    "type_id": 45649,
@@ -5706,7 +7062,11 @@ export default {
      "id": 3344,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/titan/ct1",
+    "hull": "ct1_t1"
+   }
   },
   "47269": {
    "type_id": 47269,
@@ -5720,7 +7080,11 @@ export default {
      "id": 47867,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/triglavian/frigate/tgf01",
+    "hull": "tgf01_t1"
+   }
   },
   "47270": {
    "type_id": 47270,
@@ -5734,7 +7098,11 @@ export default {
      "id": 47868,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/triglavian/cruiser/tgc01",
+    "hull": "tgc01_t1"
+   }
   },
   "47271": {
    "type_id": 47271,
@@ -5748,7 +7116,11 @@ export default {
      "id": 47869,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/triglavian/battleship/tgb01",
+    "hull": "tgb01_t1"
+   }
   },
   "47466": {
    "type_id": 47466,
@@ -5762,7 +7134,11 @@ export default {
      "id": 3327,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/soct/battleship/soctb1",
+    "hull": "soctb1_t1"
+   }
   },
   "48635": {
    "type_id": 48635,
@@ -5780,7 +7156,11 @@ export default {
      "id": 22761,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/triglavian/cruiser/tgc01",
+    "hull": "tgc01_t1"
+   }
   },
   "48636": {
    "type_id": 48636,
@@ -5798,7 +7178,11 @@ export default {
      "id": 12093,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/triglavian/frigate/tgf01",
+    "hull": "tgf01_t1"
+   }
   },
   "49710": {
    "type_id": 49710,
@@ -5812,7 +7196,11 @@ export default {
      "id": 49742,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/triglavian/destroyer/tgde01",
+    "hull": "tgde01_t1"
+   }
   },
   "49711": {
    "type_id": 49711,
@@ -5826,7 +7214,11 @@ export default {
      "id": 49743,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/triglavian/battlecruiser/tgbc01",
+    "hull": "tgbc01_t1"
+   }
   },
   "49712": {
    "type_id": 49712,
@@ -5840,7 +7232,11 @@ export default {
      "id": 47868,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/triglavian/cruiser/tgc02",
+    "hull": "tgc02_t1"
+   }
   },
   "49713": {
    "type_id": 49713,
@@ -5858,7 +7254,11 @@ export default {
      "id": 12096,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/triglavian/cruiser/tgc02",
+    "hull": "tgc02_t2"
+   }
   },
   "52250": {
    "type_id": 52250,
@@ -5876,7 +7276,11 @@ export default {
      "id": 12095,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/triglavian/frigate/tgf01",
+    "hull": "tgf01_t2"
+   }
   },
   "52252": {
    "type_id": 52252,
@@ -5894,7 +7298,11 @@ export default {
      "id": 16591,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/triglavian/cruiser/tgc01",
+    "hull": "tgc01_t2"
+   }
   },
   "52254": {
    "type_id": 52254,
@@ -5912,7 +7320,11 @@ export default {
      "id": 37615,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/triglavian/destroyer/tgde01",
+    "hull": "tgde01_t2"
+   }
   },
   "52907": {
    "type_id": 52907,
@@ -5934,7 +7346,11 @@ export default {
      "id": 3456,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/triglavian/dreadnought/tgdn01",
+    "hull": "tgdn01_t1"
+   }
   },
   "54731": {
    "type_id": 54731,
@@ -5948,7 +7364,11 @@ export default {
      "id": 55031,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/upwell/frigate/uwf01",
+    "hull": "uwf01_t1"
+   }
   },
   "54732": {
    "type_id": 54732,
@@ -5962,7 +7382,11 @@ export default {
      "id": 55032,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/upwell/cruiser/uwc01",
+    "hull": "uwc01_t1"
+   }
   },
   "54733": {
    "type_id": 54733,
@@ -5976,7 +7400,11 @@ export default {
      "id": 54794,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/upwell/battleship/uwb01",
+    "hull": "uwb01_t1"
+   }
   },
   "60764": {
    "type_id": 60764,
@@ -5998,7 +7426,11 @@ export default {
      "id": 28609,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/mordu/cruiser/morc1",
+    "hull": "morc1_xvii"
+   }
   },
   "60765": {
    "type_id": 60765,
@@ -6020,7 +7452,11 @@ export default {
      "id": 28615,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/mordu/frigate/morf1",
+    "hull": "morf1_xvii"
+   }
   },
   "64034": {
    "type_id": 64034,
@@ -6034,7 +7470,11 @@ export default {
      "id": 3327,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/shuttle/cs1",
+    "hull": "cs1_t1"
+   }
   },
   "72811": {
    "type_id": 72811,
@@ -6048,7 +7488,11 @@ export default {
      "id": 33098,
      "level": 2
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/minmatar/battlecruiser/mbc1",
+    "hull": "mbc1_t1"
+   }
   },
   "72812": {
    "type_id": 72812,
@@ -6062,7 +7506,11 @@ export default {
      "id": 33096,
      "level": 2
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/battlecruiser/cbc1",
+    "hull": "cbc1_t1"
+   }
   },
   "72869": {
    "type_id": 72869,
@@ -6076,7 +7524,11 @@ export default {
      "id": 33097,
      "level": 2
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/battlecruiser/gbc2",
+    "hull": "gbc2_t1"
+   }
   },
   "72872": {
    "type_id": 72872,
@@ -6090,7 +7542,11 @@ export default {
      "id": 33095,
      "level": 2
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/amarr/battlecruiser/abc1",
+    "hull": "abc1_t1"
+   }
   },
   "72903": {
    "type_id": 72903,
@@ -6104,7 +7560,11 @@ export default {
      "id": 3329,
      "level": 2
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/minmatar/frigate/mf2",
+    "hull": "mf2_t1"
+   }
   },
   "72904": {
    "type_id": 72904,
@@ -6118,7 +7578,11 @@ export default {
      "id": 3330,
      "level": 2
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/frigate/cf3",
+    "hull": "cf3_t1"
+   }
   },
   "72907": {
    "type_id": 72907,
@@ -6132,7 +7596,11 @@ export default {
      "id": 3331,
      "level": 2
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/amarr/frigate/af7",
+    "hull": "af7_t1"
+   }
   },
   "72913": {
    "type_id": 72913,
@@ -6146,7 +7614,11 @@ export default {
      "id": 3328,
      "level": 2
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/frigate/gf5",
+    "hull": "gf5_t1"
+   }
   },
   "73787": {
    "type_id": 73787,
@@ -6168,7 +7640,11 @@ export default {
      "id": 3456,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/minmatar/dreadnought/mdn1",
+    "hull": "mdn1_fn"
+   }
   },
   "73789": {
    "type_id": 73789,
@@ -6182,7 +7658,11 @@ export default {
      "id": 33091,
      "level": 2
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/amarr/destroyer/ade1",
+    "hull": "ade1_fn"
+   }
   },
   "73790": {
    "type_id": 73790,
@@ -6204,7 +7684,11 @@ export default {
      "id": 3456,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/amarr/dreadnought/adn1",
+    "hull": "adn1_fn"
+   }
   },
   "73792": {
    "type_id": 73792,
@@ -6226,7 +7710,11 @@ export default {
      "id": 3456,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/dreadnought/gdn1",
+    "hull": "gdn1_fn"
+   }
   },
   "73793": {
    "type_id": 73793,
@@ -6248,7 +7736,11 @@ export default {
      "id": 3456,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/dreadnought/cdn1",
+    "hull": "cdn1_fn"
+   }
   },
   "73794": {
    "type_id": 73794,
@@ -6262,7 +7754,11 @@ export default {
      "id": 33094,
      "level": 2
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/minmatar/destroyer/mde1",
+    "hull": "mde1_fn"
+   }
   },
   "73795": {
    "type_id": 73795,
@@ -6276,7 +7772,11 @@ export default {
      "id": 33092,
      "level": 2
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/destroyer/cde1",
+    "hull": "cde1_fn"
+   }
   },
   "73796": {
    "type_id": 73796,
@@ -6290,7 +7790,11 @@ export default {
      "id": 33093,
      "level": 2
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/destroyer/gde1",
+    "hull": "gde1_fn"
+   }
   },
   "74141": {
    "type_id": 74141,
@@ -6308,7 +7812,11 @@ export default {
      "id": 12095,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/minmatar/frigate/mf4",
+    "hull": "mf4_xviii"
+   }
   },
   "74316": {
    "type_id": 74316,
@@ -6326,7 +7834,11 @@ export default {
      "id": 16591,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/minmatar/cruiser/mc2",
+    "hull": "mc2_vii"
+   }
   },
   "77114": {
    "type_id": 77114,
@@ -6340,7 +7852,11 @@ export default {
      "id": 3327,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/soct/frigate/soctf2",
+    "hull": "soctf2_t1"
+   }
   },
   "77281": {
    "type_id": 77281,
@@ -6362,7 +7878,11 @@ export default {
      "id": 20531,
      "level": 5
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/dreadnought/gdn1",
+    "hull": "gdn1_fn"
+   }
   },
   "77283": {
    "type_id": 77283,
@@ -6384,7 +7904,11 @@ export default {
      "id": 20525,
      "level": 5
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/amarr/dreadnought/adn1",
+    "hull": "adn1_fn"
+   }
   },
   "77284": {
    "type_id": 77284,
@@ -6406,7 +7930,11 @@ export default {
      "id": 20530,
      "level": 5
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/dreadnought/cdn1",
+    "hull": "cdn1_fn"
+   }
   },
   "77288": {
    "type_id": 77288,
@@ -6428,7 +7956,11 @@ export default {
      "id": 20532,
      "level": 5
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/minmatar/dreadnought/mdn1",
+    "hull": "mdn1_fn"
+   }
   },
   "77726": {
    "type_id": 77726,
@@ -6446,7 +7978,11 @@ export default {
      "id": 16591,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/cruiser/gc4",
+    "hull": "gc4_tournament"
+   }
   },
   "78333": {
    "type_id": 78333,
@@ -6464,7 +8000,11 @@ export default {
      "id": 33094,
      "level": 2
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/angel/destroyer/angde1",
+    "hull": "angde1_t1"
+   }
   },
   "78366": {
    "type_id": 78366,
@@ -6482,7 +8022,11 @@ export default {
      "id": 33097,
      "level": 2
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/battlecruiser/cbc2",
+    "hull": "cbc2_t1"
+   }
   },
   "78367": {
    "type_id": 78367,
@@ -6500,7 +8044,11 @@ export default {
      "id": 33092,
      "level": 2
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/destroyer/cde2",
+    "hull": "cde2_t1"
+   }
   },
   "78369": {
    "type_id": 78369,
@@ -6518,7 +8066,11 @@ export default {
      "id": 33097,
      "level": 2
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/angel/battlecruiser/angbc2",
+    "hull": "angbc2_t1"
+   }
   },
   "78414": {
    "type_id": 78414,
@@ -6536,7 +8088,11 @@ export default {
      "id": 12095,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/frigate/gf4",
+    "hull": "gf4_tournament"
+   }
   },
   "78576": {
    "type_id": 78576,
@@ -6558,7 +8114,11 @@ export default {
      "id": 3344,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/angel/titan/angt1",
+    "hull": "angt1_t1"
+   }
   },
   "81008": {
    "type_id": 81008,
@@ -6572,7 +8132,11 @@ export default {
      "id": 81032,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/upwell/industrial/uwi01",
+    "hull": "uwi01_t1"
+   }
   },
   "81040": {
    "type_id": 81040,
@@ -6590,7 +8154,11 @@ export default {
      "id": 81044,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/upwell/freighter/uwfr01",
+    "hull": "uwfr01_t1"
+   }
   },
   "81046": {
    "type_id": 81046,
@@ -6608,7 +8176,11 @@ export default {
      "id": 19719,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/upwell/industrial/uwi01",
+    "hull": "uwi01_t2a"
+   }
   },
   "81047": {
    "type_id": 81047,
@@ -6626,7 +8198,11 @@ export default {
      "id": 19719,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/upwell/industrial/uwi01",
+    "hull": "uwi01_t2b"
+   }
   },
   "85062": {
    "type_id": 85062,
@@ -6655,7 +8231,11 @@ export default {
      "id": 12093,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/concord/frigate/conf1",
+    "hull": "conf1_xx"
+   }
   },
   "85086": {
    "type_id": 85086,
@@ -6673,7 +8253,11 @@ export default {
      "id": 33096,
      "level": 2
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/deathless/battlecruiser/deabc1",
+    "hull": "deabc1_t1"
+   }
   },
   "85087": {
    "type_id": 85087,
@@ -6691,7 +8275,11 @@ export default {
      "id": 33094,
      "level": 2
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/deathless/destroyer/deade1",
+    "hull": "deade1_t1"
+   }
   },
   "85229": {
    "type_id": 85229,
@@ -6720,7 +8308,11 @@ export default {
      "id": 22761,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/concord/cruiser/conc1",
+    "hull": "conc1_xx"
+   }
   },
   "85236": {
    "type_id": 85236,
@@ -6749,7 +8341,11 @@ export default {
      "id": 28656,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/concord/battleship/conb1",
+    "hull": "conb1_xx"
+   }
   },
   "87381": {
    "type_id": 87381,
@@ -6775,7 +8371,11 @@ export default {
      "id": 3456,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/angel/dreadnought/angdn1",
+    "hull": "angdn1_t1"
+   }
   },
   "88001": {
    "type_id": 88001,
@@ -6793,7 +8393,11 @@ export default {
      "id": 28667,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/triglavian/battleship/tgb01",
+    "hull": "tgb01_t2"
+   }
   },
   "89240": {
    "type_id": 89240,
@@ -6807,7 +8411,11 @@ export default {
      "id": 89241,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/ore/destroyer/orede1",
+    "hull": "orede1_t1"
+   }
   },
   "89607": {
    "type_id": 89607,
@@ -6829,7 +8437,11 @@ export default {
      "id": 89609,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/soe/battlecruiser/soebc1",
+    "hull": "soebc1_t1"
+   }
   },
   "89647": {
    "type_id": 89647,
@@ -6843,7 +8455,11 @@ export default {
      "id": 89241,
      "level": 2
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/ore/destroyer/orede1",
+    "hull": "orede1_fn"
+   }
   },
   "89648": {
    "type_id": 89648,
@@ -6857,7 +8473,11 @@ export default {
      "id": 32918,
      "level": 3
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/ore/frigate/oref1",
+    "hull": "oref1_t1"
+   }
   },
   "89649": {
    "type_id": 89649,
@@ -6875,7 +8495,11 @@ export default {
      "id": 37615,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/ore/destroyer/orede1",
+    "hull": "orede1_t2b"
+   }
   },
   "89807": {
    "type_id": 89807,
@@ -6889,7 +8513,11 @@ export default {
      "id": 33096,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/battlecruiser/cbc3",
+    "hull": "cbc3_xxi"
+   }
   },
   "89808": {
    "type_id": 89808,
@@ -6903,7 +8531,11 @@ export default {
      "id": 35680,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/destroyer/cde3",
+    "hull": "cde3_xxi"
+   }
   },
   "91174": {
    "type_id": 91174,
@@ -6921,7 +8553,11 @@ export default {
      "id": 16281,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/ore/destroyer/orede1",
+    "hull": "orede1_t2c"
+   }
   },
   "91775": {
    "type_id": 91775,
@@ -6935,7 +8571,11 @@ export default {
      "id": 33091,
      "level": 2
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/amarr/destroyer/ade2",
+    "hull": "ade2_fn"
+   }
   },
   "91849": {
    "type_id": 91849,
@@ -6949,7 +8589,11 @@ export default {
      "id": 33093,
      "level": 2
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/destroyer/gde2",
+    "hull": "gde2_fn"
+   }
   },
   "91857": {
    "type_id": 91857,
@@ -6963,7 +8607,11 @@ export default {
      "id": 33092,
      "level": 2
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/destroyer/cde2",
+    "hull": "cde2_fn"
+   }
   },
   "91858": {
    "type_id": 91858,
@@ -6977,7 +8625,11 @@ export default {
      "id": 33094,
      "level": 2
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/minmatar/destroyer/mde2",
+    "hull": "mde2_fn"
+   }
   },
   "92282": {
    "type_id": 92282,
@@ -6991,7 +8643,11 @@ export default {
      "id": 3327,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/shuttle/gy1",
+    "hull": "gy1_t1"
+   }
   },
   "92283": {
    "type_id": 92283,
@@ -7005,7 +8661,11 @@ export default {
      "id": 3327,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/shuttle/gy1",
+    "hull": "gy1_t1"
+   }
   },
   "92284": {
    "type_id": 92284,
@@ -7019,7 +8679,11 @@ export default {
      "id": 3327,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/shuttle/gy1",
+    "hull": "gy1_t1"
+   }
   },
   "92822": {
    "type_id": 92822,
@@ -7041,7 +8705,11 @@ export default {
      "id": 93983,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/amarr/carrier/aca2",
+    "hull": "aca2_t2"
+   }
   },
   "92823": {
    "type_id": 92823,
@@ -7063,7 +8731,11 @@ export default {
      "id": 93983,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/caldari/carrier/cca1",
+    "hull": "cca1_t2"
+   }
   },
   "92824": {
    "type_id": 92824,
@@ -7085,7 +8757,11 @@ export default {
      "id": 93983,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/gallente/carrier/gca2",
+    "hull": "gca2_t2"
+   }
   },
   "92825": {
    "type_id": 92825,
@@ -7107,7 +8783,11 @@ export default {
      "id": 93983,
      "level": 1
     }
-   ]
+   ],
+   "model": {
+    "folder": "res:/dx9/model/ship/minmatar/carrier/mca2",
+    "hull": "mca2_t2"
+   }
   }
  },
  "races": {

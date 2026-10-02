@@ -2,7 +2,8 @@
 
 // Regenerates PodStack's ship data from EVE's static data export (SDE):
 //
-//   resources/ships.js   every published ship on the market: class, race, tech/meta group and the skills it needs
+//   resources/ships.js   every published ship on the market: class, race, tech/meta group, the skills it needs, and
+//                        where its hull model is in the EVE client's files (for the 3D viewer)
 //
 // Usage: `npm run update-ships` downloads the latest SDE from CCP (about 100 MB), or
 // `npm run update-ships -- <folder>` uses an already extracted JSONL SDE. It prints which ships are new or removed.
@@ -16,7 +17,7 @@ const {execFileSync} = require('child_process');
 const ROOT = path.join(__dirname, '..');
 const SDE_URL = 'https://developers.eveonline.com/static-data/tranquility';
 const SHIP_CATEGORY = 6;
-const FILES = ['types.jsonl', 'groups.jsonl', 'typeDogma.jsonl', 'races.jsonl', 'metaGroups.jsonl'];
+const FILES = ['types.jsonl', 'groups.jsonl', 'typeDogma.jsonl', 'races.jsonl', 'metaGroups.jsonl', 'graphics.jsonl', '_sde.jsonl'];
 
 // the same skill/level dogma attribute pairs skills use for their prerequisites
 const PREREQUISITES = [[182, 277], [183, 278], [184, 279], [1285, 1286], [1289, 1287], [1290, 1288]];
@@ -58,10 +59,21 @@ function loadCurrent() {
     }
 }
 
+// The hull's folder and name in the client's resources, e.g. {folder: 'res:/dx9/model/ship/minmatar/frigate/mf4',
+// hull: 'mf4_t1'}: its model is <folder>/<hull>.gr2 and its textures <folder>/<hull>_<map>.dds.
+function modelOf(graphic) {
+    if (!graphic || !graphic.sofHullName || !graphic.iconFolder) {
+        return undefined;
+    }
+    const folder = graphic.iconFolder.replace(/\\/g, '/').replace(/\/icons\/?$/i, '').toLowerCase();
+    return {folder, hull: graphic.sofHullName.toLowerCase()};
+}
+
 function build(dir) {
     const groups = new Map(readJsonl(dir, 'groups.jsonl').map(g => [g._key, g]));
     const races = new Map(readJsonl(dir, 'races.jsonl').map(r => [r._key, r.name.en]));
     const metaGroups = new Map(readJsonl(dir, 'metaGroups.jsonl').map(m => [m._key, m.name.en]));
+    const graphics = new Map(readJsonl(dir, 'graphics.jsonl').map(g => [g._key, g]));
     const dogma = new Map(readJsonl(dir, 'typeDogma.jsonl')
         .map(t => [t._key, new Map((t.dogmaAttributes || []).map(a => [a.attributeID, a.value]))]));
 
@@ -90,6 +102,7 @@ function build(dir) {
             race_id: type.raceID,
             meta: metaGroups.get(type.metaGroupID) || 'Tech I',
             skills,
+            model: modelOf(graphics.get(type.graphicID)),
         };
     }
 

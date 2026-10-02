@@ -13,6 +13,8 @@ import DateTimeHelper from '../../helpers/DateTimeHelper';
 import FittingHelper from '../../helpers/FittingHelper';
 import ImageHelper from '../../helpers/ImageHelper';
 import ShipHelper from '../../helpers/ShipHelper';
+import ShipModelHelper from '../../helpers/ShipModelHelper';
+import ShipViewer from '../ships/ShipViewer';
 import SkillPlanStore from '../../helpers/SkillPlanStore';
 import PageHeader from '../ui/PageHeader';
 import Panel from '../ui/Panel';
@@ -41,6 +43,7 @@ export default class ShipBrowser extends React.Component {
             flyableOnly: false,
             open: {},
             selected: undefined,
+            view3d: false,
             target: NEW_PLAN,
             added: undefined,
         };
@@ -176,15 +179,34 @@ export default class ShipBrowser extends React.Component {
 
         const can = character !== undefined && ShipHelper.canFly(character, ship);
         const needed = training[ship.type_id];
+        let eveFound = false;
+        let has3d = false;
+        try {
+            eveFound = ShipModelHelper.isAvailable();
+            has3d = eveFound && ShipModelHelper.locate(ship) !== undefined;
+        } catch (err) {
+            // the index couldn't be read: no 3D
+        }
         const plans = character !== undefined ? SkillPlanStore.getSkillPlansForCharacter(character.id) : [];
 
         return (
             <div className="stack">
                 <div className="panel ship-hero">
                     <img src={`https://images.evetech.net/types/${ship.type_id}/render?size=128`} alt="" width={128} height={128}/>
-                    <div>
+                    <div style={{flex: 1}}>
                         <div className="ship-hero-name">{ship.name}</div>
                         <div className="muted">{ship.group} · {ShipHelper.raceName(ship.race_id)} · {ship.meta}</div>
+                        <div className="ship-hero-actions">
+                            {has3d ?
+                                <button type="button" className={`accel-toggle ${this.state.view3d ? 'on' : ''}`}
+                                        onClick={() => this.setState({view3d: !this.state.view3d})}>
+                                    <i className="material-icons">view_in_ar</i>
+                                    <span>{this.state.view3d ? 'Hide 3D' : 'View in 3D'}</span>
+                                </button> :
+                                <span className="faint" title={eveFound ? 'Your EVE client has no model for this ship.' : 'Set your EVE folder in Settings to view ships in 3D.'}>
+                                    {eveFound ? 'No 3D model in your client' : '3D needs your EVE folder (Settings)'}
+                                </span>}
+                        </div>
                         {character !== undefined &&
                             <div style={{marginTop: 10}}>
                                 {can ?
@@ -194,6 +216,12 @@ export default class ShipBrowser extends React.Component {
                         }
                     </div>
                 </div>
+
+                {has3d && this.state.view3d &&
+                    <Panel title="3D View" icon="view_in_ar" flush={true} subtitle="From your EVE client">
+                        <ShipViewer ship={ship}/>
+                    </Panel>
+                }
 
                 <Panel title="Required Skills" icon="school" flush={true}>
                     <table className="data-table">
