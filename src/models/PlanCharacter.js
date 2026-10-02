@@ -52,6 +52,8 @@ class PlanCharacter {
         this.queue = [];
         this.time = 0;
         this.lastRemap = this.attributes.last_remap_date !== undefined ? (Date.now() - (new Date(this.attributes.last_remap_date).getTime())) : 0;
+        // time since the last remap when the plan starts
+        this.lastRemapAtStart = this.lastRemap;
 
         const finishedSkills = this.baseCharacter.getFinishedSkillsInQueue();
         const finishedSkillIds = finishedSkills.map(o => o.skill_id);

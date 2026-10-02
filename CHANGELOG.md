@@ -1,3 +1,12 @@
+## 0.2.14 Alpha (0.2.14-alpha)
+* Skill plans: Optimise reorders a plan to finish it sooner, keeping every skill after its prerequisites. Order only
+  matters around remaps in the plan (each skill moves after the remap that suits it best) and while a cerebral
+  accelerator is active (slowest skills first while it lasts); it says so when no order is faster, and asks before
+  changing anything. A yearly remap is never pulled to less than a year after the last one.
+* Mails and Notifications: Mark all read clears the unread counts and badges for what you've seen; anything new
+  counts again. (It's kept in PodStack: EVE's own read state doesn't change.)
+* Character tabs fill each line under the character panel and wrap onto the next; the API tab is now ESI, at the end.
+
 ## 0.2.13 Alpha (0.2.13-alpha)
 * New character tabs, in a third row: Notifications (EVE's in-game notifications, unread count on the tab), Calendar
   (upcoming events), Standings (factions, corporations and agents, with the effective standing after Connections and

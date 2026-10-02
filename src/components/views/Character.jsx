@@ -32,33 +32,28 @@ import {CloneStateBadge, TokenStatusDot} from '../ui/CharacterBadges';
 import ErrorBoundary from '../ui/ErrorBoundary';
 import AcceleratorBadge from '../ui/AcceleratorBadge';
 
-// rows of tabs: the pilot, ISK and stuff, then the people and events around them
-const pageRows = [
-    [
-        {key: 'summary', label: 'Summary', icon: 'assessment'},
-        {key: 'skills', label: 'Skills', icon: 'library_books'},
-        {key: 'plans', label: 'Plans', icon: 'format_list_numbered'},
-        {key: 'clones', label: 'Clones', icon: 'people_outline'},
-        {key: 'mails', label: 'Mails', icon: 'mail'},
-        {key: 'api', label: 'API', icon: 'vpn_key'},
-    ],
-    [
-        {key: 'wallet', label: 'Wallet', icon: 'account_balance_wallet'},
-        {key: 'market', label: 'Market', icon: 'storefront'},
-        {key: 'contracts', label: 'Contracts', icon: 'assignment'},
-        {key: 'assets', label: 'Assets', icon: 'inventory_2'},
-        {key: 'industry', label: 'Industry', icon: 'precision_manufacturing'},
-        {key: 'research', label: 'Research', icon: 'science'},
-        {key: 'planets', label: 'PI', icon: 'public'},
-    ],
-    [
-        {key: 'notifications', label: 'Notifications', icon: 'notifications'},
-        {key: 'calendar', label: 'Calendar', icon: 'event'},
-        {key: 'standings', label: 'Standings', icon: 'handshake'},
-        {key: 'contacts', label: 'Contacts', icon: 'contacts'},
-        {key: 'kills', label: 'Kill Log', icon: 'gps_fixed'},
-        {key: 'medals', label: 'Medals', icon: 'military_tech'},
-    ],
+// the pilot, ISK and stuff, the people and events around them, then the ESI login; they fill each line under the
+// character panel and wrap onto the next
+const pages = [
+    {key: 'summary', label: 'Summary', icon: 'assessment'},
+    {key: 'skills', label: 'Skills', icon: 'library_books'},
+    {key: 'plans', label: 'Plans', icon: 'format_list_numbered'},
+    {key: 'clones', label: 'Clones', icon: 'people_outline'},
+    {key: 'mails', label: 'Mails', icon: 'mail'},
+    {key: 'wallet', label: 'Wallet', icon: 'account_balance_wallet'},
+    {key: 'market', label: 'Market', icon: 'storefront'},
+    {key: 'contracts', label: 'Contracts', icon: 'assignment'},
+    {key: 'assets', label: 'Assets', icon: 'inventory_2'},
+    {key: 'industry', label: 'Industry', icon: 'precision_manufacturing'},
+    {key: 'research', label: 'Research', icon: 'science'},
+    {key: 'planets', label: 'PI', icon: 'public'},
+    {key: 'notifications', label: 'Notifications', icon: 'notifications'},
+    {key: 'calendar', label: 'Calendar', icon: 'event'},
+    {key: 'standings', label: 'Standings', icon: 'handshake'},
+    {key: 'contacts', label: 'Contacts', icon: 'contacts'},
+    {key: 'kills', label: 'Kill Log', icon: 'gps_fixed'},
+    {key: 'medals', label: 'Medals', icon: 'military_tech'},
+    {key: 'api', label: 'ESI', icon: 'vpn_key'},
 ];
 
 
@@ -184,7 +179,7 @@ export default class Character extends React.Component {
                 component = <Research characterId={characterId}/>;
                 break;
             case 'notifications':
-                component = <Notifications key={characterId} characterId={characterId}/>;
+                component = <Notifications key={characterId} characterId={characterId} onRead={() => this.forceUpdate()}/>;
                 break;
             case 'calendar':
                 component = <Calendar characterId={characterId}/>;
@@ -205,7 +200,7 @@ export default class Character extends React.Component {
                 component = <Contracts characterId={characterId}/>;
                 break;
             case 'mails':
-                component = <Mails characterId={characterId}/>;
+                component = <Mails characterId={characterId} onRead={() => this.forceUpdate()}/>;
                 break;
             case 'assets':
                 component = <Assets key={characterId} characterId={characterId}/>;
@@ -228,23 +223,19 @@ export default class Character extends React.Component {
                 {this.renderHero(char)}
 
                 <div className="tabs">
-                    {pageRows.map((row, i) =>
-                        <div key={i} className="tab-row">
-                            {row.map(page =>
-                                <button
-                                    key={page.key}
-                                    className={`tab ${this.state.currentPage === page.key ? 'active' : ''}`}
-                                    onClick={() => this.switchPage(page.key)}
-                                >
-                                    <i className="material-icons">{page.icon}</i>
-                                    {page.label}
-                                    {page.key === 'mails' && char.getUnreadMailCount() > 0 &&
-                                        <span className="tab-badge" title={`${char.getUnreadMailCount()} unread`}>{char.getUnreadMailCount()}</span>}
-                                    {page.key === 'notifications' && char.getUnreadNotificationCount() > 0 &&
-                                        <span className="tab-badge" title={`${char.getUnreadNotificationCount()} unread`}>{char.getUnreadNotificationCount()}</span>}
-                                </button>
-                            )}
-                        </div>
+                    {pages.map(page =>
+                        <button
+                            key={page.key}
+                            className={`tab ${this.state.currentPage === page.key ? 'active' : ''}`}
+                            onClick={() => this.switchPage(page.key)}
+                        >
+                            <i className="material-icons">{page.icon}</i>
+                            {page.label}
+                            {page.key === 'mails' && char.getUnreadMailCount() > 0 &&
+                                <span className="tab-badge" title={`${char.getUnreadMailCount()} unread`}>{char.getUnreadMailCount()}</span>}
+                            {page.key === 'notifications' && char.getUnreadNotificationCount() > 0 &&
+                                <span className="tab-badge" title={`${char.getUnreadNotificationCount()} unread`}>{char.getUnreadNotificationCount()}</span>}
+                        </button>
                     )}
                 </div>
 

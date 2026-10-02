@@ -12,10 +12,19 @@ export default class Mails extends React.Component {
         super(props);
     }
 
+    markAllRead(char) {
+        char.markAllMailsRead();
+        this.forceUpdate();
+        if (this.props.onRead !== undefined) {
+            this.props.onRead();
+        }
+    }
+
     render() {
         const char = CharacterModel.get(this.props.characterId);
-        const mails = char.getMails();
-        const unread = mails.filter(m => !m.is_read).length;
+        // shown as read once marked read in PodStack, too
+        const mails = char.getMails().map(m => ({...m, is_read: !char.isMailUnread(m)}));
+        const unread = char.getUnreadMailCount();
 
         return (
             <Panel
@@ -26,6 +35,12 @@ export default class Mails extends React.Component {
                         {unread > 0 && <span className="badge info" style={{marginRight: 8}}>{unread} unread</span>}
                         {(info => info !== undefined ? `Updated ${info.lastRefresh}` : 'Not loaded yet')(char.getDataRefreshInfo().find(c => c.type === 'Mails'))}
                     </span>
+                }
+                actions={
+                    <button type="button" className="link-button mark-read" disabled={unread === 0}
+                            onClick={() => this.markAllRead(char)}>
+                        Mark all read
+                    </button>
                 }
             >
                 <MailTable

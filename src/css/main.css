@@ -1022,23 +1022,22 @@ a:hover {
 /* ---------------------------------------------------------------- Tabs */
 
 .tabs {
-    margin: 0 0 18px;
-}
-
-/* character tabs come in rows (pilot, ISK and stuff, people and events); each row has its own underline */
-.tab-row {
     display: flex;
-    flex-wrap: wrap;   /* a narrow window wraps the tabs instead of cutting the last ones off */
-    gap: 2px;
-    border-bottom: 1px solid var(--line);
+    flex-wrap: wrap;   /* each line fills the width under the character panel, the rest wrap onto the next */
+    column-gap: 2px;
+    margin: 0 0 18px;
+    /* a hairline under every line of tabs (they're all 44px tall) */
+    background: repeating-linear-gradient(to bottom, transparent 0 43px, var(--line) 43px 44px);
 }
 
 .tab {
     display: flex;
     align-items: center;
     gap: 8px;
+    flex: 0 0 auto;
     height: 44px;
     padding: 0 10px;
+    white-space: nowrap;
     font-family: var(--font-display);
     font-weight: 700;
     font-size: 13px;
@@ -1047,8 +1046,7 @@ a:hover {
     color: var(--text-dim);
     background: none;
     border: 0;
-    border-bottom: 2px solid transparent;
-    margin-bottom: -1px;
+    border-bottom: 2px solid transparent;   /* covers the line's hairline, which sits in its last pixel */
     cursor: pointer;
     outline: none;
     transition: color 0.15s, border-color 0.15s, background 0.15s;
@@ -3467,4 +3465,14 @@ a:hover {
     padding: 8px 16px;
     font-size: 11px;
     border-top: 1px solid var(--line);
+}
+
+/* "Mark all read" in a panel header */
+.link-button.mark-read {
+    margin-left: 12px;
+}
+
+.link-button:disabled {
+    color: var(--text-faint);
+    cursor: default;
 }

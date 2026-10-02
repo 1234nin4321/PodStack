@@ -173,8 +173,8 @@ ipcMain.on('app:relaunch', () => {
     app.exit(0);
 });
 
-// Narrowest page (window content) at which no page of the app breaks: every column shown, no squashed buttons, the
-// character tabs on one row. The widest need is a skill plan with an implant/accelerator comparison (1200px) plus
+// Narrowest page (window content) at which no page of the app breaks: every column shown, no squashed buttons (the
+// character tabs wrap onto more lines). The widest need is a skill plan with an implant/accelerator comparison (1200px) plus
 // the 10px scrollbar. Measured page by page; re-measure when adding columns or tabs.
 const MIN_CONTENT_WIDTH = 1210;
 const DEFAULT_CONTENT_WIDTH = 1280;

@@ -96,7 +96,7 @@ function currentConditions(settings) {
         }
 
         for (const mail of character.mails || []) {
-            if (!mail.is_read && !(mail.labels || []).includes(2)) {
+            if (character.isMailUnread(mail)) {
                 add('new_mail', mail.mail_id, character, `${character.name}: new mail from ${mail.from_name || 'someone'}`, mail.subject);
             }
         }
@@ -129,7 +129,7 @@ function currentConditions(settings) {
         }
 
         for (const notification of character.eveNotifications || []) {
-            if (!notification.is_read) {
+            if (character.isNotificationUnread(notification)) {
                 add('eve_notification', notification.notification_id, character,
                     `${character.name}: ${FormatHelper.notificationTitle(notification.type)}`,
                     notification.sender_name ? `From ${notification.sender_name}` : 'New in-game notification.');

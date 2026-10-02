@@ -31,6 +31,7 @@ import AcceleratorHelper from '../../../helpers/AcceleratorHelper';
 import PlanSkillPopover from '../../popovers/PlanSkillToLevelPopover';
 import RemapDialog from '../../dialogs/RemapDialog';
 import SkillPlanStore from '../../../helpers/SkillPlanStore';
+import DateTimeHelper from '../../../helpers/DateTimeHelper';
 import ConfirmHelper from '../../../helpers/ConfirmHelper';
 import SkillPlanTable from '../../tables/SkillPlanTable';
 import Panel from '../../ui/Panel';
@@ -204,6 +205,41 @@ export default class Plans extends React.Component {
         const newId = SkillPlanHelper.mergePlans(this.props.characterId, planIds, name);
         this.setState({showQueue: false});
         this.handleSkillPlanChanged(newId);
+    }
+
+    // Reorders the plan to finish sooner, if any order does (see SkillPlanHelper.optimiseOrder), after asking.
+    async handleOptimise() {
+        const result = SkillPlanHelper.optimiseOrder(this.planCharacter);
+        if (result === undefined) {
+            ConfirmHelper.alert({
+                title: 'Already as fast as it gets',
+                message: 'No order of this plan trains it any sooner.\n\n' +
+                    'With the same attributes throughout, every order takes the same total time: each level takes its ' +
+                    'skill points over its training speed, wherever it is. Order only saves time around remaps in the ' +
+                    'plan (each skill trained after the remap that suits it best) and while a cerebral accelerator is ' +
+                    'active (slowest skills first while it lasts).',
+            });
+            return;
+        }
+
+        const planId = this.state.skillPlanId;
+        const confirmed = await ConfirmHelper.confirm({
+            title: 'Optimise plan order',
+            message: `Reordering saves ${DateTimeHelper.niceCountdown(result.before - result.time)}: ` +
+                `${DateTimeHelper.niceCountdown(result.before)} becomes ${DateTimeHelper.niceCountdown(result.time)}.\n\n` +
+                (result.moved > 0 ? `${result.moved} skill level${result.moved === 1 ? '' : 's'} move to another remap section. Remaps keep their order. ` : '') +
+                (this.planCharacter.accelerator !== undefined ? 'The slowest skills train first while the accelerator lasts. ' : '') +
+                'Every skill still comes after its prerequisites.',
+            confirmLabel: 'Reorder',
+        });
+        if (!confirmed || this.state.skillPlanId !== planId) {
+            return;
+        }
+
+        this.planCharacter.reset();
+        result.queue.forEach(item => this.planCharacter.addItemToQueue(item));
+        this.setState({items: this.planCharacter.queue, totalTime: this.planCharacter.time, selection: []});
+        SkillPlanStore.storeSkillPlan(this.props.characterId, this.state.skillPlanId, this.state.skillPlanName, this.planCharacter.queue);
     }
 
     handleSort() {
@@ -1034,6 +1070,15 @@ export default class Plans extends React.Component {
                                     label="Sort"
                                     title="Fastest to train first, prerequisites kept in order"
                                     icon={<FontIcon className="material-icons" style={styles.buttonIcon}>sort</FontIcon>}
+                                />
+                                <RaisedButton
+                                    style={styles.button}
+                                    labelStyle={styles.buttonLabel}
+                                    onClick={() => this.handleOptimise()}
+                                    disabled={this.state.items.length < 2}
+                                    label="Optimise"
+                                    title="Reorder to finish the whole plan as soon as possible, prerequisites kept in order"
+                                    icon={<FontIcon className="material-icons" style={styles.buttonIcon}>auto_fix_high</FontIcon>}
                                 />
                                 <RaisedButton
                                     style={styles.button}

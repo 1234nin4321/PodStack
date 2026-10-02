@@ -131,7 +131,18 @@ class Character {
 
     // unread mail received (label 2 is the outbox, so mail the character sent doesn't count)
     getUnreadMailCount() {
-        return (this.mails || []).filter(m => !m.is_read && !(m.labels || []).includes(2)).length;
+        return (this.mails || []).filter(m => this.isMailUnread(m)).length;
+    }
+
+    // Unread in EVE, not sent by the character, and not marked read in PodStack (EVE's own read state can't be
+    // changed without another scope, so "Mark all read" remembers which mails were seen; a new one counts again).
+    isMailUnread(mail) {
+        return !mail.is_read && !(mail.labels || []).includes(2) && !(this.seenMailIds || []).includes(mail.mail_id);
+    }
+
+    markAllMailsRead() {
+        this.seenMailIds = (this.mails || []).filter(m => !m.is_read).map(m => m.mail_id);
+        this.save();
     }
 
     getMailLabels() {
@@ -936,7 +947,18 @@ class Character {
     }
 
     getUnreadNotificationCount() {
-        return (this.eveNotifications || []).filter(n => !n.is_read).length;
+        return (this.eveNotifications || []).filter(n => this.isNotificationUnread(n)).length;
+    }
+
+    // Unread in EVE and not marked read in PodStack (ESI can't mark notifications read, so "Mark all read" remembers
+    // which were seen; a new one counts again).
+    isNotificationUnread(notification) {
+        return !notification.is_read && !(this.seenNotificationIds || []).includes(notification.notification_id);
+    }
+
+    markAllNotificationsRead() {
+        this.seenNotificationIds = (this.eveNotifications || []).filter(n => !n.is_read).map(n => n.notification_id);
+        this.save();
     }
 
     // Upcoming calendar events (ESI gives the next 50), soonest first.

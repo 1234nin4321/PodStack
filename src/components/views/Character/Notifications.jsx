@@ -23,6 +23,14 @@ export default class Notifications extends React.Component {
         this.state = {query: '', open: undefined};
     }
 
+    markAllRead(char) {
+        char.markAllNotificationsRead();
+        this.forceUpdate();
+        if (this.props.onRead !== undefined) {
+            this.props.onRead();
+        }
+    }
+
     render() {
         const char = CharacterModel.get(this.props.characterId);
         const info = char.getDataRefreshInfo().find(c => c.type === 'EVE Notifications');
@@ -42,7 +50,13 @@ export default class Notifications extends React.Component {
 
         return (
             <Panel title="Notifications" icon="notifications" flush={true}
-                   subtitle={`${FormatHelper.number(char.eveNotifications.length)} · ${unread} unread${info !== undefined ? ` · Updated ${info.lastRefresh}` : ''}`}>
+                   subtitle={`${FormatHelper.number(char.eveNotifications.length)} · ${unread} unread${info !== undefined ? ` · Updated ${info.lastRefresh}` : ''}`}
+                   actions={
+                       <button type="button" className="link-button mark-read" disabled={unread === 0}
+                               onClick={() => this.markAllRead(char)}>
+                           Mark all read
+                       </button>
+                   }>
                 <div className="asset-search">
                     <input className="field" type="search" placeholder="Search type, sender or details…"
                            value={this.state.query} onChange={e => this.setState({query: e.target.value})}/>
@@ -57,8 +71,8 @@ export default class Notifications extends React.Component {
                         <div key={n.notification_id} className="asset-group">
                             <div className="asset-group-head" onClick={() => this.setState({open: open ? undefined : n.notification_id})}>
                                 <i className={`material-icons chevron ${open ? 'open' : ''}`}>expand_more</i>
-                                {!n.is_read && <span className="unread-dot" title="Unread"/>}
-                                <span className="asset-group-name" style={{fontWeight: n.is_read ? 'normal' : 600}}>{FormatHelper.notificationTitle(n.type)}</span>
+                                {char.isNotificationUnread(n) && <span className="unread-dot" title="Unread"/>}
+                                <span className="asset-group-name" style={{fontWeight: char.isNotificationUnread(n) ? 600 : 'normal'}}>{FormatHelper.notificationTitle(n.type)}</span>
                                 <span className="muted">{n.sender_name || ''}</span>
                                 <span className="muted nowrap" title={date.toLocaleString(navigator.language)}>{DateTimeHelper.timeSince(date)} ago</span>
                             </div>
