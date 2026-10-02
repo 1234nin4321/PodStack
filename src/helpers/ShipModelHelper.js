@@ -10,6 +10,7 @@ import path from 'path';
 import GrannyFile from './granny/GrannyFile';
 import {parseDds, decodeInto} from './granny/Dds';
 import SettingsHelper from './SettingsHelper';
+import log from 'electron-log';
 
 const SETTING = 'eve_folder';
 // where EVE gets installed, relative to a drive's root: the launcher's default (CCP\EVE), the old shared cache
@@ -251,48 +252,81 @@ export default class ShipModelHelper {
         }
         const files = ShipModelHelper.files();
 
-        const granny = new GrannyFile(readFile(files.get(found.model)));
-        const root = granny.root();
-        // the full-detail meshes; the "LOD n" ones are lower-detail copies
-        const meshes = root.Meshes.filter(m => m !== undefined && !/ LOD \d+$/.test(m.Name || ''));
-        if (meshes.length === 0) {
-            throw new Error('The model has no meshes.');
+        const file = found.model.split('/').pop();
+        let granny;
+        let root;
+        try {
+            granny = new GrannyFile(readFile(files.get(found.model)));
+            root = granny.root();
+        } catch (err) {
+            log.warn(`[Models] Couldn't read ${found.model}`, err);
+            throw new Error(`Couldn't read ${file}: ${err.message}.`);
         }
+        // the full-detail meshes; the "LOD n" ones are lower-detail copies (used only when there's nothing else)
+        const all = (root.Meshes || []).filter(m => m !== undefined);
+        const full = all.filter(m => !/ LOD \d+$/.test(m.Name || ''));
+        const meshes = full.length > 0 ? full : all.slice(0, 1);
 
         const positions = [];
         const uvs = [];
         const indices = [];
         const groups = [];
+        const problems = [];
         let vertexBase = 0;
         let indexBase = 0;
         for (const mesh of meshes) {
-            const vertices = granny.vertexArray(mesh.PrimaryVertexData.Vertices);
-            const pos = vertices.fields.Position;
-            const uv = vertices.fields.TextureCoordinates0;
-            if (pos === undefined || pos.components !== 3) {
-                continue;
-            }
-            const topology = mesh.PrimaryTopology;
-            let meshIndices = granny.numberArray(topology, 'Indices16');
-            if (meshIndices.length === 0) {
-                meshIndices = granny.numberArray(topology, 'Indices');
-            }
+            try {
+                const vertices = granny.vertexArray(mesh.PrimaryVertexData && mesh.PrimaryVertexData.Vertices);
+                const pos = vertices.fields.Position;
+                const uv = vertices.fields.TextureCoordinates0;
+                if (pos === undefined || pos.components < 3 || vertices.count === 0) {
+                    problems.push(`${mesh.Name}: no positions`);
+                    continue;
+                }
+                const topology = mesh.PrimaryTopology;
+                let meshIndices = granny.numberArray(topology, 'Indices16');
+                if (meshIndices.length === 0) {
+                    meshIndices = granny.numberArray(topology, 'Indices');
+                }
+                if (meshIndices.length === 0) {
+                    problems.push(`${mesh.Name}: no triangles`);
+                    continue;
+                }
 
-            positions.push(pos.data);
-            uvs.push(uv !== undefined && uv.components >= 2 ? uv.data : new Float32Array(vertices.count * 2));
-            indices.push(meshIndices.map(i => i + vertexBase));
+                positions.push(firstComponents(pos, 3, vertices.count));
+                uvs.push(uv !== undefined && uv.components >= 2 ? firstComponents(uv, 2, vertices.count) : new Float32Array(vertices.count * 2));
+                indices.push(meshIndices.map(i => i + vertexBase));
 
-            const materials = mesh.MaterialBindings.map(b => ((b.Material && b.Material.Name) || '').toLowerCase());
-            for (const group of topology.Groups) {
-                const name = materials[group.MaterialIndex] || '';
-                groups.push({
-                    start: indexBase + group.TriFirst * 3,
-                    count: group.TriCount * 3,
-                    kind: name.includes('glass') ? 'glass' : (name.includes('reactor') || name.includes('glow') || name.includes('light')) ? 'glow' : 'hull',
-                });
+                const materials = (mesh.MaterialBindings || []).map(b => ((b.Material && b.Material.Name) || '').toLowerCase());
+                const meshGroups = topology.Groups && topology.Groups.length > 0 ? topology.Groups :
+                    [{MaterialIndex: 0, TriFirst: 0, TriCount: meshIndices.length / 3}];
+                for (const group of meshGroups) {
+                    const name = materials[group.MaterialIndex] || '';
+                    groups.push({
+                        start: indexBase + group.TriFirst * 3,
+                        count: group.TriCount * 3,
+                        kind: materialKind(name),
+                    });
+                }
+                vertexBase += vertices.count;
+                indexBase += meshIndices.length;
+            } catch (err) {
+                problems.push(`${mesh.Name}: ${err.message}`);
             }
-            vertexBase += vertices.count;
-            indexBase += meshIndices.length;
+        }
+        if (problems.length > 0) {
+            log.warn(`[Models] ${found.model}: skipped ${problems.join('; ')}`);
+        }
+        if (positions.length === 0) {
+            throw new Error(`${file} has no mesh PodStack can show${problems.length > 0 ? ` (${problems[0]})` : ''}.`);
+        }
+
+        // textures are a bonus: without them the hull is shown in plain metal
+        let textures = {};
+        try {
+            textures = ShipModelHelper.textures(files, found, ship.model.hull);
+        } catch (err) {
+            log.warn(`[Models] Textures for ${found.model} failed`, err);
         }
 
         return {
@@ -300,7 +334,7 @@ export default class ShipModelHelper {
             uvs: concat(Float32Array, uvs),
             indices: concat(Uint32Array, indices),
             groups,
-            textures: ShipModelHelper.textures(files, found, ship.model.hull),
+            textures,
         };
     }
 
@@ -372,6 +406,28 @@ export default class ShipModelHelper {
         }
         return textures;
     }
+}
+
+// how a material is drawn, from its name: glass, a glowing part (reactor, engine exhaust, lights), or hull
+function materialKind(name) {
+    if (name.includes('glass')) {
+        return 'glass';
+    }
+    return /reactor|glow|light|exhaust|booster|thruster|engine/.test(name) ? 'glow' : 'hull';
+}
+
+// the first n components of each item of a vertex field ({components, data}), packed tightly
+function firstComponents(field, n, count) {
+    if (field.components === n) {
+        return field.data;
+    }
+    const out = new Float32Array(count * n);
+    for (let i = 0; i < count; i++) {
+        for (let c = 0; c < n; c++) {
+            out[i * n + c] = field.data[i * field.components + c];
+        }
+    }
+    return out;
 }
 
 function concat(Type, arrays) {

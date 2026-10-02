@@ -2,18 +2,21 @@
 
 // Reads Granny 2 (.gr2) files, the format of EVE's ship models: the sections (decompressed with our own BitKnit 2
 // decoder), the pointer fixups that link them, and any structure in them by walking its type definition. Only what
-// EVE's files use is supported: little-endian, 32-bit pointers, format revision 7, uncompressed or BitKnit 2 sections.
+// EVE's files use is supported: little-endian, format revision 7, uncompressed, Oodle1 or BitKnit 2 sections, with 32-bit or
+// 64-bit pointers (EVE has both: structures are packed, so pointer size changes every structure's layout).
 //
 // The file layout follows libbg3's Granny reader (MIT, https://github.com/eiz/libbg3) and opengr2's documentation
 // (https://github.com/arves100/opengr2/wiki/File-Format-documentation).
 
-import {decompress} from './BitKnit';
+import {decompress as bitknit} from './BitKnit';
+import {decompress as oodle1} from './Oodle1';
 
 const MAGIC_LE32 = [0x29, 0xde, 0x6c, 0xc0, 0xba, 0xa4, 0x53, 0x2b, 0x25, 0xf5, 0xb7, 0xa5, 0xf6, 0x66, 0xe2, 0xee];
+const MAGIC_LE64 = [0xe5, 0x9b, 0x49, 0x5e, 0x6f, 0x63, 0x1f, 0x14, 0x1e, 0x13, 0xeb, 0xa9, 0x90, 0xbe, 0xed, 0xc4];
 const INFO = 32;               // file info follows the 16-byte magic and its 16-byte header
 const SECTION_HEADER = 44;
-const MEMBER_SIZE = 32;        // a member definition with 32-bit pointers
 const COMPRESSION_NONE = 0;
+const COMPRESSION_OODLE1 = 2;
 const COMPRESSION_BITKNIT2 = 4;
 
 // member types
@@ -27,10 +30,11 @@ const SCALAR_SIZE = {
     [T.REAL32]: 4, [T.INT8]: 1, [T.UINT8]: 1, [T.BINORMAL_INT8]: 1, [T.NORMAL_UINT8]: 1, [T.INT16]: 2, [T.UINT16]: 2,
     [T.BINORMAL_INT16]: 2, [T.NORMAL_UINT16]: 2, [T.INT32]: 4, [T.UINT32]: 4, [T.REAL16]: 2, [T.EMPTY]: 0,
 };
-const FIELD_SIZE = {
-    [T.REFERENCE]: 4, [T.REF_TO_ARRAY]: 8, [T.ARRAY_OF_REFS]: 8, [T.VARIANT_REF]: 8, [T.REF_TO_VARIANT_ARRAY]: 12,
-    [T.STRING]: 4, [T.TRANSFORM]: 68,
-};
+// sizes of the members that hold pointers, for a pointer size p (packed: no padding)
+const fieldSizes = p => ({
+    [T.REFERENCE]: p, [T.REF_TO_ARRAY]: 4 + p, [T.ARRAY_OF_REFS]: 4 + p, [T.VARIANT_REF]: 2 * p,
+    [T.REF_TO_VARIANT_ARRAY]: 2 * p + 4, [T.STRING]: p, [T.TRANSFORM]: 68,
+});
 
 function halfToFloat(h) {
     const s = h & 0x8000 ? -1 : 1;
@@ -54,9 +58,17 @@ export default class GrannyFile {
         const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
         const u32 = o => view.getUint32(o, true);
 
-        if (!MAGIC_LE32.every((b, i) => bytes[i] === b)) {
-            throw new Error('Not a little-endian 32-bit Granny 2 file');
+        if (MAGIC_LE32.every((b, i) => bytes[i] === b)) {
+            this.pointerSize = 4;
+        } else if (MAGIC_LE64.every((b, i) => bytes[i] === b)) {
+            this.pointerSize = 8;
+        } else {
+            throw new Error('Not a little-endian Granny 2 file');
         }
+        const p = this.pointerSize;
+        this.fieldSize = fieldSizes(p);
+        // a member definition: type, name pointer, type pointer, array width, 3 tags, a reserved pointer-sized word
+        this.memberSize = 20 + 3 * p;
         if (u32(INFO) !== 7) {
             throw new Error(`Unsupported Granny format revision ${u32(INFO)}`);
         }
@@ -74,7 +86,7 @@ export default class GrannyFile {
             const h = sectionTable + i * SECTION_HEADER;
             headers.push({
                 compression: u32(h), offset: u32(h + 4), size: u32(h + 8), decompressedSize: u32(h + 12),
-                fixupsOffset: u32(h + 28), fixupCount: u32(h + 32),
+                stop0: u32(h + 20), stop1: u32(h + 24), fixupsOffset: u32(h + 28), fixupCount: u32(h + 32),
             });
         }
 
@@ -83,8 +95,10 @@ export default class GrannyFile {
             if (h.compression === COMPRESSION_NONE) {
                 data = bytes.slice(h.offset, h.offset + h.decompressedSize);
             } else if (h.compression === COMPRESSION_BITKNIT2) {
-                data = h.size > 0 ? decompress(bytes.subarray(h.offset, h.offset + h.size), h.decompressedSize) :
+                data = h.size > 0 ? bitknit(bytes.subarray(h.offset, h.offset + h.size), h.decompressedSize) :
                     new Uint8Array(h.decompressedSize);
+            } else if (h.compression === COMPRESSION_OODLE1) {
+                data = oodle1(bytes.subarray(h.offset, h.offset + h.size), h.decompressedSize, h.stop0, h.stop1);
             } else {
                 throw new Error(`Unsupported Granny compression ${h.compression} in section ${i}`);
             }
@@ -99,7 +113,7 @@ export default class GrannyFile {
                 let fixups;
                 if (h.compression === COMPRESSION_BITKNIT2) {
                     const length = u32(h.fixupsOffset);
-                    fixups = decompress(bytes.subarray(h.fixupsOffset + 4, h.fixupsOffset + 4 + length), h.fixupCount * 12);
+                    fixups = bitknit(bytes.subarray(h.fixupsOffset + 4, h.fixupsOffset + 4 + length), h.fixupCount * 12);
                 } else {
                     fixups = bytes.subarray(h.fixupsOffset, h.fixupsOffset + h.fixupCount * 12);
                 }
@@ -144,8 +158,9 @@ export default class GrannyFile {
         const view = this.views[typeLoc[0]];
         const members = [];
         let offset = 0;
+        const p = this.pointerSize;
         for (let k = 0; ; k++) {
-            const m = typeLoc[1] + k * MEMBER_SIZE;
+            const m = typeLoc[1] + k * this.memberSize;
             const type = view.getUint32(m, true);
             if (type === T.END) {
                 break;
@@ -153,24 +168,24 @@ export default class GrannyFile {
             const member = {
                 type,
                 name: this.string(this.deref([typeLoc[0], m + 4])),
-                ref: this.deref([typeLoc[0], m + 8]),
-                width: view.getInt32(m + 12, true),
+                ref: this.deref([typeLoc[0], m + 4 + p]),
+                width: view.getInt32(m + 4 + 2 * p, true),
                 offset,
             };
             members.push(member);
-            offset += this.memberSize(member);
+            offset += this.sizeOf(member);
         }
         members.size = offset;
         this.typeCache.set(key, members);
         return members;
     }
 
-    memberSize(member) {
+    sizeOf(member) {
         const count = Math.max(1, member.width);
         if (member.type === T.INLINE) {
             return this.members(member.ref).size * count;
         }
-        const size = FIELD_SIZE[member.type] !== undefined ? FIELD_SIZE[member.type] : SCALAR_SIZE[member.type];
+        const size = this.fieldSize[member.type] !== undefined ? this.fieldSize[member.type] : SCALAR_SIZE[member.type];
         if (size === undefined) {
             throw new Error(`Unknown Granny member type ${member.type}`);
         }
@@ -215,6 +230,7 @@ export default class GrannyFile {
 
     field(member, loc) {
         const view = this.views[loc[0]];
+        const p = this.pointerSize;
         switch (member.type) {
             case T.INLINE:
                 return this.object(member.ref, loc);
@@ -233,15 +249,15 @@ export default class GrannyFile {
                 const count = view.getInt32(loc[1], true);
                 const items = this.deref([loc[0], loc[1] + 4]);
                 return items === undefined ? [] :
-                    Array.from({length: count}, (_, i) => this.object(member.ref, this.deref([items[0], items[1] + i * 4])));
+                    Array.from({length: count}, (_, i) => this.object(member.ref, this.deref([items[0], items[1] + i * p])));
             }
             case T.VARIANT_REF:
-                return this.object(this.deref(loc), this.deref([loc[0], loc[1] + 4]));
+                return this.object(this.deref(loc), this.deref([loc[0], loc[1] + p]));
             case T.REF_TO_VARIANT_ARRAY:
                 return {
                     type: this.deref(loc),
-                    count: view.getInt32(loc[1] + 4, true),
-                    loc: this.deref([loc[0], loc[1] + 8]),
+                    count: view.getInt32(loc[1] + p, true),
+                    loc: this.deref([loc[0], loc[1] + p + 4]),
                 };
             case T.TRANSFORM: {
                 const f = i => view.getFloat32(loc[1] + 4 + i * 4, true);
