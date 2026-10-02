@@ -8,6 +8,7 @@ import {RoomEnvironment} from 'three/examples/jsm/environments/RoomEnvironment.j
 import ShipModelHelper from '../../helpers/ShipModelHelper';
 import ShipPaint from '../../helpers/ShipPaint';
 import ShipSof from '../../helpers/ShipSof';
+import {parseDds, decodeInto} from '../../helpers/granny/Dds';
 
 const HEIGHT = 460;
 const COMPRESSED = {
@@ -20,6 +21,9 @@ const LIGHTING = {
     space: {label: 'Deep space', background: 0x020306, env: 0.35, key: 3.2, rim: 0.6, ambient: 0.05},
     bright: {label: 'Bright', background: 0x1a1f27, env: 1.6, key: 1.6, rim: 1.0, ambient: 0.6},
 };
+
+// a 1x1 black texture, for pattern layers that aren't in use
+const BLANK = () => dataTexture({width: 1, height: 1, data: new Uint8Array([0, 0, 0, 255])}, THREE.NoColorSpace);
 
 function dataTexture(t, colorSpace) {
     const texture = new THREE.DataTexture(t.data, t.width, t.height, THREE.RGBAFormat);
@@ -72,6 +76,11 @@ export default class ShipViewer extends React.Component {
             this.observer.disconnect();
         }
         this.clearShip();
+        for (const texture of (this.masks || new Map()).values()) {
+            if (texture !== undefined) {
+                texture.dispose();
+            }
+        }
         if (this.controls !== undefined) {
             this.controls.dispose();
         }
@@ -196,7 +205,7 @@ export default class ShipViewer extends React.Component {
         geometry.setAttribute('position', new THREE.BufferAttribute(model.positions, 3));
         geometry.setAttribute('uv', new THREE.BufferAttribute(model.uvs, 2));
         geometry.setIndex(new THREE.BufferAttribute(model.indices, 1));
-        const kinds = ['hull', 'glass', 'glow'];
+        const kinds = ['hull', 'glass', 'glow', 'booster'];
         for (const group of model.groups) {
             geometry.addGroup(group.start, group.count, kinds.indexOf(group.kind));
         }
@@ -253,16 +262,65 @@ export default class ShipViewer extends React.Component {
             mtlDiffuse: {value: [0, 1, 2, 3].map(() => new THREE.Color(0x808080))},
             mtlSpecular: {value: [0, 1, 2, 3].map(() => new THREE.Color(0x0a0a0a))},
             mtlRough: {value: [0.5, 0.5, 0.5, 0.5]},
+            // up to two SKIN pattern layers: a mask projected through a box placed on the hull, painting a material
+            patternMask0: {value: BLANK()},
+            patternMask1: {value: BLANK()},
+            patternOn: {value: [0, 0]},
+            patternPos: {value: [new THREE.Vector3(), new THREE.Vector3()]},
+            patternScale: {value: [new THREE.Vector3(1, 1, 1), new THREE.Vector3(1, 1, 1)]},
+            patternRot: {value: [new THREE.Vector4(0, 0, 0, 1), new THREE.Vector4(0, 0, 0, 1)]},
+            patternMirror: {value: [0, 0]},
+            patternRepeatU: {value: [0, 0]},
+            patternRepeatV: {value: [0, 0]},
+            patternDiffuse: {value: [new THREE.Color(), new THREE.Color()]},
+            patternSpecular: {value: [new THREE.Color(), new THREE.Color()]},
+            patternRough: {value: [0.5, 0.5]},
         };
         hull.onBeforeCompile = shader => {
             Object.assign(shader.uniforms, this.paint);
+            // the position on the hull itself (before it's centred in the scene), which patterns are placed against
+            shader.vertexShader = shader.vertexShader
+                .replace('#include <common>', `#include <common>
+varying vec3 vHullPosition;`)
+                .replace('#include <begin_vertex>', `#include <begin_vertex>
+vHullPosition = position;`);
             shader.fragmentShader = shader.fragmentShader
                 .replace('#include <common>', `#include <common>
 uniform sampler2D surfaceMap;
 uniform float paintAmount;
 uniform vec3 mtlDiffuse[4];
 uniform vec3 mtlSpecular[4];
-uniform float mtlRough[4];`)
+uniform float mtlRough[4];
+varying vec3 vHullPosition;
+uniform sampler2D patternMask0;
+uniform sampler2D patternMask1;
+uniform float patternOn[2];
+uniform vec3 patternPos[2];
+uniform vec3 patternScale[2];
+uniform vec4 patternRot[2];
+uniform float patternMirror[2];
+uniform float patternRepeatU[2];
+uniform float patternRepeatV[2];
+uniform vec3 patternDiffuse[2];
+uniform vec3 patternSpecular[2];
+uniform float patternRough[2];
+// rotates v by the inverse of the unit quaternion q
+vec3 unrotate(vec4 q, vec3 v) {
+    vec3 u = -q.xyz;
+    return 2.0 * dot(u, v) * u + (q.w * q.w - dot(u, u)) * v + 2.0 * q.w * cross(u, v);
+}
+// where a pattern layer lands on the hull here: xy are its texture coordinates, z is 1 inside its box, 0 outside
+vec3 patternCoords(int i) {
+    vec3 p = vHullPosition;
+    // mirrored patterns are painted on both sides of the hull
+    if (patternMirror[i] > 0.5) { p.x = (patternPos[i].x < 0.0 ? -1.0 : 1.0) * abs(p.x); }
+    vec3 local = unrotate(patternRot[i], p - patternPos[i]) / max(patternScale[i], vec3(1e-4));
+    vec2 uv = local.xy * 0.5 + 0.5;
+    float inside = step(abs(local.z), 1.0);
+    if (patternRepeatU[i] > 0.5) { uv.x = fract(uv.x); } else { inside *= step(0.0, uv.x) * step(uv.x, 1.0); }
+    if (patternRepeatV[i] > 0.5) { uv.y = fract(uv.y); } else { inside *= step(0.0, uv.y) * step(uv.y, 1.0); }
+    return vec3(uv, inside);
+}`)
                 .replace('#include <map_fragment>', `#include <map_fragment>
 vec4 surfaceSample = texture2D(surfaceMap, vMapUv);
 int area = int(floor(surfaceSample.r * 3.0 + 0.5));
@@ -272,6 +330,17 @@ float areaRough = mtlRough[0];
 if (area == 1) { areaColor = mtlDiffuse[1]; areaSpecular = mtlSpecular[1]; areaRough = mtlRough[1]; }
 else if (area == 2) { areaColor = mtlDiffuse[2]; areaSpecular = mtlSpecular[2]; areaRough = mtlRough[2]; }
 else if (area >= 3) { areaColor = mtlDiffuse[3]; areaSpecular = mtlSpecular[3]; areaRough = mtlRough[3]; }
+// SKIN patterns paint their material over the areas where their mask is set
+if (patternOn[0] > 0.5) {
+    vec3 pc = patternCoords(0);
+    float m = texture2D(patternMask0, pc.xy).r * pc.z;
+    areaColor = mix(areaColor, patternDiffuse[0], m); areaSpecular = mix(areaSpecular, patternSpecular[0], m); areaRough = mix(areaRough, patternRough[0], m);
+}
+if (patternOn[1] > 0.5) {
+    vec3 pc = patternCoords(1);
+    float m = texture2D(patternMask1, pc.xy).r * pc.z;
+    areaColor = mix(areaColor, patternDiffuse[1], m); areaSpecular = mix(areaSpecular, patternSpecular[1], m); areaRough = mix(areaRough, patternRough[1], m);
+}
 // keep the texture's detail (its brightness) under the paint
 float detail = clamp(dot(diffuseColor.rgb, vec3(0.299, 0.587, 0.114)) * 2.0, 0.0, 1.6);
 diffuseColor.rgb = mix(diffuseColor.rgb, areaColor * detail, paintAmount);`)
@@ -292,8 +361,14 @@ material.specularColorBlended = mix(material.specularColorBlended, areaSpecular,
         const glow = new THREE.MeshStandardMaterial({
             color: 0x332211, emissive: new THREE.Color(0xffa860), emissiveIntensity: 2.5, roughness: 0.4,
         });
+        const booster = new THREE.MeshStandardMaterial({
+            color: 0x221a14, emissive: new THREE.Color(0xffb070), emissiveIntensity: 2, roughness: 0.4,
+        });
+        this.glass = glass;
         this.glowMaterial = glow;
-        return [hull, glass, glow];
+        this.booster = booster;
+        this.applyColors();
+        return [hull, glass, glow, booster];
     }
 
     // Puts the chosen paint into the hull shader: 'default' = the ship's own look, a SKIN id, or '' = unpainted (the
@@ -338,22 +413,123 @@ material.specularColorBlended = mix(material.specularColorBlended, areaSpecular,
                 this.paint.mtlRough.value[i] = area.roughness;
             });
         }
+        this.applyPattern(skin, areas);
+        this.applyColors();
         const source = areas === undefined ? 'none' : exact ? 'client' : 'approximate';
         if (this.state.paintSource !== source) {
             this.setState({paintSource: source});
         }
-        const paint = skin !== '' && skin !== 'default' ? ShipPaint.areas(skin) : undefined;
-        // lights glow in the SKIN's window colour, when it's bright enough to be one
-        const glow = new THREE.Color(paint !== undefined ? paint.glow : '#ffc48a');
-        const hsl = {};
-        glow.getHSL(hsl);
-        const light = hsl.l > 0.35 ? glow : new THREE.Color('#ffc48a');
+    }
+
+    // A SKIN's pattern layers into the shader (none for the default look, unpainted, or a hull it isn't placed on).
+    applyPattern(skin, areas) {
+        const paint = typeof skin === 'number' ? ShipPaint.paint(skin) : undefined;
+        const located = ShipModelHelper.locate(this.props.ship);
+        const hull = located !== undefined ? located.hull : this.props.ship.model && this.props.ship.model.hull;
+        const layers = paint !== undefined && areas !== undefined ? ShipSof.pattern(paint.pattern, hull) : [];
+
+        [0, 1].forEach(i => {
+            const layer = layers[i];
+            const mask = layer !== undefined ? this.maskTexture(layer.mask, layer) : undefined;
+            this.paint.patternOn.value[i] = mask !== undefined ? 1 : 0;
+            if (mask === undefined) {
+                return;
+            }
+            this.paint[`patternMask${i}`].value = mask;
+            this.paint.patternPos.value[i].fromArray(layer.position);
+            this.paint.patternScale.value[i].fromArray(layer.scaling);
+            this.paint.patternRot.value[i].fromArray(layer.rotation);
+            this.paint.patternMirror.value[i] = layer.mirrored ? 1 : 0;
+            this.paint.patternRepeatU.value[i] = layer.projectionU === 2 ? 1 : 0;
+            this.paint.patternRepeatV.value[i] = layer.projectionV === 2 ? 1 : 0;
+
+            // 4 and 5: the SKIN's custom materials; 0-3: the hull's own
+            const source = layer.materialSource;
+            let material = source >= 4 ? ShipSof.material(paint.custom[source - 4]) : undefined;
+            if (source >= 4 && material === undefined && paint.custom[source - 4]) {
+                const guess = ShipPaint.fromName(paint.custom[source - 4]);
+                const color = new THREE.Color(guess.color);
+                material = {diffuse: color.clone().multiplyScalar(1 - guess.metalness).toArray(),
+                    specular: new THREE.Color(0.04, 0.04, 0.04).lerp(color, guess.metalness).toArray(), roughness: guess.roughness};
+            }
+            if (material !== undefined) {
+                this.paint.patternDiffuse.value[i].setRGB(...material.diffuse);
+                this.paint.patternSpecular.value[i].setRGB(...material.specular);
+                this.paint.patternRough.value[i] = material.roughness;
+            } else if (areas !== undefined && areas[source] !== undefined) {
+                this.paint.patternDiffuse.value[i].copy(areas[source].diffuse);
+                this.paint.patternSpecular.value[i].copy(areas[source].specular);
+                this.paint.patternRough.value[i] = areas[source].roughness;
+            } else {
+                this.paint.patternOn.value[i] = 0;
+            }
+        });
+    }
+
+    // a pattern mask from the client (kept for the session), or undefined when it can't be read
+    maskTexture(res, layer) {
+        this.masks = this.masks || new Map();
+        const key = `${res}:${layer.projectionU}:${layer.projectionV}`;
+        if (!this.masks.has(key)) {
+            let texture;
+            try {
+                const bytes = ShipModelHelper.resource(res);
+                const dds = bytes !== undefined ? parseDds(bytes) : undefined;
+                if (dds !== undefined) {
+                    texture = this.ddsTexture(dds);
+                    if (texture !== undefined) {
+                        texture.wrapS = layer.projectionU === 2 ? THREE.RepeatWrapping : THREE.ClampToEdgeWrapping;
+                        texture.wrapT = layer.projectionV === 2 ? THREE.RepeatWrapping : THREE.ClampToEdgeWrapping;
+                    }
+                }
+            } catch (err) {
+                texture = undefined;
+            }
+            this.masks.set(key, texture);
+        }
+        return this.masks.get(key);
+    }
+
+    // a texture from a parsed DDS: one or two channel formats decoded here, colour ones left compressed
+    ddsTexture(dds) {
+        if (dds.format === 'BC4' || dds.format === 'BC5') {
+            const mip = dds.mips[0];
+            const rgba = new Uint8Array(mip.width * mip.height * 4).fill(255);
+            decodeInto(mip, dds.format, rgba, dds.format === 'BC5' ? [0, 1] : [0]);
+            return dataTexture({width: mip.width, height: mip.height, data: rgba}, THREE.NoColorSpace);
+        }
+        const compressed = COMPRESSED[dds.format];
+        if (compressed === undefined || !this.renderer.extensions.has(compressed.extension)) {
+            return undefined;
+        }
+        const texture = new THREE.CompressedTexture(dds.mips, dds.width, dds.height, compressed.format);
+        texture.minFilter = THREE.LinearMipmapLinearFilter;
+        texture.needsUpdate = true;
+        return texture;
+    }
+
+    // The faction's colours on the hull's glow map, reactors, engine exhaust and glass (glows can be brighter than 1).
+    applyColors() {
+        const {skin} = this.state;
+        const colors = skin !== '' ? ShipSof.colors(ShipSof.factionFor(this.props.ship, typeof skin === 'number' ? skin : undefined)) : undefined;
+        const set = (material, key, fallback, scale = 1) => {
+            if (material === undefined) {
+                return;
+            }
+            if (colors !== undefined && colors[key] !== undefined) {
+                material.emissive.setRGB(...colors[key].map(v => v * scale));
+                material.emissiveIntensity = 1;
+            } else {
+                material.emissive.set(fallback);
+                material.emissiveIntensity = fallback === '#000000' ? 0 : 2.5;
+            }
+        };
         if (this.hull !== undefined && this.hull.emissiveMap) {
-            this.hull.emissive.copy(light);
+            set(this.hull, 'Hull', '#ffc48a', 0.6);
         }
-        if (this.glowMaterial !== undefined) {
-            this.glowMaterial.emissive.copy(light);
-        }
+        set(this.glowMaterial, 'Reactor', '#ffa860', 0.6);
+        set(this.booster, 'Booster', '#ffb070', 1.5);
+        set(this.glass, 'Glass', '#000000', 0.5);
     }
 
     resetView() {

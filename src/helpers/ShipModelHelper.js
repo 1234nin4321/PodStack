@@ -26,6 +26,8 @@ const EVE_LIKE = /eve|ccp|sharedcache|games|steam/i;
 const SHIP_PREFIX = 'res:/dx9/model/ship/';
 // the space object factory's factions (a ship's look, and each SKIN's) and materials, for paint
 const SOF_PREFIX = 'res:/dx9/model/spaceobjectfactory/';
+// the masks SKIN patterns project onto hulls
+const PATTERN_PREFIX = 'res:/texture/projection/';
 
 let index;      // {folder, files: Map(res path -> absolute file)}
 let detected;   // the auto-detected folder (null when none), found once per session
@@ -209,7 +211,7 @@ export default class ShipModelHelper {
             const files = new Map();
             const text = fs.readFileSync(path.join(folder, 'tq', 'resfileindex.txt'), 'utf8');
             for (const line of text.split('\n')) {
-                if (!line.startsWith(SHIP_PREFIX) && !line.startsWith(SOF_PREFIX)) {
+                if (!line.startsWith(SHIP_PREFIX) && !line.startsWith(SOF_PREFIX) && !line.startsWith(PATTERN_PREFIX)) {
                     continue;
                 }
                 const [res, file] = line.split(',');
@@ -250,7 +252,7 @@ export default class ShipModelHelper {
 
     /**
      * Loads a ship's hull for the viewer:
-     * {positions, uvs, indices, groups: [{start, count, kind: 'hull'|'glass'|'glow'}], textures: {albedo (parsed BC7/BC
+     * {positions, uvs, indices, groups: [{start, count, kind: 'hull'|'glass'|'glow'|'booster'}], textures: {albedo (parsed BC7/BC
      * DDS), normal, surface (paint area mask in R, roughness in G), glow (in R): each {width, height, data} RGBA}}.
      * Textures that are missing are left out.
      */
@@ -418,12 +420,15 @@ export default class ShipModelHelper {
     }
 }
 
-// how a material is drawn, from its name: glass, a glowing part (reactor, engine exhaust, lights), or hull
+// how a material is drawn, from its name: glass, an engine's exhaust, another glowing part (reactor, lights), or hull
 function materialKind(name) {
     if (name.includes('glass')) {
         return 'glass';
     }
-    return /reactor|glow|light|exhaust|booster|thruster|engine/.test(name) ? 'glow' : 'hull';
+    if (/exhaust|booster|thruster|engine/.test(name)) {
+        return 'booster';
+    }
+    return /reactor|glow|light/.test(name) ? 'glow' : 'hull';
 }
 
 // the first n components of each item of a vertex field ({components, data}), packed tightly

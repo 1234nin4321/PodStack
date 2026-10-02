@@ -55,6 +55,51 @@ export default class ShipSof {
         };
     }
 
+    // a faction's colour set: {Hull, Reactor, Booster, Glass, PrimaryLight, ...: [r, g, b] (may be over 1: glows)}
+    static colors(faction) {
+        const root = faction ? black(`${SOF}factions/${faction.toLowerCase()}.black`) : undefined;
+        if (root === undefined || root.colorSet === undefined) {
+            return undefined;
+        }
+        return Object.fromEntries(Object.entries(root.colorSet)
+            .filter(([key, value]) => key !== '_class' && Array.isArray(value))
+            .map(([key, value]) => [key, value.slice(0, 3)]));
+    }
+
+    /**
+     * A SKIN pattern's layers on a hull: [{mask (res path of the mask texture), projectionU, projectionV,
+     * materialSource (0-3: the hull's materials, 4-5: the SKIN's custom materials), position, scaling, rotation
+     * (quaternion), mirrored}], only the layers placed on this hull; [] when the pattern isn't placed on it.
+     */
+    static pattern(name, hull) {
+        const root = name ? black(`${SOF}patterns/${name.toLowerCase()}.black`) : undefined;
+        if (root === undefined || !Array.isArray(root.projections)) {
+            return [];
+        }
+        const placed = root.projections.find(p => p && p.name === hull);
+        if (placed === undefined) {
+            return [];
+        }
+        return [[root.layer1, placed.transformLayer1], [root.layer2, placed.transformLayer2]]
+            .filter(([layer, transform]) => layer && transform && layer.textureResFilePath && transform.position)
+            .map(([layer, transform]) => ({
+                mask: layer.textureResFilePath,
+                projectionU: layer.projectionTypeU,
+                projectionV: layer.projectionTypeV,
+                materialSource: layer.materialSource,
+                position: transform.position,
+                scaling: transform.scaling || [1, 1, 1],
+                rotation: transform.rotation || [0, 0, 0, 1],
+                mirrored: transform.isMirrored === 1,
+            }));
+    }
+
+    // the faction whose look a ship has with a SKIN (its own faction when skinId is undefined)
+    static factionFor(ship, skinId) {
+        const paint = skinId !== undefined ? (ShipData.skins || {})[skinId] : undefined;
+        return (paint !== undefined && paint.faction) || (ship.model && ship.model.faction) || undefined;
+    }
+
     // the four material names a faction gives a hull's main ("Primary") paint areas
     static factionMaterials(faction) {
         if (!faction) {

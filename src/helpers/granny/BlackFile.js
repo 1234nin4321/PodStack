@@ -19,6 +19,13 @@ const STRING_FIELDS = new Set([
 ]);
 // fields holding four floats
 const VEC4_FIELDS = new Set(['value', 'color', 'coneColor', 'spriteColor', 'flareColor']);
+// fields whose type depends on the class they're in: {class: {field: type}}, '*' for every field of the class
+const CLASS_FIELDS = {
+    EveSOFDataPatternLayer: {projectionTypeU: 'u32', projectionTypeV: 'u32', materialSource: 'u32'},
+    EveSOFDataPatternTransform: {position: 'vec3', scaling: 'vec3', rotation: 'vec4', isMirrored: 'u8'},
+    EveSOFDataFactionColorSet: {'*': 'vec4'},
+};
+const SIZES = {u8: 1, u32: 4, vec3: 12, vec4: 16};
 
 export default class BlackFile {
     /**
@@ -92,7 +99,7 @@ export default class BlackFile {
                 break;
             }
             p += 2;
-            const value = this.value(name, p, objectEnd);
+            const value = this.value(name, p, objectEnd, obj._class);
             if (value === undefined) {
                 break;   // can't read this field: skip the rest of the object
             }
@@ -104,7 +111,22 @@ export default class BlackFile {
     }
 
     // {value, next} of a field's value at p, or undefined when its type can't be told
-    value(name, p, end) {
+    value(name, p, end, cls) {
+        const typed = CLASS_FIELDS[cls] && (CLASS_FIELDS[cls][name] || CLASS_FIELDS[cls]['*']);
+        if (typed !== undefined && !this.isObject(p, end)) {
+            const size = SIZES[typed];
+            if (p + size > end) {
+                return undefined;
+            }
+            if (typed === 'u8') {
+                return {value: this.bytes[p], next: p + 1};
+            }
+            if (typed === 'u32') {
+                return {value: this.u32(p), next: p + 4};
+            }
+            const f = i => this.view.getFloat32(p + i * 4, true);
+            return {value: Array.from({length: size / 4}, (_, i) => f(i)), next: p + size};
+        }
         if (STRING_FIELDS.has(name)) {
             return p + 2 <= end ? {value: this.strings[this.u16(p)], next: p + 2} : undefined;
         }
