@@ -281,7 +281,7 @@ export default class FittingHelper {
         const items = requirements.items.map(item => {
             const missing = item.skills
                 .filter(s => trained(s.id) < s.level)
-                .map(s => ({id: s.id, name: AllSkills.skills[s.id].name, level: s.level, trained: trained(s.id)}));
+                .map(s => ({id: s.id, name: (AllSkills.skills[s.id] || {name: `Skill #${s.id}`}).name, level: s.level, trained: trained(s.id)}));
 
             return {...item, usable: missing.length === 0, missing};
         });
@@ -302,7 +302,7 @@ export default class FittingHelper {
                     return;
                 }
                 levels[id] = level;
-                (AllSkills.skills[id].required_skills || []).forEach(req => visit(req.id, req.level));
+                ((AllSkills.skills[id] || {}).required_skills || []).forEach(req => visit(req.id, req.level));
             };
             item.skills.forEach(s => visit(s.id, s.level));
             return levels;

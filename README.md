@@ -68,6 +68,7 @@ npm install
 npm start          # run in development mode
 npm run make       # build installers into out/make
 npm run stats      # downloads per release and per month, as a running total (--save updates stats/downloads.json)
+npm run update-skills  # refresh skills, skillbook prices and Alpha caps from EVE's latest static data export
 ```
 
 Usage

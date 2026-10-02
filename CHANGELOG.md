@@ -1,3 +1,14 @@
+## 0.2.7 Alpha (0.2.7-alpha)
+* 94 new skills from EVE's latest static data (512 in total), including Precursor and Vorton weapons and ships,
+  EDENCOM and Upwell ships, Lancer Dreadnoughts, Breacher Pods, the new ore processing skills and the new
+  Sequencing group. The 15 retired ore processing skills are gone and 9 renamed skills use their current names.
+* Skillbook prices for every skill with an NPC price (102 were missing), and Alpha skill limits from CCP's data, so
+  Alpha characters with renamed skills are no longer taken for Omega.
+* Skill plans: Delete asks for confirmation first.
+* Skill plans: "+ Level N" asks whether to add the next level right after the skill or at the end of the plan.
+* Fixed: the plan list didn't update a plan's skill count and time after importing or adding a level.
+* `npm run update-skills` refreshes skills, skillbook prices and Alpha limits from the latest static data.
+
 ## 0.2.6 Alpha (0.2.6-alpha)
 * Fixed: "Cannot read properties of undefined (reading 'readText')" when importing a skill plan from EVE or pasting
   a skill list. The clipboard works again everywhere: plan import and export, the Fit Planner's paste, Copy name on

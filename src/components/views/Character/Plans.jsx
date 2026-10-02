@@ -14,6 +14,9 @@ import MergePlansDialog from '../../dialogs/MergePlansDialog';
 import TrainingQueueTable from '../../tables/TrainingQueueTable';
 import ImportExportHelper from '../../../helpers/ImportExportHelper';
 import SkillPlanHelper from '../../../helpers/SkillPlanHelper';
+import Popover from 'material-ui/Popover';
+import Menu from 'material-ui/Menu';
+import MenuItem from 'material-ui/MenuItem';
 import RemapHelper from '../../../helpers/RemapHelper';
 import TrainingProfileHelper from '../../../helpers/TrainingProfileHelper';
 import Character from '../../../models/Character';
@@ -293,8 +296,21 @@ export default class Plans extends React.Component {
         }
     }
 
-    // "+ Level N" on a skill row: plans the next level straight after it, then recalculates the plan's times.
-    handleAddNextLevel(index) {
+    // "+ Level N" on a skill row: asks whether the next level goes right after this one or at the end of the plan.
+    // The menu opens once the click is over, or the click itself would close it again.
+    handleAddNextLevel(index, anchorEl) {
+        const open = () => setTimeout(() => this.setState({addLevelMenu: {index, anchorEl}}), 0);
+        if (typeof document !== 'undefined') {
+            document.addEventListener('mouseup', open, {once: true});
+        } else {
+            open();
+        }
+    }
+
+    // Plans the next level of the skill at index, right after it ('after') or at the end of the plan ('end'), then
+    // recalculates the plan's times.
+    addNextLevel(index, position) {
+        this.setState({addLevelMenu: undefined});
         const item = this.state.items[index];
         if (item === undefined || item.type !== 'skill' || item.level >= 5) {
             return;
@@ -307,22 +323,26 @@ export default class Plans extends React.Component {
             return;
         }
 
-        const queue = this.planCharacter.queue.slice(0, before);
-        queue.splice(index + 1, 0, ...added);
-        this.planCharacter.reset();
-        queue.forEach(queued => this.planCharacter.addItemToQueue(queued));
+        if (position === 'after') {
+            const queue = this.planCharacter.queue.slice(0, before);
+            queue.splice(index + 1, 0, ...added);
+            this.planCharacter.reset();
+            queue.forEach(queued => this.planCharacter.addItemToQueue(queued));
+        }
 
-        this.setState({
-            items: this.planCharacter.queue,
-            totalTime: this.planCharacter.time,
-            selection: [],
-        });
         SkillPlanStore.storeSkillPlan(
             this.props.characterId,
             this.state.skillPlanId,
             this.state.skillPlanName,
             this.planCharacter.queue,
         );
+        this.setState({
+            items: this.planCharacter.queue,
+            totalTime: this.planCharacter.time,
+            selection: [],
+            // the plan list shows each plan's skill count and time
+            skillPlans: SkillPlanStore.getSkillPlansForCharacter(this.props.characterId),
+        });
     }
 
     handleItemRemove(index, e) {
@@ -518,6 +538,14 @@ export default class Plans extends React.Component {
     }
 
     handleSkillPlanRemove() {
+        const plan = SkillPlanStore.getSkillPlansForCharacter(this.props.characterId).find(p => p.id === this.state.skillPlanId);
+        const name = plan !== undefined ? plan.name : this.state.skillPlanName;
+        const skills = plan !== undefined ? plan.skillCount : 0;
+        if (!confirm(`Delete the plan "${name}"?\n\n` +
+            (skills > 0 ? `Its ${skills} skill level${skills === 1 ? '' : 's'} will be removed. ` : '') + 'This can\'t be undone.')) {
+            return;
+        }
+
         SkillPlanStore.deleteSkillPlan(this.props.characterId, this.state.skillPlanId);
         const plans = SkillPlanStore.getSkillPlansForCharacter(this.props.characterId);
 
@@ -559,17 +587,17 @@ export default class Plans extends React.Component {
             this.planCharacter.addNote(name, `Imported from ${source}`);
             skills.forEach(s => this.planCharacter.planSkill(s.typeId, s.level));
             
-            this.setState({
-                items: this.planCharacter.queue,
-                totalTime: this.planCharacter.time,
-                
-            });
             SkillPlanStore.storeSkillPlan(
                 this.props.characterId,
                 this.state.skillPlanId,
                 this.state.skillPlanName,
                 this.planCharacter.queue,
             );
+            this.setState({
+                items: this.planCharacter.queue,
+                totalTime: this.planCharacter.time,
+                skillPlans: SkillPlanStore.getSkillPlansForCharacter(this.props.characterId),
+            });
         }
         this.setState({ importToPlanPopoverOpen: false });
     }
@@ -610,6 +638,31 @@ export default class Plans extends React.Component {
         return this.comparison.result;
     }
 
+    // where "+ Level N" puts the new level
+    renderAddLevelMenu() {
+        const menu = this.state.addLevelMenu;
+        const item = menu !== undefined ? this.state.items[menu.index] : undefined;
+        if (item === undefined || item.type !== 'skill') {
+            return null;
+        }
+        const next = `${item.name} ${['', 'I', 'II', 'III', 'IV', 'V'][item.level + 1]}`;
+
+        return (
+            <Popover
+                open={true}
+                anchorEl={menu.anchorEl}
+                anchorOrigin={{horizontal: 'right', vertical: 'bottom'}}
+                targetOrigin={{horizontal: 'right', vertical: 'top'}}
+                onRequestClose={() => this.setState({addLevelMenu: undefined})}
+            >
+                <Menu desktop={true}>
+                    <MenuItem primaryText={`Add ${next} right after this level`} onClick={() => this.addNextLevel(menu.index, 'after')}/>
+                    <MenuItem primaryText={`Add ${next} at the end of the plan`} onClick={() => this.addNextLevel(menu.index, 'end')}/>
+                </Menu>
+            </Popover>
+        );
+    }
+
     renderRemapDialog() {
         const character = Character.get(this.props.characterId);
         const bonuses = TrainingProfileHelper.getImplantBonuses(this.props.characterId);
@@ -640,6 +693,7 @@ export default class Plans extends React.Component {
         return (
             <div>
                 {this.renderRemapDialog()}
+                {this.renderAddLevelMenu()}
                 <NoteDialog
                     text={this.state.noteText}
                     details={this.state.noteDetails}

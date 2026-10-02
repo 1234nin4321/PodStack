@@ -147,9 +147,9 @@ const SortableItem = SortableElement(
 
         handleMouseDown(e) {
             if (e.target.innerText !== undefined && e.target.innerText === 'add' && this.props.onAddLevel !== undefined) {
-                // the "+ Level N" button shown on hover
+                // the "+ Level N" button shown on hover; the page asks where to put it, anchored at the button
                 e.stopPropagation();
-                this.props.onAddLevel(this.props.idx);
+                this.props.onAddLevel(this.props.idx, e.target.closest('button') || e.target);
             } else if (e.target.innerText !== undefined && e.target.innerText === 'delete') {
                 this.props.onRemove(this.props.idx, e);
             } else if (e.target.innerText !== undefined && e.target.innerText === 'mode_edit') {
@@ -192,7 +192,7 @@ const SortableItem = SortableElement(
                                 </TableRowColumn>
                             }
                             <TableRowColumn style={this.props.columnMarketGroup}>
-                                {AllSkills.skills[this.props.value.id].market_group_name}
+                                {(AllSkills.skills[this.props.value.id] || {}).market_group_name}
                             </TableRowColumn>
                             <TableRowColumn style={this.props.columnAttributes}>
                                 {this.props.value.attributeTitle}
