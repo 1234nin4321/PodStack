@@ -28,6 +28,53 @@ const LIGHTING = {
     space: {label: 'Deep space', background: 0x020306, reflections: 'space', env: 0.6, key: 3.2, rim: 0.6, ambient: 0.05, bloom: 0.6},
     bright: {label: 'Bright', background: 0x1a1f27, reflections: 'room', env: 1.6, key: 1.6, rim: 1.0, ambient: 0.6, bloom: 0.2},
 };
+// the nebula space lighting reflects by default, where the client has it; its name's first letter is the region
+const NEBULA = 'c01';
+const NEBULA_REGIONS = {a: 'Amarr', c: 'Caldari', g: 'Gallente', m: 'Minmatar', j: 'Jove'};
+
+// "Caldari 01" for c01; other names as they are
+function nebulaLabel(name) {
+    const m = name.match(/^([acgmj])(\d+)$/);
+    return m ? `${NEBULA_REGIONS[m[1]]} ${m[2]}` : name;
+}
+
+// A nebula cubemap (BC6H, from ShipModelHelper.nebulaResource) as a compressed cube texture, or undefined when it isn't
+// one or the graphics card can't take it.
+function nebulaCube(bytes, renderer) {
+    if (bytes === undefined || !renderer.extensions.has('EXT_texture_compression_bptc')) {
+        return undefined;
+    }
+    const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+    const fourCC = String.fromCharCode(bytes[84], bytes[85], bytes[86], bytes[87]);
+    const dxgi = view.getUint32(128, true);
+    const cube = (view.getUint32(136, true) & 4) !== 0;
+    if (fourCC !== 'DX10' || (dxgi !== 95 && dxgi !== 96) || !cube) {
+        return undefined;
+    }
+    const height = view.getUint32(12, true);
+    const width = view.getUint32(16, true);
+    const mips = Math.max(1, view.getUint32(28, true));
+    // each face: its whole mip chain, of which the first level is used
+    const levelSize = level => Math.max(1, (width >> level) + 3 >> 2) * Math.max(1, (height >> level) + 3 >> 2) * 16;
+    let faceSize = 0;
+    for (let level = 0; level < mips; level++) {
+        faceSize += levelSize(level);
+    }
+    if (148 + faceSize * 6 > bytes.length) {
+        return undefined;
+    }
+    const images = [0, 1, 2, 3, 4, 5].map(face => {
+        const data = bytes.subarray(148 + face * faceSize, 148 + face * faceSize + levelSize(0));
+        return {width, height, mipmaps: [{data, width, height}]};
+    });
+    const texture = new THREE.CompressedCubeTexture(images, dxgi === 96 ? THREE.RGB_BPTC_SIGNED_Format : THREE.RGB_BPTC_UNSIGNED_Format, THREE.HalfFloatType);
+    texture.minFilter = THREE.LinearFilter;
+    texture.magFilter = THREE.LinearFilter;
+    texture.generateMipmaps = false;
+    texture.needsUpdate = true;
+    return texture;
+}
+
 // where the sun (the key light) is, which the space sky's sun matches
 const SUN = new THREE.Vector3(3, 4, 2).normalize();
 
@@ -135,7 +182,7 @@ export default class ShipViewer extends React.Component {
     constructor(props) {
         super(props);
 
-        this.state = {status: 'loading', error: undefined, autoRotate: true, lighting: 'ingame', dirt: 'clean', skin: 'default', paintSource: 'none'};
+        this.state = {status: 'loading', error: undefined, autoRotate: true, lighting: 'ingame', nebula: undefined, dirt: 'clean', skin: 'default', paintSource: 'none'};
         this.mount = React.createRef();
     }
 
@@ -151,7 +198,7 @@ export default class ShipViewer extends React.Component {
             clearTimeout(this.loadTimer);
             this.loadTimer = setTimeout(() => this.loadShip(), 30);
         }
-        if (prevState.lighting !== this.state.lighting) {
+        if (prevState.lighting !== this.state.lighting || prevState.nebula !== this.state.nebula) {
             this.applyLighting();
         }
         if (prevState.dirt !== this.state.dirt && this.paint !== undefined) {
@@ -185,8 +232,10 @@ export default class ShipViewer extends React.Component {
         if (this.controls !== undefined) {
             this.controls.dispose();
         }
-        for (const envMap of Object.values(this.envMaps || {})) {
-            envMap.dispose();
+        for (const envMap of [...Object.values(this.envMaps || {}), ...(this.nebulaEnvs || new Map()).values()]) {
+            if (envMap) {
+                envMap.dispose();
+            }
         }
         if (this.composer !== undefined) {
             this.composer.dispose();
@@ -281,9 +330,34 @@ export default class ShipViewer extends React.Component {
         this.ambient.intensity = preset.ambient;
         this.key.intensity = preset.key;
         this.rim.intensity = preset.rim;
-        this.scene.environment = this.envMaps[preset.reflections];
+        this.scene.environment = (preset.reflections === 'space' && this.nebulaEnv(this.state.nebula || this.defaultNebula())) || this.envMaps[preset.reflections];
         this.scene.environmentIntensity = preset.env;
         this.bloom.strength = preset.bloom;
+    }
+
+    // the reflections of one of the client's nebulas, prefiltered for rough to polished surfaces (undefined when the
+    // client hasn't got it or it can't be shown; the generated sky is used instead)
+    nebulaEnv(name) {
+        if (!name) {
+            return undefined;
+        }
+        this.nebulaEnvs = this.nebulaEnvs || new Map();
+        if (!this.nebulaEnvs.has(name)) {
+            let env;
+            try {
+                const cube = nebulaCube(ShipModelHelper.nebulaResource(name), this.renderer);
+                if (cube !== undefined) {
+                    const pmrem = new THREE.PMREMGenerator(this.renderer);
+                    env = pmrem.fromCubemap(cube).texture;
+                    pmrem.dispose();
+                    cube.dispose();
+                }
+            } catch (err) {
+                env = undefined;
+            }
+            this.nebulaEnvs.set(name, env);
+        }
+        return this.nebulaEnvs.get(name);
     }
 
     clearShip() {
@@ -1021,6 +1095,19 @@ material.specularColorBlended = mix(material.specularColorBlended, areaSpecular,
         set(this.glass, 'Glass', '#000000', 0.5);
     }
 
+    // the client's nebulas, read once
+    nebulas() {
+        if (this.nebulaNames === undefined) {
+            this.nebulaNames = ShipModelHelper.nebulas();
+        }
+        return this.nebulaNames;
+    }
+
+    defaultNebula() {
+        const names = this.nebulas();
+        return names.includes(NEBULA) ? NEBULA : names[0];
+    }
+
     resetView() {
         if (this.radius === undefined) {
             return;
@@ -1071,6 +1158,11 @@ material.specularColorBlended = mix(material.specularColorBlended, areaSpecular,
                                     onClick={() => this.setState({lighting: key})}>{preset.label}</button>
                         )}
                     </div>
+                    {LIGHTING[this.state.lighting].reflections === 'space' && this.nebulas().length > 0 &&
+                        <select className="field small" value={this.state.nebula || this.defaultNebula()} title="Nebula reflected on the hull"
+                                onChange={e => this.setState({nebula: e.target.value})}>
+                            {this.nebulas().map(name => <option key={name} value={name}>{nebulaLabel(name)}</option>)}
+                        </select>}
                     <div className="seg" title="Dirt">
                         {Object.entries(DIRT).map(([key, preset]) =>
                             <button key={key} type="button" className={this.state.dirt === key ? 'active' : ''}

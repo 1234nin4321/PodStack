@@ -33,7 +33,10 @@ const DECAL_PREFIX = 'res:/dx9/model/decal/';
 // effects' meshes and textures shared between hulls, and generic meshes (planes)
 const SHARED_PREFIX = 'res:/dx9/model/shared/';
 const GENERIC_PREFIX = 'res:/graphics/generic/';
-const PREFIXES = [SHIP_PREFIX, SOF_PREFIX, TEXTURE_PREFIX, DECAL_PREFIX, SHARED_PREFIX, GENERIC_PREFIX];
+// the nebulas the client lights space with (cubemaps)
+const NEBULA_PREFIX = 'res:/dx9/scene/universe/';
+const PREFIXES = [SHIP_PREFIX, SOF_PREFIX, TEXTURE_PREFIX, DECAL_PREFIX, SHARED_PREFIX, GENERIC_PREFIX, NEBULA_PREFIX];
+const NEBULA = /^res:\/dx9\/scene\/universe\/([a-z0-9_]+)_cube_lowdetail\.dds$/;
 
 let index;      // {folder, files: Map(res path -> absolute file)}
 let detected;   // the auto-detected folder (null when none), found once per session
@@ -291,6 +294,20 @@ export default class ShipModelHelper {
             log.warn(`[Models] Couldn't read ${res}`, err.message);
             return undefined;
         }
+    }
+
+    // the names of the client's nebulas (e.g. "c01"), whose cubemaps nebulaResource() gives
+    static nebulas() {
+        const files = ShipModelHelper.files();
+        if (files === undefined) {
+            return [];
+        }
+        return [...files.keys()].map(res => (res.match(NEBULA) || [])[1]).filter(Boolean).sort();
+    }
+
+    // a nebula's cubemap: its small HDR (BC6H) one, as the client uses at low detail
+    static nebulaResource(name) {
+        return ShipModelHelper.resource(`${NEBULA_PREFIX}${name}_cube_lowdetail.dds`);
     }
 
     static isAvailable() {
