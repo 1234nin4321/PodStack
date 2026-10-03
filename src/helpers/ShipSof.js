@@ -67,7 +67,8 @@ export default class ShipSof {
     }
 
     /**
-     * A SKIN pattern's layers on a hull: [{mask (res path of the mask texture), projectionU, projectionV,
+     * A SKIN pattern's layers on a hull: [{mask (res path of the mask texture), projectionU, projectionV (per axis,
+     * outside the box: 0 or undefined repeats, 1 clamps, 2 stops),
      * materialSource (0-3: the hull's materials, 4-5: the SKIN's custom materials), position, scaling, rotation
      * (quaternion), mirrored, targets: [4 booleans: the paint areas it paints]}], only the layers placed on this hull;
      * [] when the pattern isn't placed on it.

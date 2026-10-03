@@ -348,8 +348,10 @@ export default class ShipViewer extends React.Component {
             patternScale: {value: [new THREE.Vector3(1, 1, 1), new THREE.Vector3(1, 1, 1)]},
             patternRot: {value: [new THREE.Vector4(0, 0, 0, 1), new THREE.Vector4(0, 0, 0, 1)]},
             patternMirror: {value: [0, 0]},
-            patternRepeatU: {value: [0, 0]},
-            patternRepeatV: {value: [0, 0]},
+            // per axis, how a layer's mask carries on outside its box: 0 repeats, 1 clamps (its edge stretches outwards),
+            // 2 stops (nothing outside), as the pattern files' projection types
+            patternModeU: {value: [0, 0]},
+            patternModeV: {value: [0, 0]},
             patternDiffuse: {value: [new THREE.Color(), new THREE.Color()]},
             patternSpecular: {value: [new THREE.Color(), new THREE.Color()]},
             patternRough: {value: [0.5, 0.5]},
@@ -381,8 +383,8 @@ uniform vec3 patternPos[2];
 uniform vec3 patternScale[2];
 uniform vec4 patternRot[2];
 uniform float patternMirror[2];
-uniform float patternRepeatU[2];
-uniform float patternRepeatV[2];
+uniform float patternModeU[2];
+uniform float patternModeV[2];
 uniform vec3 patternDiffuse[2];
 uniform vec3 patternSpecular[2];
 uniform float patternRough[2];
@@ -394,16 +396,22 @@ vec3 unrotate(vec4 q, vec3 v) {
 }
 // where a pattern layer's mask is sampled here, as the client's vertex shader works it out: the hull position in the
 // layer's box, whose y and z span the texture. It runs through the whole hull along the box's x; mirrored layers use
-// |x|, so both sides get the +x side's paint.
-vec2 patternCoords(int i) {
+// |x|, so both sides get the +x side's paint. z is 0 where an axis that stops is outside the box, else 1.
+vec3 patternCoords(int i) {
     vec3 p = vHullPosition;
     if (patternMirror[i] > 0.5) { p.x = abs(p.x); }
     vec3 local = unrotate(patternRot[i], p - patternPos[i]) / max(patternScale[i], vec3(1e-4));
     vec2 uv = local.yz * 0.5 + 0.5;
-    // an axis that doesn't repeat is clamped: the mask's edge carries on beyond the box
-    if (patternRepeatU[i] < 0.5) { uv.x = clamp(uv.x, 0.0, 1.0); }
-    if (patternRepeatV[i] < 0.5) { uv.y = clamp(uv.y, 0.0, 1.0); }
-    return uv;
+    float inside = 1.0;
+    if (patternModeU[i] > 1.5) { inside *= step(0.0, uv.x) * step(uv.x, 1.0); }
+    if (patternModeV[i] > 1.5) { inside *= step(0.0, uv.y) * step(uv.y, 1.0); }
+    if (patternModeU[i] > 0.5) { uv.x = clamp(uv.x, 0.0, 1.0); }
+    if (patternModeV[i] > 0.5) { uv.y = clamp(uv.y, 0.0, 1.0); }
+    return vec3(uv, inside);
+}
+float patternMask(sampler2D mask, int i) {
+    vec3 pc = patternCoords(i);
+    return texture2D(mask, pc.xy).r * pc.z;
 }`)
                 .replace('#include <map_fragment>', `#include <map_fragment>
 vec4 surfaceSample = texture2D(surfaceMap, vMapUv);
@@ -420,8 +428,8 @@ if (maskBlend < 0.5) {
 // SKIN patterns paint their material over each area they target, before the areas are blended. Layer 1 lies over
 // layer 2 (the client also has variants where layer 2 only shows inside layer 1, or ignores it; nothing in the
 // pattern files says which a SKIN uses, so the commonest is used)
-float mask1 = patternOn[0] > 0.5 ? texture2D(patternMask0, patternCoords(0)).r : 0.0;
-float mask2 = patternOn[1] > 0.5 ? texture2D(patternMask1, patternCoords(1)).r * (1.0 - mask1) : 0.0;
+float mask1 = patternOn[0] > 0.5 ? patternMask(patternMask0, 0) : 0.0;
+float mask2 = patternOn[1] > 0.5 ? patternMask(patternMask1, 1) * (1.0 - mask1) : 0.0;
 vec3 areaColor = vec3(0.0);
 vec3 areaSpecular = vec3(0.0);
 float areaGloss = 0.0;
@@ -544,8 +552,8 @@ material.specularColorBlended = mix(material.specularColorBlended, areaSpecular,
             this.paint.patternScale.value[i].fromArray(layer.scaling);
             this.paint.patternRot.value[i].fromArray(layer.rotation);
             this.paint.patternMirror.value[i] = layer.mirrored ? 1 : 0;
-            this.paint.patternRepeatU.value[i] = layer.projectionU === 2 ? 1 : 0;
-            this.paint.patternRepeatV.value[i] = layer.projectionV === 2 ? 1 : 0;
+            this.paint.patternModeU.value[i] = layer.projectionU || 0;
+            this.paint.patternModeV.value[i] = layer.projectionV || 0;
             this.paint.patternTarget.value[i].set(...layer.targets.map(t => (t ? 1 : 0)));
 
             // 4 and 5: the SKIN's custom materials; 0-3: the hull's own
@@ -705,8 +713,9 @@ material.specularColorBlended = mix(material.specularColorBlended, areaSpecular,
                 if (dds !== undefined) {
                     texture = this.ddsTexture(dds);
                     if (texture !== undefined) {
-                        texture.wrapS = layer.projectionU === 2 ? THREE.RepeatWrapping : THREE.ClampToEdgeWrapping;
-                        texture.wrapT = layer.projectionV === 2 ? THREE.RepeatWrapping : THREE.ClampToEdgeWrapping;
+                        // only projection type 0 repeats; 1 and 2 are clamped (2 then stops at the box, in the shader)
+                        texture.wrapS = layer.projectionU ? THREE.ClampToEdgeWrapping : THREE.RepeatWrapping;
+                        texture.wrapT = layer.projectionV ? THREE.ClampToEdgeWrapping : THREE.RepeatWrapping;
                     }
                 }
             } catch (err) {
