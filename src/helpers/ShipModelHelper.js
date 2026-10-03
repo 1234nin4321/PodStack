@@ -462,24 +462,30 @@ export default class ShipModelHelper {
     // the texture set `insert` names (a SKIN's or faction's) where the client has it.
     static textures(files, found, hull, insert) {
         const used = [];
-        const pick = map => {
-            const file = ShipModelHelper.textureFile(files, found.folder, [hull, found.hull], map, insert);
+        // a map from the set, else (where the set hasn't got it, or it can't be read) the hull's own
+        const pick = (map, set = insert) => {
+            const file = ShipModelHelper.textureFile(files, found.folder, [hull, found.hull], map, set);
             if (file === undefined) {
                 return undefined;
             }
-            if (file.inserted) {
-                used.push(file.res);
-            }
             try {
-                return parseDds(readFile(files.get(file.res)));
+                const dds = parseDds(readFile(files.get(file.res)));
+                if (file.inserted) {
+                    used.push(file.res);
+                }
+                return dds;
             } catch (err) {
-                return undefined;
+                log.warn(`[Models] ${file.res}: ${err.message}`);
+                return file.inserted ? pick(map, 'none') : undefined;
             }
         };
 
         const textures = {};
         const albedo = pick('a');
-        if (albedo !== undefined && ['BC1', 'BC3', 'BC7'].includes(albedo.format)) {
+        if (albedo !== undefined && !['BC1', 'BC2', 'BC3', 'BC7', 'RGBA8', 'BGRA8'].includes(albedo.format)) {
+            log.warn(`[Models] ${found.model}: colour texture in ${albedo.format}, which the viewer can't show`);
+        }
+        if (albedo !== undefined && ['BC1', 'BC2', 'BC3', 'BC7', 'RGBA8', 'BGRA8'].includes(albedo.format)) {
             textures.albedo = albedo;
         }
 

@@ -1,12 +1,18 @@
 'use strict';
 
-// Reads DirectDraw Surface (.dds) textures as EVE's ships use them: block-compressed BC1/BC3/BC4/BC5/BC7 with a full
-// mip chain, from either the legacy header (FourCC DXT1/DXT5/ATI1/ATI2) or the DX10 extension header. BC4 and BC5
-// are also decoded here, so single-channel maps and normal maps can be repacked into ordinary RGBA textures.
+// Reads DirectDraw Surface (.dds) textures as EVE's ships use them: block-compressed BC1/BC2/BC3/BC4/BC5/BC7, or
+// uncompressed 8-bit RGBA/BGRA, with a full mip chain, from either the legacy header (FourCC DXT1/DXT3/DXT5/ATI1/ATI2,
+// or RGB bit masks) or the DX10 extension header. BC4 and BC5 are also decoded here, so single-channel maps and normal
+// maps can be repacked into ordinary RGBA textures.
 
-const DXGI = {71: 'BC1', 72: 'BC1', 77: 'BC3', 78: 'BC3', 80: 'BC4', 81: 'BC4', 83: 'BC5', 84: 'BC5', 98: 'BC7', 99: 'BC7'};
-const FOURCC = {DXT1: 'BC1', DXT5: 'BC3', ATI1: 'BC4', BC4U: 'BC4', ATI2: 'BC5', BC5U: 'BC5'};
-const BLOCK_BYTES = {BC1: 8, BC3: 16, BC4: 8, BC5: 16, BC7: 16};
+const DXGI = {
+    28: 'RGBA8', 29: 'RGBA8', 71: 'BC1', 72: 'BC1', 74: 'BC2', 75: 'BC2', 77: 'BC3', 78: 'BC3', 80: 'BC4', 81: 'BC4',
+    83: 'BC5', 84: 'BC5', 87: 'BGRA8', 91: 'BGRA8', 98: 'BC7', 99: 'BC7',
+};
+const FOURCC = {DXT1: 'BC1', DXT3: 'BC2', DXT5: 'BC3', ATI1: 'BC4', BC4U: 'BC4', ATI2: 'BC5', BC5U: 'BC5'};
+const BLOCK_BYTES = {BC1: 8, BC2: 16, BC3: 16, BC4: 8, BC5: 16, BC7: 16};
+// uncompressed formats: bytes per pixel
+const PIXEL_BYTES = {RGBA8: 4, BGRA8: 4};
 
 /**
  * @param {Uint8Array} bytes the .dds file
@@ -27,8 +33,12 @@ export function parseDds(bytes) {
     if (fourCC === 'DX10') {
         format = DXGI[view.getUint32(128, true)];
         offset += 20;
-    } else {
+    } else if (FOURCC[fourCC] !== undefined) {
         format = FOURCC[fourCC];
+    } else if ((view.getUint32(80, true) & 0x40) !== 0 && view.getUint32(88, true) === 32) {
+        // uncompressed, by its red channel's bits
+        const red = view.getUint32(92, true);
+        format = red === 0xff ? 'RGBA8' : red === 0xff0000 ? 'BGRA8' : undefined;
     }
     if (format === undefined) {
         throw new Error(`Unsupported DDS format ${fourCC === 'DX10' ? view.getUint32(128, true) : fourCC}`);
@@ -38,7 +48,8 @@ export function parseDds(bytes) {
     let w = width;
     let h = height;
     for (let i = 0; i < mipCount && offset < bytes.length; i++) {
-        const size = Math.max(1, Math.ceil(w / 4)) * Math.max(1, Math.ceil(h / 4)) * BLOCK_BYTES[format];
+        const size = PIXEL_BYTES[format] !== undefined ? w * h * PIXEL_BYTES[format] :
+            Math.max(1, Math.ceil(w / 4)) * Math.max(1, Math.ceil(h / 4)) * BLOCK_BYTES[format];
         mips.push({width: w, height: h, data: bytes.subarray(offset, offset + size)});
         offset += size;
         w = Math.max(1, w >> 1);

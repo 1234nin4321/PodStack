@@ -18,6 +18,7 @@ const HEIGHT = 460;
 const COMPRESSED = {
     BC7: {extension: 'EXT_texture_compression_bptc', format: THREE.RGBA_BPTC_Format},
     BC1: {extension: 'WEBGL_compressed_texture_s3tc', format: THREE.RGB_S3TC_DXT1_Format},
+    BC2: {extension: 'WEBGL_compressed_texture_s3tc', format: THREE.RGBA_S3TC_DXT3_Format},
     BC3: {extension: 'WEBGL_compressed_texture_s3tc', format: THREE.RGBA_S3TC_DXT5_Format},
 };
 // reflections: 'space' is a nebula sky with a sun, as the client lights ships with the system's nebula; 'room' a studio.
@@ -466,7 +467,7 @@ export default class ShipViewer extends React.Component {
 
         this.radius = sphere.radius;
         this.resetView();
-        this.setState({status: 'ready', textured: model.textures.albedo !== undefined && this.albedoSupported});
+        this.setState({status: 'ready', textured: this.textureState(model.textures)});
     }
 
     // A look whose texture set differs from the one loaded (a SKIN's clean "nefantar" set over the hull's weathered
@@ -495,6 +496,16 @@ export default class ShipViewer extends React.Component {
         // the same maps as before where the set doesn't have them only costs a reload, so it's done once per set
         this.setTextures(this.hull, textures);
         this.model.textures = textures;
+        this.setState({textured: this.textureState(textures)});
+    }
+
+    // whether the hull's colour texture shows: true, or why not ('missing': none PodStack can read, 'unsupported': the
+    // graphics card can't take its format)
+    textureState(textures) {
+        if (textures.albedo === undefined) {
+            return 'missing';
+        }
+        return this.albedoSupported ? true : 'unsupported';
     }
 
     // the hull's maps into its material, replacing (and freeing) those it had
@@ -506,15 +517,12 @@ export default class ShipViewer extends React.Component {
 
         // the albedo stays block-compressed on the graphics card, where the card supports the format
         const albedo = textures.albedo;
-        const compressed = albedo !== undefined ? COMPRESSED[albedo.format] : undefined;
-        this.albedoSupported = compressed !== undefined && this.renderer.extensions.has(compressed.extension);
-        if (this.albedoSupported) {
-            const map = new THREE.CompressedTexture(albedo.mips, albedo.width, albedo.height, compressed.format);
+        const map = albedo !== undefined ? this.ddsTexture(albedo) : undefined;
+        this.albedoSupported = map !== undefined;
+        if (map !== undefined) {
             map.colorSpace = THREE.SRGBColorSpace;
             map.wrapS = map.wrapT = THREE.RepeatWrapping;
-            map.minFilter = THREE.LinearMipmapLinearFilter;
             map.anisotropy = 8;
-            map.needsUpdate = true;
             hull.map = map;
         } else {
             // a plain map, so the shader still has the hull's texture coordinates for the masks
@@ -1147,6 +1155,16 @@ material.specularColorBlended = mix(material.specularColorBlended, areaSpecular,
 
     // a texture from a parsed DDS: one or two channel formats decoded here, colour ones left compressed
     ddsTexture(dds) {
+        if (dds.format === 'RGBA8' || dds.format === 'BGRA8') {
+            const mip = dds.mips[0];
+            const rgba = new Uint8Array(mip.data);
+            if (dds.format === 'BGRA8') {
+                for (let i = 0; i < rgba.length; i += 4) {
+                    [rgba[i], rgba[i + 2]] = [rgba[i + 2], rgba[i]];
+                }
+            }
+            return dataTexture({width: mip.width, height: mip.height, data: rgba}, THREE.NoColorSpace);
+        }
         if (dds.format === 'BC4' || dds.format === 'BC5') {
             const mip = dds.mips[0];
             const rgba = new Uint8Array(mip.width * mip.height * 4).fill(255);
@@ -1269,9 +1287,11 @@ material.specularColorBlended = mix(material.specularColorBlended, areaSpecular,
                     <button type="button" className="link-button" onClick={() => this.resetView()}>Reset view</button>
                     <span className="faint ship-viewer-hint">Drag to orbit · scroll to zoom · right-drag to pan</span>
                 </div>
-                {status === 'ready' && !this.state.textured &&
+                {status === 'ready' && this.state.textured !== true &&
                     <p className="faint" style={{margin: 0, padding: '0 12px 10px'}}>
-                        Your graphics card can't show this hull's colour texture (BC7), so it's shown in plain metal.
+                        {this.state.textured === 'unsupported' ?
+                            'Your graphics card can\'t show this hull\'s colour texture, so it\'s shown in plain metal.' :
+                            'PodStack couldn\'t read this hull\'s colour texture from your EVE client, so it\'s shown in plain metal.'}
                     </p>}
             </div>
         );
