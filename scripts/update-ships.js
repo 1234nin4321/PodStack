@@ -4,7 +4,8 @@
 //
 //   resources/ships.js   every published ship on the market: class, race, tech/meta group, the skills it needs, and
 //                        where its hull model is in the EVE client's files and the SKINs it can wear (for the 3D
-//                        viewer), plus each SKIN's paint: colours, materials and pattern
+//                        viewer), plus each SKIN's paint: colours, materials and pattern; and the names of the
+//                        regions each of the client's nebulas is seen in (the viewer's backdrops)
 //
 // Usage: `npm run update-ships` downloads the latest SDE from CCP (about 100 MB), or
 // `npm run update-ships -- <folder>` uses an already extracted JSONL SDE. It prints which ships are new or removed.
@@ -19,7 +20,7 @@ const ROOT = path.join(__dirname, '..');
 const SDE_URL = 'https://developers.eveonline.com/static-data/tranquility';
 const SHIP_CATEGORY = 6;
 const FILES = ['types.jsonl', 'groups.jsonl', 'typeDogma.jsonl', 'races.jsonl', 'metaGroups.jsonl', 'graphics.jsonl',
-    'skins.jsonl', 'skinMaterials.jsonl', 'graphicMaterialSets.jsonl', '_sde.jsonl'];
+    'skins.jsonl', 'skinMaterials.jsonl', 'graphicMaterialSets.jsonl', 'mapRegions.jsonl', '_sde.jsonl'];
 
 // the same skill/level dogma attribute pairs skills use for their prerequisites
 const PREREQUISITES = [[182, 277], [183, 278], [184, 279], [1285, 1286], [1289, 1287], [1290, 1288]];
@@ -111,6 +112,21 @@ function buildSkins(dir) {
     return {byType, paints};
 }
 
+// each nebula the regions use (by the name of its cubemap in the client, e.g. "c02") -> those regions' names, e.g.
+// ["The Forge", "GPMR-01"]
+function buildNebulas(dir, graphics) {
+    const nebulas = {};
+    for (const region of readJsonl(dir, 'mapRegions.jsonl')) {
+        const graphic = graphics.get(region.nebulaID);
+        const match = graphic && (graphic.graphicFile || '').match(/\/universe\/([a-z0-9_]+)_cube\.red$/i);
+        if (match) {
+            const name = match[1].toLowerCase();
+            (nebulas[name] = nebulas[name] || []).push(region.name.en);
+        }
+    }
+    return nebulas;
+}
+
 function build(dir) {
     const groups = new Map(readJsonl(dir, 'groups.jsonl').map(g => [g._key, g]));
     const races = new Map(readJsonl(dir, 'races.jsonl').map(r => [r._key, r.name.en]));
@@ -153,7 +169,7 @@ function build(dir) {
     // only the paints some ship here can wear
     const used = new Set(Object.values(ships).flatMap(s => s.skins.map(k => k.id)));
     const skinPaints = Object.fromEntries(Object.entries(paints).filter(([id]) => used.has(Number(id))));
-    return {ships, races: usedRaces, skins: skinPaints};
+    return {ships, races: usedRaces, skins: skinPaints, nebulas: buildNebulas(dir, graphics)};
 }
 
 function header(build, date) {

@@ -11,6 +11,7 @@ import {OutputPass} from 'three/examples/jsm/postprocessing/OutputPass.js';
 import ShipModelHelper from '../../helpers/ShipModelHelper';
 import ShipPaint from '../../helpers/ShipPaint';
 import ShipSof from '../../helpers/ShipSof';
+import ShipData from '../../../resources/ships';
 import {parseDds, decodeInto} from '../../helpers/granny/Dds';
 
 // the view's height: from its width (16:9), at least MIN_HEIGHT and at most MAX_SHARE of the window's
@@ -34,17 +35,16 @@ const LIGHTING = {
     ingame: {label: 'In-game', background: 0x050506, env: 1.6, key: 1.8, rim: 1.0, ambient: 0.04, bloom: 0.6},
     space: {label: 'Deep space', background: 0x020306, env: 0.6, key: 2.0, rim: 0.6, ambient: 0.05, bloom: 0.6},
 };
-// the nebula space lighting reflects by default, where the client has it; its name's first letter is the region
+// the nebula shown by default (The Citadel), where the client has it
 const NEBULA = 'c01';
 const NEBULA_INTENSITY = 0.5;
 // how bright the nebula is behind the ship
 const NEBULA_BACKGROUND = 0.6;
-const NEBULA_REGIONS = {a: 'Amarr', c: 'Caldari', g: 'Gallente', m: 'Minmatar', j: 'Jove'};
 
-// "Caldari 01" for c01; other names as they are
+// a nebula by the regions it's seen in ("The Forge, GPMR-01" for c02, from the SDE); else its name in the client
 function nebulaLabel(name) {
-    const m = name.match(/^([acgmj])(\d+)$/);
-    return m ? `${NEBULA_REGIONS[m[1]]} ${m[2]}` : name;
+    const regions = (ShipData.nebulas || {})[name];
+    return regions && regions.length > 0 ? regions.join(', ') : name;
 }
 
 // A nebula cubemap (BC6H, from ShipModelHelper.nebulaResource) as a compressed cube texture, or undefined when it isn't
@@ -1226,7 +1226,7 @@ material.specularColorBlended = mix(material.specularColorBlended, areaSpecular,
     // the client's nebulas, read once
     nebulas() {
         if (this.nebulaNames === undefined) {
-            this.nebulaNames = ShipModelHelper.nebulas();
+            this.nebulaNames = ShipModelHelper.nebulas().sort((a, b) => nebulaLabel(a).localeCompare(nebulaLabel(b)));
         }
         return this.nebulaNames;
     }
@@ -1298,6 +1298,7 @@ material.specularColorBlended = mix(material.specularColorBlended, areaSpecular,
                                     onClick={() => this.setState({lighting: key})}>{preset.label}</button>
                         )}
                     </div>
+                    {this.nebulas().length > 0 && <span className="ship-viewer-label">Nebula Selector</span>}
                     {this.nebulas().length > 0 &&
                         <select className="field small" value={this.nebulaName() || 'none'}
                                 title="The space behind the ship, reflected on it"
