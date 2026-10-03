@@ -7,6 +7,7 @@ import {EffectComposer} from 'three/examples/jsm/postprocessing/EffectComposer.j
 import {RenderPass} from 'three/examples/jsm/postprocessing/RenderPass.js';
 import {UnrealBloomPass} from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import {OutputPass} from 'three/examples/jsm/postprocessing/OutputPass.js';
+import {SMAAPass} from 'three/examples/jsm/postprocessing/SMAAPass.js';
 
 import ShipModelHelper from '../../helpers/ShipModelHelper';
 import ShipPaint from '../../helpers/ShipPaint';
@@ -20,6 +21,14 @@ const MIN_HEIGHT = 320;
 const DEFAULT_HEIGHT = 460;
 // room kept below the toolbar
 const BOTTOM_MARGIN = 16;
+
+// The canvas's pixels per screen pixel: at least 1.5 (drawn larger and scaled down to the screen, which smooths what
+// multisampling can't: thin parts and the small sharp highlights that shimmer as the ship turns), more on a high-DPI
+// screen, at most 2.
+const SUPERSAMPLE = 1.5;
+function pixelRatio() {
+    return Math.min(Math.max(window.devicePixelRatio || 1, SUPERSAMPLE), 2);
+}
 
 // the element a page scrolls in (the app's content pane), else the document's
 function scrollParent(element) {
@@ -413,7 +422,7 @@ export default class ShipViewer extends React.Component {
     setUp() {
         const container = this.mount.current;
         const renderer = new THREE.WebGLRenderer({antialias: true});
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+        renderer.setPixelRatio(pixelRatio());
         const height = viewerHeight(container, this.toolbar.current, container.clientWidth);
         renderer.setSize(container.clientWidth, height);
         renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -445,7 +454,9 @@ export default class ShipViewer extends React.Component {
         this.reflection = {reflectionCube: {value: this.skyTarget.texture}, reflectionIntensity: {value: 1}, reflectionFlip: {value: 1}};
 
         // drawn through bloom, then tone mapped (the output pass uses the renderer's tone mapping and colour space)
-        const target = new THREE.WebGLRenderTarget(container.clientWidth, height, {type: THREE.HalfFloatType, samples: 4});
+        // (multisampled 4x: smooth outlines)
+        const ratio = renderer.getPixelRatio();
+        const target = new THREE.WebGLRenderTarget(container.clientWidth * ratio, height * ratio, {type: THREE.HalfFloatType, samples: 4});
         this.composer = new EffectComposer(renderer, target);
         this.composer.addPass(new RenderPass(scene, this.camera));
         // a weak bloom on the brightest highlights (set by eye: the client's own threshold and scale don't carry over to
@@ -453,6 +464,8 @@ export default class ShipViewer extends React.Component {
         this.bloom = new UnrealBloomPass(new THREE.Vector2(container.clientWidth, height), 0.15, 0.4, 1.0);
         this.composer.addPass(this.bloom);
         this.composer.addPass(new OutputPass());
+        // then SMAA on the finished picture: the edges multisampling leaves stepped (thin rails, antennas, panel lines)
+        this.composer.addPass(new SMAAPass());
 
         this.controls = new OrbitControls(this.camera, renderer.domElement);
         this.controls.enableDamping = true;
