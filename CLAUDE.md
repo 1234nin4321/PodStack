@@ -53,9 +53,19 @@ How the client paints a hull, as worked out from its files and its decompiled sh
   with a shader, its own textures (often shared plating/tech or another hull's) and an `areaType` (0 Primary, 1 Glass,
   2 Sails, 3 Reactor, 4 Darkhull, 5 Rock; 6-9 unknown, painted as Primary). The viewer builds one hull material per
   (texture set, area type). A SKIN's materials replace only Primary; other area types use the faction's.
-- **Textures:** `_a` colour (BC7, raw, not sRGB; greyscale shading), `_n` normal (BC5, no z: normalize(N + xT + yB)),
-  `_m` four-area material mask (levels 0/85/170/255, linear blend between), `_r` gloss multiplier (R = 1 - gloss*_r),
-  `_g` glow (raised to 2.4), `_p3` dust layer (not drawn), `_d` dirt (removed at the user's request: hulls render clean).
+- **Geometry:** a gr2 vertex's `Tangent` (4 bytes) packs the tangent frame: each byte an angle (b/255·2π − π); T and
+  B are spherical unit vectors (angles 0-1, 2-3), N = T × B, negated unless angles 1 and 3 are both > 0 (quadv5's
+  vertex shader). The viewer uses these normals and tangents; working normals out from triangles is wrong on most hulls
+  (authored bevels, and seams where vertices are split). A hull area's `index` is the mesh's group **position**, not its
+  MaterialIndex (Tech III cruisers' full-detail meshes name material 0 for nearly every group).
+- **Parts by shader** (all of a hull's area lists, `ShipModelHelper.slotPasses`): quadv5/quadsails/quaddetail painted;
+  quadheatv5 (engines, reactors) painted too, its glow map in the faction's Booster (Reactor for area type 3) colour;
+  quadglassv5 glass; additive fxv5/fxdirectionalv5 areas drawn as glowing layers over their slot; fxdistortionv5 (heat
+  shimmer) and slots no area names aren't drawn.
+- **Textures:** `_a` colour (BC7; the shader declares it sRGB: base = sRGB(_a) × paint), `_n` normal (BC5, no z:
+  normalize(N + xT + yB)), `_m` four-area material mask (levels 0/85/170/255, linear blend between), `_r` gloss
+  multiplier (R = 1 - gloss*_r), `_g` glow (raised to 2.4), `_p3` PaintMaskMap (where set: unpainted, F0 0.04, gloss
+  0.4; only 21 of 386 aren't empty; not drawn), `_d` dirt (the client's main pass doesn't use it either).
   A look's `resPathInsert` (SKIN, else faction) picks a texture set, e.g. "nefantar"; most hulls lack most sets and the
   game falls back to the hull's own.
 - **Paint chain:** SKIN (SDE) → faction `factions/<name>.black` `areaTypes.<type>.material1-4` → `materials/<name>.black`
@@ -70,19 +80,25 @@ How the client paints a hull, as worked out from its files and its decompiled sh
   lights. Particles and animation curves aren't drawn.
 - **Running lights:** hull `spriteSets` items; `colorType` indexes Primary, Secondary, Tertiary, Black (not stored),
   White, Yellow, Orange, Red, Blue, ... of the faction's colour set. Drawn ×4 brightness, ×0.5 size (user approved).
-- **Lighting:** "In-game" and "Deep space" presets, reflecting the chosen nebula (`dx9/scene/universe/<name>_cube_lowdetail.dds`,
-  BC6H), which is also the backdrop; nebulas are named by the regions they're seen in (SDE). Bloom on.
+- **Lighting** (from quadv5's disassembly, `effect.dx11/.../quadv5.sm_hi`): one white sun (the preview scenes' 1.5 =
+  1.5π in three.js) and the nebula's reflection cube `<name>_cube_refl.dds` (128², DXT3, 7 mips, read linear) at mip
+  `7 − log2(2/a⁴ − 1)/4` (a = roughness²) × the scene's reflectionIntensity (1.55; 1.4 for m nebulas), its smallest
+  mip along N as ambient; no other lights. Backdrop `<name>_cube_lowdetail.dds` (BC6H); each race in its preview
+  nebula (`dx9/scene/preview/`). Tone mapping is Uncharted 2 (`H(2x)/H(11.2)`, the client's postprocess shader);
+  exposure (0.3), backdrop (2) and bloom are set by eye, as the client's exposure is automatic.
+- **Checking a change:** `npm start` bundles once (esbuild, no watch): run `node scripts/build.js --dev` and reload
+  the window (Ctrl+R) to see edits.
 
 ## Open items (as of 2026-10-03)
 
-- **Area kinds from the SOF, not part names:** the viewer still decides glass/booster/glow from the gr2 material name.
-  The SOF says per area: `quadglassv5` = glass (106 areas), `fxv5`/`fxdirectionalv5` additive glows (40 areas, 19
-  ships, e.g. Osprey, Basilisk, Dominix, Nestor), `fxdistortionv5` heat shimmer that shouldn't be drawn solid (11 ships,
-  e.g. Paladin, Golem), `quadheatv5` boosters/reactors with per-material heat glow (550 areas). Next step: list which
-  of these parts the viewer draws as solid painted hull (read the part names from the gr2s), then classify by shader.
+- **Not yet drawn:** engine glows and trails (each hull's `booster` items: nozzle transforms; colours and shapes from
+  `spaceobjectfactory/races/<race>.black`, textures `dx9/model/booster/`), textured glass (alpha = 1 − PaintMask,
+  tint, reflections; drawn two-sided), spotlights, glow planes, haze, killmarks.
+- **Pattern blend modes:** the viewer draws layer 2 only outside layer 1 (quadv5's NESTED_INVERTED); the shader's
+  default permutation is OVERLAY (layer 2 on top). No file found says which a SKIN uses.
 - **47 SKIN looks** have pattern layers whose custom material the SDE leaves blank (e.g. Raven State Police, Scope
   Syndication YC122): the viewer leaves the layer off; an in-game screenshot would show if that's right.
 - **Faction default patterns** (`defaultPattern` in ~10 factions, mostly Sansha) aren't drawn.
 - **24 SKIN looks** reference materials/factions/patterns that don't exist in the client (CCP data errors, e.g. pattern
   `igc_xx_edencomm` vs file `igc_xx_edencom`); nothing to fix.
-- Not drawn: `_p3` dust layer, detail maps (`quaddetailv5`), sail detail maps, spotlights, killmarks, particles.
+- Also not drawn: detail maps (`quaddetailv5`), sail detail maps, particles, animations (bind pose only).
