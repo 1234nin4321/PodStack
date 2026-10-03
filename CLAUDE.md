@@ -81,11 +81,12 @@ How the client paints a hull, as worked out from its files and its decompiled sh
 - **Running lights:** hull `spriteSets` items; `colorType` indexes Primary, Secondary, Tertiary, Black (not stored),
   White, Yellow, Orange, Red, Blue, ... of the faction's colour set. Drawn ×4 brightness, ×0.5 size (user approved).
 - **Lighting** (from quadv5's disassembly, `effect.dx11/.../quadv5.sm_hi`): one white sun (the preview scenes' 1.5 =
-  1.5π in three.js) and the nebula's reflection cube `<name>_cube_refl.dds` (128², DXT3, 7 mips, read linear) at mip
+  1.5π in three.js) and the nebula's reflection cube `<name>_cube_refl.dds` (128², DXT3, 7 mips; sRGB, as quadv5 tags
+  EveSpaceSceneEnvMap `Tr2sRGB`: read linear, reflections come out ~10× too strong) at mip
   `7 − log2(2/a⁴ − 1)/4` (a = roughness²) × the scene's reflectionIntensity (1.55; 1.4 for m nebulas), its smallest
   mip along N as ambient; no other lights. Backdrop `<name>_cube_lowdetail.dds` (BC6H); each race in its preview
   nebula (`dx9/scene/preview/`). Tone mapping is Uncharted 2 (`H(2x)/H(11.2)`, the client's postprocess shader);
-  exposure (0.9), backdrop (2) and bloom are set by eye, as the client's exposure is automatic.
+  exposure (1.2), backdrop (1.5) and bloom are set by eye, as the client's exposure is automatic.
 - **Checking a change:** `npm start` bundles once (esbuild, no watch): run `node scripts/build.js --dev` and reload
   the window (Ctrl+R) to see edits.
 

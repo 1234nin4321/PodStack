@@ -46,7 +46,7 @@ const NEBULA = 'c01';
 const RACE_NEBULAS = {1: 'c05', 2: 'm01', 4: 'a05', 8: 'g04', 128: 'c06'};
 const NEBULA_INTENSITY = 0.5;
 // how bright the nebula is behind the ship (before the exposure)
-const NEBULA_BACKGROUND = 2;
+const NEBULA_BACKGROUND = 1.5;
 // How strongly hulls reflect a nebula: its scene's reflectionIntensity, 1.55 in the a/c/g/j nebulas and 1.4 in the m
 // ones (dx9/scene/universe/<name>_cube.black).
 function reflectionIntensity(name) {
@@ -54,7 +54,7 @@ function reflectionIntensity(name) {
 }
 // The client's exposure is set as it plays, from the picture's brightness; the viewer's is fixed, set by eye (the
 // Tengu, Apocalypse and Rifter in their races' nebulas).
-const EXPOSURE = 0.9;
+const EXPOSURE = 1.2;
 
 // The client's tone mapping (postprocess/tonemapping: Uncharted 2's curve, white point 11.2), in place of three.js's
 // custom one, which the viewer uses.
@@ -506,9 +506,8 @@ export default class ShipViewer extends React.Component {
             try {
                 cube = ddsCube(ShipModelHelper.nebulaReflection(name), this.renderer, true);
                 if (cube !== undefined) {
-                    // its values as they are (read as sRGB, the cubes average about 0.01: hulls would be black out of
-                    // the sun, which in the game they aren't)
-                    cube.colorSpace = THREE.NoColorSpace;
+                    // sRGB, as quadv5 declares EveSpaceSceneEnvMap (Tr2sRGB): out of the sun, mostly dark space
+                    cube.colorSpace = THREE.SRGBColorSpace;
                 }
             } catch (err) {
                 cube = undefined;
