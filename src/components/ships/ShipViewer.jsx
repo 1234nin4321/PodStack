@@ -12,6 +12,7 @@ import {SMAAPass} from 'three/examples/jsm/postprocessing/SMAAPass.js';
 import ShipModelHelper from '../../helpers/ShipModelHelper';
 import ShipPaint from '../../helpers/ShipPaint';
 import ShipSof from '../../helpers/ShipSof';
+import SettingsHelper from '../../helpers/SettingsHelper';
 import ShipData from '../../../resources/ships';
 import {parseDds, decodeInto} from '../../helpers/granny/Dds';
 
@@ -22,13 +23,16 @@ const DEFAULT_HEIGHT = 460;
 // room kept below the toolbar
 const BOTTOM_MARGIN = 16;
 
-// The canvas's pixels per screen pixel: at least 1.5 (drawn larger and scaled down to the screen, which smooths what
-// multisampling can't: thin parts and the small sharp highlights that shimmer as the ship turns), more on a high-DPI
-// screen, at most 2.
+// The canvas's pixels per screen pixel: the screen's (at most 2); with anti-aliasing on, at least 1.5 (drawn larger and
+// scaled down to the screen, which smooths what multisampling can't: thin parts and the small sharp highlights that
+// shimmer as the ship turns), which costs the graphics card about twice the work.
 const SUPERSAMPLE = 1.5;
-function pixelRatio() {
-    return Math.min(Math.max(window.devicePixelRatio || 1, SUPERSAMPLE), 2);
+function pixelRatio(antialias) {
+    const screen = window.devicePixelRatio || 1;
+    return Math.min(antialias ? Math.max(screen, SUPERSAMPLE) : screen, 2);
 }
+// the saved choice of anti-aliasing (off unless turned on)
+const ANTIALIAS_SETTING = 'ship_viewer_antialias';
 
 // the element a page scrolls in (the app's content pane), else the document's
 function scrollParent(element) {
@@ -338,7 +342,8 @@ export default class ShipViewer extends React.Component {
         super(props);
 
         // subsystems: a Tech III cruiser's chosen [core, defensive, offensive, propulsion] variants (undefined: its own)
-        this.state = {status: 'loading', error: undefined, autoRotate: true, lighting: 'ingame', nebula: undefined, height: DEFAULT_HEIGHT, fullscreen: false, skin: 'default', paintSource: 'none', subsystems: undefined};
+        this.state = {status: 'loading', error: undefined, autoRotate: true, lighting: 'ingame', nebula: undefined, height: DEFAULT_HEIGHT, fullscreen: false, skin: 'default', paintSource: 'none', subsystems: undefined,
+            antialias: SettingsHelper.get(ANTIALIAS_SETTING, false) === true};
         this.mount = React.createRef();
         this.root = React.createRef();
         this.toolbar = React.createRef();
@@ -369,6 +374,14 @@ export default class ShipViewer extends React.Component {
             // logos and effects follow the SKIN's faction
             this.addDecals();
             this.addEffects();
+        }
+        if (prevState.antialias !== this.state.antialias && this.renderer !== undefined) {
+            // the canvas at its new resolution (the running lights' size follows in resize), and SMAA on or off
+            const ratio = pixelRatio(this.state.antialias);
+            this.renderer.setPixelRatio(ratio);
+            this.composer.setPixelRatio(ratio);
+            this.smaa.enabled = this.state.antialias;
+            this.resize();
         }
         if (this.controls !== undefined) {
             this.controls.autoRotate = this.state.autoRotate;
@@ -422,7 +435,7 @@ export default class ShipViewer extends React.Component {
     setUp() {
         const container = this.mount.current;
         const renderer = new THREE.WebGLRenderer({antialias: true});
-        renderer.setPixelRatio(pixelRatio());
+        renderer.setPixelRatio(pixelRatio(this.state.antialias));
         const height = viewerHeight(container, this.toolbar.current, container.clientWidth);
         renderer.setSize(container.clientWidth, height);
         renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -464,8 +477,11 @@ export default class ShipViewer extends React.Component {
         this.bloom = new UnrealBloomPass(new THREE.Vector2(container.clientWidth, height), 0.15, 0.4, 1.0);
         this.composer.addPass(this.bloom);
         this.composer.addPass(new OutputPass());
-        // then SMAA on the finished picture: the edges multisampling leaves stepped (thin rails, antennas, panel lines)
-        this.composer.addPass(new SMAAPass());
+        // then, with anti-aliasing on, SMAA on the finished picture: the edges multisampling leaves stepped (thin rails,
+        // antennas, panel lines)
+        this.smaa = new SMAAPass();
+        this.smaa.enabled = this.state.antialias;
+        this.composer.addPass(this.smaa);
 
         this.controls = new OrbitControls(this.camera, renderer.domElement);
         this.controls.enableDamping = true;
@@ -1734,6 +1750,14 @@ material.specularColorBlended = mix(material.specularColorBlended, areaSpecular,
                             <option value="none">No backdrop</option>
                             {this.nebulas().map(name => <option key={name} value={name}>{nebulaLabel(name)}</option>)}
                         </select>}
+                    <label className="ship-viewer-label" title="Smoother edges and highlights; about twice the work for the graphics card">
+                        <input type="checkbox" checked={this.state.antialias}
+                               onChange={e => {
+                                   SettingsHelper.set(ANTIALIAS_SETTING, e.target.checked);
+                                   this.setState({antialias: e.target.checked});
+                               }}/>
+                        {' '}Anti-aliasing
+                    </label>
                     <button type="button" className="link-button" onClick={() => this.setState({autoRotate: !this.state.autoRotate})}>
                         {this.state.autoRotate ? 'Stop rotating' : 'Rotate'}
                     </button>
