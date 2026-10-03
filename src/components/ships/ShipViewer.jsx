@@ -23,6 +23,14 @@ const LIGHTING = {
     bright: {label: 'Bright', background: 0x1a1f27, env: 1.6, key: 1.6, rim: 1.0, ambient: 0.6},
 };
 
+// how dirty the hull is: the client sets a dirt level per ship while it runs (it isn't in its files), which scales the
+// hull's dirt map
+const DIRT = {
+    clean: {label: 'Clean', level: 0},
+    used: {label: 'Used', level: 0.5},
+    dirty: {label: 'Dirty', level: 1},
+};
+
 // a 1x1 black texture, for pattern layers that aren't in use
 const BLANK = () => dataTexture({width: 1, height: 1, data: new Uint8Array([0, 0, 0, 255])}, THREE.NoColorSpace);
 
@@ -50,7 +58,7 @@ export default class ShipViewer extends React.Component {
     constructor(props) {
         super(props);
 
-        this.state = {status: 'loading', error: undefined, autoRotate: true, lighting: 'ingame', skin: 'default', paintSource: 'none'};
+        this.state = {status: 'loading', error: undefined, autoRotate: true, lighting: 'ingame', dirt: 'clean', skin: 'default', paintSource: 'none'};
         this.mount = React.createRef();
     }
 
@@ -68,6 +76,9 @@ export default class ShipViewer extends React.Component {
         }
         if (prevState.lighting !== this.state.lighting) {
             this.applyLighting();
+        }
+        if (prevState.dirt !== this.state.dirt && this.paint !== undefined) {
+            this.paint.dirtLevel.value = DIRT[this.state.dirt].level;
         }
         if (prevState.skin !== this.state.skin) {
             this.applyTextureSet();
@@ -325,6 +336,7 @@ export default class ShipViewer extends React.Component {
             // 1: blend between the mask's four levels (weathered panels part-way between two materials); 0: crisp areas
             maskBlend: {value: maskBlends(textures) ? 1 : 0},
             paintAmount: {value: 0},
+            dirtLevel: {value: DIRT[this.state.dirt].level},
             mtlDiffuse: {value: [0, 1, 2, 3].map(() => new THREE.Color(0x808080))},
             mtlSpecular: {value: [0, 1, 2, 3].map(() => new THREE.Color(0x0a0a0a))},
             mtlRough: {value: [0.5, 0.5, 0.5, 0.5]},
@@ -360,8 +372,7 @@ uniform vec3 mtlDiffuse[4];
 uniform vec3 mtlSpecular[4];
 uniform float mtlRough[4];
 uniform float maskBlend;
-vec3 areaVec(vec3 v[4], int i) { return i == 0 ? v[0] : i == 1 ? v[1] : i == 2 ? v[2] : v[3]; }
-float areaFloat(float v[4], int i) { return i == 0 ? v[0] : i == 1 ? v[1] : i == 2 ? v[2] : v[3]; }
+uniform float dirtLevel;
 varying vec3 vHullPosition;
 uniform sampler2D patternMask0;
 uniform sampler2D patternMask1;
@@ -376,66 +387,70 @@ uniform vec3 patternDiffuse[2];
 uniform vec3 patternSpecular[2];
 uniform float patternRough[2];
 uniform vec4 patternTarget[2];
-float targetsArea(vec4 targets, int area) {
-    return area == 0 ? targets.x : area == 1 ? targets.y : area == 2 ? targets.z : targets.w;
-}
 // rotates v by the inverse of the unit quaternion q
 vec3 unrotate(vec4 q, vec3 v) {
     vec3 u = -q.xyz;
     return 2.0 * dot(u, v) * u + (q.w * q.w - dot(u, u)) * v + 2.0 * q.w * cross(u, v);
 }
-// where a pattern layer lands on the hull here: xy are its texture coordinates, z is 1 inside its box, 0 outside
-vec3 patternCoords(int i) {
+// where a pattern layer's mask is sampled here, as the client's vertex shader works it out: the hull position in the
+// layer's box, whose y and z span the texture. It runs through the whole hull along the box's x; mirrored layers use
+// |x|, so both sides get the +x side's paint.
+vec2 patternCoords(int i) {
     vec3 p = vHullPosition;
-    // mirrored patterns are painted on both sides of the hull
-    if (patternMirror[i] > 0.5) { p.x = (patternPos[i].x < 0.0 ? -1.0 : 1.0) * abs(p.x); }
+    if (patternMirror[i] > 0.5) { p.x = abs(p.x); }
     vec3 local = unrotate(patternRot[i], p - patternPos[i]) / max(patternScale[i], vec3(1e-4));
-    // projected along the box's x, like the client's decals; its texture spans y and z
     vec2 uv = local.yz * 0.5 + 0.5;
-    float inside = step(abs(local.x), 1.0);
-    if (patternRepeatU[i] > 0.5) { uv.x = fract(uv.x); } else { inside *= step(0.0, uv.x) * step(uv.x, 1.0); }
-    if (patternRepeatV[i] > 0.5) { uv.y = fract(uv.y); } else { inside *= step(0.0, uv.y) * step(uv.y, 1.0); }
-    return vec3(uv, inside);
+    // an axis that doesn't repeat is clamped: the mask's edge carries on beyond the box
+    if (patternRepeatU[i] < 0.5) { uv.x = clamp(uv.x, 0.0, 1.0); }
+    if (patternRepeatV[i] < 0.5) { uv.y = clamp(uv.y, 0.0, 1.0); }
+    return uv;
 }`)
                 .replace('#include <map_fragment>', `#include <map_fragment>
 vec4 surfaceSample = texture2D(surfaceMap, vMapUv);
-// the mask's four levels (0, 85, 170, 255) are the four materials; a hull's own textures are weathered, with values
-// part-way between two levels (e.g. the default Rifter's panels, between blued steel and rust), which blend the two.
-// Where a SKIN's clean texture set is missing, its weathering is read as the nearer material instead (crisp).
-float maskValue = surfaceSample.r * 255.0;
-float level = clamp(maskValue / 85.0, 0.0, 3.0);
-int lowArea = int(floor(level));
-int highArea = lowArea < 3 ? lowArea + 1 : 3;
-float between = level - float(lowArea);
+// As the client's hull shader (quadv5) paints: the mask's four levels (0, 85, 170, 255) are the four areas, each fully
+// its own within about 2.5 of its level and blending linearly into the next in between (a hull's own textures are
+// weathered, e.g. the default Rifter's panels, between blued steel and rust). Where a SKIN's clean texture set is
+// missing, its weathering is read as the nearest area instead (crisp), or its colours would run into each other.
+vec4 areaWeight = clamp(1.0319 - 3.1915 * abs(vec4(surfaceSample.r) - vec4(0.0, 1.0 / 3.0, 2.0 / 3.0, 1.0)), 0.0, 1.0);
 if (maskBlend < 0.5) {
-    lowArea = maskValue < 42.0 ? 0 : maskValue < 145.0 ? 1 : maskValue < 254.0 ? 2 : 3;
-    highArea = lowArea;
-    between = 0.0;
+    float maskValue = surfaceSample.r * 255.0;
+    areaWeight = maskValue < 42.0 ? vec4(1.0, 0.0, 0.0, 0.0) : maskValue < 145.0 ? vec4(0.0, 1.0, 0.0, 0.0) :
+        maskValue < 254.0 ? vec4(0.0, 0.0, 1.0, 0.0) : vec4(0.0, 0.0, 0.0, 1.0);
 }
-int area = between < 0.5 ? lowArea : highArea;
-vec3 areaColor = mix(areaVec(mtlDiffuse, lowArea), areaVec(mtlDiffuse, highArea), between);
-vec3 areaSpecular = mix(areaVec(mtlSpecular, lowArea), areaVec(mtlSpecular, highArea), between);
-float areaRough = mix(areaFloat(mtlRough, lowArea), areaFloat(mtlRough, highArea), between);
-// SKIN patterns paint their material over the areas where their mask is set
-if (patternOn[0] > 0.5) {
-    vec3 pc = patternCoords(0);
-    float m = texture2D(patternMask0, pc.xy).r * pc.z * targetsArea(patternTarget[0], area);
-    areaColor = mix(areaColor, patternDiffuse[0], m); areaSpecular = mix(areaSpecular, patternSpecular[0], m); areaRough = mix(areaRough, patternRough[0], m);
+// SKIN patterns paint their material over each area they target, before the areas are blended. Layer 1 lies over
+// layer 2 (the client also has variants where layer 2 only shows inside layer 1, or ignores it; nothing in the
+// pattern files says which a SKIN uses, so the commonest is used)
+float mask1 = patternOn[0] > 0.5 ? texture2D(patternMask0, patternCoords(0)).r : 0.0;
+float mask2 = patternOn[1] > 0.5 ? texture2D(patternMask1, patternCoords(1)).r * (1.0 - mask1) : 0.0;
+vec3 areaColor = vec3(0.0);
+vec3 areaSpecular = vec3(0.0);
+float areaGloss = 0.0;
+for (int k = 0; k < 4; k++) {
+    float layer1 = mask1 * patternTarget[0][k];
+    float layer2 = mask2 * patternTarget[1][k];
+    areaColor += areaWeight[k] * mix(mix(mtlDiffuse[k], patternDiffuse[0], layer1), patternDiffuse[1], layer2);
+    areaSpecular += areaWeight[k] * mix(mix(mtlSpecular[k], patternSpecular[0], layer1), patternSpecular[1], layer2);
+    areaGloss += areaWeight[k] * mix(mix(1.0 - mtlRough[k], 1.0 - patternRough[0], layer1), 1.0 - patternRough[1], layer2);
 }
-if (patternOn[1] > 0.5) {
-    vec3 pc = patternCoords(1);
-    float m = texture2D(patternMask1, pc.xy).r * pc.z * targetsArea(patternTarget[1], area);
-    areaColor = mix(areaColor, patternDiffuse[1], m); areaSpecular = mix(areaSpecular, patternSpecular[1], m); areaRough = mix(areaRough, patternRough[1], m);
-}
-// the hull's colour texture is greyscale shading (panels, recesses, highlights): the material's colour is multiplied by
-// its raw value, scaled to the game's paint brightness measured in side-by-side screenshots (top view: 0.073 in game)
+// dirt (_d, times the ship's dirt level) turns the paint to bare, non-metal grey with a gloss of 0.4
+float dirt = dirtLevel * surfaceSample.b;
+areaColor = mix(areaColor, vec3(1.0), dirt);
+areaSpecular = mix(areaSpecular, vec3(0.0384, 0.0394, 0.0392), dirt);
+// the roughness map scales the material's gloss
+float paintGloss = mix(areaGloss * surfaceSample.g, 0.4, dirt);
+// the hull's colour texture is greyscale shading (panels, recesses, highlights), which the client multiplies the
+// material's colour by as it is (it isn't stored as sRGB); scaled to the game's paint brightness measured in
+// side-by-side screenshots (top view: 0.073 in game)
 float shading = pow(max(diffuseColor.r, 0.0), 1.0 / 2.2);
 float detail = clamp(shading * 0.7, 0.0, 0.85);
 diffuseColor.rgb = mix(diffuseColor.rgb, areaColor * detail, paintAmount);`)
                 .replace('#include <roughnessmap_fragment>', `float roughnessFactor = roughness;
-float hullRough = surfaceSample.g;
-// the roughness map carries the default look's wear too, so only a little of it shows under paint
-roughnessFactor = mix(hullRough, clamp(areaRough + (hullRough - 0.5) * 0.12, 0.04, 1.0), paintAmount);`)
+// painted: 1 - gloss, as the client's shader has it (squared into the specular lobe's width, as here)
+roughnessFactor = mix(surfaceSample.g, clamp(1.0 - paintGloss, 0.04, 1.0), paintAmount);`)
+                // the client raises the glow map to the power 2.4
+                .replace('#include <emissivemap_fragment>', `#ifdef USE_EMISSIVEMAP
+totalEmissiveRadiance *= pow(texture2D(emissiveMap, vEmissiveMapUv).rgb, vec3(2.4));
+#endif`)
                 .replace('#include <metalnessmap_fragment>', `float metalnessFactor = mix(metalness, 0.0, paintAmount);`)
                 // painted: the material's own specular colour, as the client's shaders use it
                 .replace('#include <lights_physical_fragment>', `#include <lights_physical_fragment>
@@ -792,6 +807,12 @@ material.specularColorBlended = mix(material.specularColorBlended, areaSpecular,
                         {Object.entries(LIGHTING).map(([key, preset]) =>
                             <button key={key} type="button" className={this.state.lighting === key ? 'active' : ''}
                                     onClick={() => this.setState({lighting: key})}>{preset.label}</button>
+                        )}
+                    </div>
+                    <div className="seg" title="Dirt">
+                        {Object.entries(DIRT).map(([key, preset]) =>
+                            <button key={key} type="button" className={this.state.dirt === key ? 'active' : ''}
+                                    onClick={() => this.setState({dirt: key})}>{preset.label}</button>
                         )}
                     </div>
                     <button type="button" className="link-button" onClick={() => this.setState({autoRotate: !this.state.autoRotate})}>

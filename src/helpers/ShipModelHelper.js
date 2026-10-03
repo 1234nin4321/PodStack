@@ -256,7 +256,7 @@ export default class ShipModelHelper {
     /**
      * Loads a ship's hull for the viewer:
      * {positions, uvs, indices, groups: [{start, count, kind: 'hull'|'glass'|'glow'|'booster'}], textures: {albedo (parsed BC7/BC
-     * DDS), normal, surface (paint area mask in R, roughness in G), glow (in R): each {width, height, data} RGBA}}.
+     * DDS), normal, surface (paint area mask in R, roughness in G, dirt in B), glow (in R): each {width, height, data} RGBA}}.
      * Textures that are missing are left out.
      */
     static load(ship, insert) {
@@ -422,23 +422,21 @@ export default class ShipModelHelper {
             textures.albedo = albedo;
         }
 
-        // normal map: two channels (BC5), with the third rebuilt so ordinary normal mapping works
+        // normal map: two channels (BC5). The client's shader doesn't rebuild the third: it tilts the surface normal by
+        // x and y along the tangents (normalize(N + x T + y B)), which is a third channel of 1 here
         const normal = pick('n');
         if (normal !== undefined && normal.format === 'BC5') {
             const mip = normal.mips[0];
             const rgba = new Uint8Array(mip.width * mip.height * 4).fill(255);
             decodeInto(mip, 'BC5', rgba, [0, 1]);
-            for (let i = 0; i < rgba.length; i += 4) {
-                const x = rgba[i] / 127.5 - 1;
-                const y = rgba[i + 1] / 127.5 - 1;
-                rgba[i + 2] = Math.round((Math.sqrt(Math.max(0, 1 - x * x - y * y)) + 1) * 127.5);
-            }
             textures.normal = {width: mip.width, height: mip.height, data: rgba};
         }
 
-        // the material mask (which of the hull's four paint areas each pixel is: _m, in R) and roughness (_r, in G)
+        // the material mask (which of the hull's four paint areas each pixel is: _m, in R), roughness (_r, in G: the
+        // client's shader uses it as a gloss multiplier) and dirt (_d, in B)
         const mask = pick('m');
         const roughness = pick('r');
+        const dirt = pick('d');
         const base = mask || roughness;
         if (base !== undefined) {
             const mip = base.mips[0];
@@ -446,12 +444,16 @@ export default class ShipModelHelper {
             for (let i = 0; i < rgba.length; i += 4) {
                 rgba[i] = 0;          // area 0 (the main hull) where there's no mask
                 rgba[i + 1] = 128;    // middling roughness where there's no roughness map
+                rgba[i + 2] = 0;      // clean where there's no dirt map
             }
             if (mask !== undefined && mask.format === 'BC4' && mask.width === mip.width) {
                 decodeInto(mask.mips[0], 'BC4', rgba, [0]);
             }
             if (roughness !== undefined && roughness.format === 'BC4' && roughness.width === mip.width) {
                 decodeInto(roughness.mips[0], 'BC4', rgba, [1]);
+            }
+            if (dirt !== undefined && dirt.format === 'BC4' && dirt.width === mip.width) {
+                decodeInto(dirt.mips[0], 'BC4', rgba, [2]);
             }
             textures.surface = {width: mip.width, height: mip.height, data: rgba};
         }
