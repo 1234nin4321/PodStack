@@ -30,6 +30,8 @@ const CLASS_FIELDS = {
     EveSOFDataHullDecalSetItem: {usage: 'u32', position: 'vec3', rotation: 'vec4', scaling: 'vec3', boneIndex: 'u32',
         meshIndex: 'u32', glowColorType: 'u32', logoType: 'u32'},
     EveSOFDataDecalIndexBuffer: {indexBuffer: 'u32array'},
+    // some hulls' areas start with the mesh area they cover
+    EveSOFDataHullArea: {index: 'u32', count: 'u32'},
     EveSOFDataHullSpriteSet: {skinned: 'u8'},
     EveSOFDataHullSpriteSetItem: {position: 'vec3', blinkRate: 'f32', blinkPhase: 'f32', minScale: 'f32', maxScale: 'f32',
         boneIndex: 'u32', colorType: 'u32', intensity: 'f32', falloff: 'f32'},

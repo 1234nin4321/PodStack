@@ -8,6 +8,7 @@ import fs from 'fs';
 import path from 'path';
 
 import GrannyFile from './granny/GrannyFile';
+import BlackFile from './granny/BlackFile';
 import {parseDds, decodeInto} from './granny/Dds';
 import SettingsHelper from './SettingsHelper';
 import log from 'electron-log';
@@ -39,6 +40,9 @@ const PREFIXES = [SHIP_PREFIX, SOF_PREFIX, TEXTURE_PREFIX, DECAL_PREFIX, SHARED_
 const NEBULA = /^res:\/dx9\/scene\/universe\/([a-z0-9_]+)_cube_lowdetail\.dds$/;
 
 let index;      // {folder, files: Map(res path -> absolute file)}
+const declaredTextures = new Map();   // hull -> its textures as its SOF file names them (null when it names none)
+// a hull area's texture parameters -> the map suffix PodStack uses for them
+const TEXTURE_PARAMETERS = {AlbedoMap: 'a', NormalMap: 'n', MaterialMap: 'm', RoughnessMap: 'r', GlowMap: 'g', PaintMaskMap: 'p3', DirtMap: 'd'};
 let detected;   // the auto-detected folder (null when none), found once per session
 
 function isEveFolder(folder) {
@@ -458,13 +462,50 @@ export default class ShipModelHelper {
         return undefined;
     }
 
+    /**
+     * The textures a hull's space object factory file gives its main area ({a, n, m, r, g, p3, d}: res paths), which
+     * often aren't named after the hull (a Raptor uses its sister hull's, the Hulk the shared ORE barge textures), or
+     * undefined when it has no file or names none.
+     */
+    static hullTextures(hull) {
+        if (!hull) {
+            return undefined;
+        }
+        if (!declaredTextures.has(hull)) {
+            let textures = null;
+            try {
+                const bytes = ShipModelHelper.resource(`${SOF_PREFIX}hulls/${hull.toLowerCase()}.black`);
+                const areas = bytes !== undefined ? new BlackFile(bytes).findList('opaqueAreas', 'EveSOFDataHullArea') : undefined;
+                const area = (areas || []).find(a => a && (a.textures || []).some(t => t && t.name === 'AlbedoMap'));
+                if (area !== undefined) {
+                    textures = {};
+                    for (const t of area.textures) {
+                        if (t && TEXTURE_PARAMETERS[t.name] && t.resFilePath) {
+                            textures[TEXTURE_PARAMETERS[t.name]] = t.resFilePath.toLowerCase();
+                        }
+                    }
+                }
+            } catch (err) {
+                log.warn(`[Models] Couldn't read the textures of ${hull}`, err.message);
+            }
+            declaredTextures.set(hull, textures);
+        }
+        return declaredTextures.get(hull) || undefined;
+    }
+
     // The hull's textures, from its own set if it has one (e.g. a navy issue's colours) else the base hull's; and from
     // the texture set `insert` names (a SKIN's or faction's) where the client has it.
     static textures(files, found, hull, insert) {
         const used = [];
+        // the textures the hull's SOF file names, else ones named after the hull
+        const declared = ShipModelHelper.hullTextures(hull) || ShipModelHelper.hullTextures(found.hull) || {};
         // a map from the set, else (where the set hasn't got it, or it can't be read) the hull's own
         const pick = (map, set = insert) => {
-            const file = ShipModelHelper.textureFile(files, found.folder, [hull, found.hull], map, set);
+            const named = declared[map] && declared[map].match(/^(.*)\/([^/]+)_([a-z0-9]+)\.dds$/);
+            let file = named && named[3] === map ? ShipModelHelper.textureFile(files, named[1], [named[2]], map, set) : undefined;
+            if (file === undefined) {
+                file = ShipModelHelper.textureFile(files, found.folder, [hull, found.hull], map, set);
+            }
             if (file === undefined) {
                 return undefined;
             }
