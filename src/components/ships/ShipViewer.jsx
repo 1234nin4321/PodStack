@@ -109,14 +109,6 @@ void main() {
     return scene;
 }
 
-// how dirty the hull is: the client sets a dirt level per ship while it runs (it isn't in its files), which scales the
-// hull's dirt map
-const DIRT = {
-    clean: {label: 'Clean', level: 0},
-    used: {label: 'Used', level: 0.5},
-    dirty: {label: 'Dirty', level: 1},
-};
-
 // The client's "ubershader" (graphics/effect/managed/space/specialfx/ubershader.fx), which effects such as a SKIN's
 // holograms and glowing trails are drawn with: up to three textures multiplied together, each scaled, offset and
 // scrolling over time, times a mask and a colour, faded by how squarely the surface faces the camera ("Fresnel":
@@ -214,7 +206,7 @@ export default class ShipViewer extends React.Component {
     constructor(props) {
         super(props);
 
-        this.state = {status: 'loading', error: undefined, autoRotate: true, lighting: 'ingame', nebula: undefined, dirt: 'clean', skin: 'default', paintSource: 'none'};
+        this.state = {status: 'loading', error: undefined, autoRotate: true, lighting: 'ingame', nebula: undefined, skin: 'default', paintSource: 'none'};
         this.mount = React.createRef();
     }
 
@@ -232,9 +224,6 @@ export default class ShipViewer extends React.Component {
         }
         if (prevState.lighting !== this.state.lighting || prevState.nebula !== this.state.nebula) {
             this.applyLighting();
-        }
-        if (prevState.dirt !== this.state.dirt && this.paint !== undefined) {
-            this.paint.dirtLevel.value = DIRT[this.state.dirt].level;
         }
         if (prevState.skin !== this.state.skin) {
             this.applyTextureSet();
@@ -563,7 +552,6 @@ export default class ShipViewer extends React.Component {
             // 1: blend between the mask's four levels (weathered panels part-way between two materials); 0: crisp areas
             maskBlend: {value: maskBlends(textures) ? 1 : 0},
             paintAmount: {value: 0},
-            dirtLevel: {value: DIRT[this.state.dirt].level},
             mtlDiffuse: {value: [0, 1, 2, 3].map(() => new THREE.Color(0x808080))},
             mtlSpecular: {value: [0, 1, 2, 3].map(() => new THREE.Color(0x0a0a0a))},
             mtlRough: {value: [0.5, 0.5, 0.5, 0.5]},
@@ -601,7 +589,6 @@ uniform vec3 mtlDiffuse[4];
 uniform vec3 mtlSpecular[4];
 uniform float mtlRough[4];
 uniform float maskBlend;
-uniform float dirtLevel;
 varying vec3 vHullPosition;
 uniform sampler2D patternMask0;
 uniform sampler2D patternMask1;
@@ -667,12 +654,8 @@ for (int k = 0; k < 4; k++) {
     areaSpecular += areaWeight[k] * mix(mix(mtlSpecular[k], patternSpecular[0], layer1), patternSpecular[1], layer2);
     areaGloss += areaWeight[k] * mix(mix(1.0 - mtlRough[k], 1.0 - patternRough[0], layer1), 1.0 - patternRough[1], layer2);
 }
-// dirt (_d, times the ship's dirt level) turns the paint to bare, non-metal grey with a gloss of 0.4
-float dirt = dirtLevel * surfaceSample.b;
-areaColor = mix(areaColor, vec3(1.0), dirt);
-areaSpecular = mix(areaSpecular, vec3(0.0384, 0.0394, 0.0392), dirt);
-// the roughness map scales the material's gloss
-float paintGloss = mix(areaGloss * surfaceSample.g, 0.4, dirt);
+// the roughness map scales the material's gloss (hulls are shown clean: the client's dirt map isn't used)
+float paintGloss = areaGloss * surfaceSample.g;
 // the hull's colour texture is greyscale shading (panels, recesses, highlights), which the client multiplies the
 // material's colour by as it is (it isn't stored as sRGB); scaled to the game's paint brightness measured in
 // side-by-side screenshots (top view: 0.073 in game)
@@ -1275,12 +1258,6 @@ material.specularColorBlended = mix(material.specularColorBlended, areaSpecular,
                             <option value="none">No backdrop</option>
                             {this.nebulas().map(name => <option key={name} value={name}>{nebulaLabel(name)}</option>)}
                         </select>}
-                    <div className="seg" title="Dirt">
-                        {Object.entries(DIRT).map(([key, preset]) =>
-                            <button key={key} type="button" className={this.state.dirt === key ? 'active' : ''}
-                                    onClick={() => this.setState({dirt: key})}>{preset.label}</button>
-                        )}
-                    </div>
                     <button type="button" className="link-button" onClick={() => this.setState({autoRotate: !this.state.autoRotate})}>
                         {this.state.autoRotate ? 'Stop rotating' : 'Rotate'}
                     </button>
