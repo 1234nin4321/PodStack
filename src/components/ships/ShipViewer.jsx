@@ -1139,9 +1139,10 @@ material.specularColorBlended = mix(material.specularColorBlended, areaSpecular,
         this.effects = undefined;
     }
 
-    // The effects the hull adds for the look's faction (see ShipSof.effects), such as a SKIN's holograms and glowing
-    // trails: their meshes, placed on the hull, drawn with the client's ubershader, and their point lights (particles
-    // and animation curves in them aren't shown); and the hull's running lights in the faction's colours.
+    // The effects on the hull with the look's faction (see ShipSof.effects): its own glowing pipes and exhausts, a
+    // SKIN's holograms and glowing trails: their meshes, placed on the hull, drawn with the client's ubershader, and
+    // their point lights (particles and animation curves in them aren't shown); and the hull's running lights in the
+    // faction's colours.
     addEffects() {
         if (this.ship === undefined) {
             return;

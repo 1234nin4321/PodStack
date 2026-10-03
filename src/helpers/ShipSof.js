@@ -224,9 +224,9 @@ export default class ShipSof {
     }
 
     /**
-     * The effects a hull adds for a faction's look, such as a SKIN's holograms and glowing trails: the root objects of
-     * the effect files (see granny/RedFile.js) in the hull's child sets whose visibility group the faction switches on.
-     * The hull's always-on children (engine exhausts, lights) aren't included.
+     * The effects on a hull with a faction's look: the root objects of the effect files (see granny/RedFile.js) in the
+     * hull's child sets, those without a visibility group always (its own glowing pipes, exhausts and lights), the
+     * others (a SKIN's holograms and glowing trails) when the faction switches their group on.
      */
     static effects(hull, faction) {
         const cacheKey = `effects:${hull}:${faction}`;
@@ -239,7 +239,7 @@ export default class ShipSof {
             const sets = bytes !== undefined ? new BlackFile(bytes).findList('childSets', 'EveSOFDataHullChildSet') : undefined;
             const groups = ShipSof.visibilityGroups(faction);
             const paths = new Set((sets || [])
-                .filter(set => set && set.visibilityGroup && groups.has(set.visibilityGroup))
+                .filter(set => set && (!set.visibilityGroup || groups.has(set.visibilityGroup)))
                 .flatMap(set => set.items || [])
                 .map(item => item && item.redFilePath)
                 .filter(Boolean));
