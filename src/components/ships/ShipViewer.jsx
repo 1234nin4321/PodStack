@@ -3,7 +3,6 @@
 import React from 'react';
 import * as THREE from 'three';
 import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls.js';
-import {RoomEnvironment} from 'three/examples/jsm/environments/RoomEnvironment.js';
 import {EffectComposer} from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import {RenderPass} from 'three/examples/jsm/postprocessing/RenderPass.js';
 import {UnrealBloomPass} from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
@@ -29,13 +28,11 @@ const COMPRESSED = {
     BC2: {extension: 'WEBGL_compressed_texture_s3tc', format: THREE.RGBA_S3TC_DXT3_Format},
     BC3: {extension: 'WEBGL_compressed_texture_s3tc', format: THREE.RGBA_S3TC_DXT5_Format},
 };
-// reflections: 'space' is a nebula sky with a sun, as the client lights ships with the system's nebula; 'room' a studio.
-// bloom: how strongly very bright pixels glow, like the client's post-processing
+// Both light the ship as the client does in space: reflecting the chosen nebula (else a generated nebula sky with a
+// sun). env: how strongly; bloom: how strongly very bright pixels glow, like the client's post-processing.
 const LIGHTING = {
-    ingame: {label: 'In-game', background: 0x050506, reflections: 'space', env: 1.6, key: 1.8, rim: 1.0, ambient: 0.04, bloom: 0.6},
-    studio: {label: 'Studio', background: 0x0b0e13, reflections: 'room', env: 1.6, key: 2.0, rim: 1.2, ambient: 0.15, bloom: 0.35},
-    space: {label: 'Deep space', background: 0x020306, reflections: 'space', env: 0.6, key: 2.0, rim: 0.6, ambient: 0.05, bloom: 0.6},
-    bright: {label: 'Bright', background: 0x1a1f27, reflections: 'room', env: 1.6, key: 1.6, rim: 1.0, ambient: 0.6, bloom: 0.2},
+    ingame: {label: 'In-game', background: 0x050506, env: 1.6, key: 1.8, rim: 1.0, ambient: 0.04, bloom: 0.6},
+    space: {label: 'Deep space', background: 0x020306, env: 0.6, key: 2.0, rim: 0.6, ambient: 0.05, bloom: 0.6},
 };
 // the nebula space lighting reflects by default, where the client has it; its name's first letter is the region
 const NEBULA = 'c01';
@@ -302,7 +299,7 @@ export default class ShipViewer extends React.Component {
 
         const scene = new THREE.Scene();
         const pmrem = new THREE.PMREMGenerator(renderer);
-        this.envMaps = {room: pmrem.fromScene(new RoomEnvironment(), 0.04).texture, space: pmrem.fromScene(spaceSky(), 0).texture};
+        this.envMaps = {space: pmrem.fromScene(spaceSky(), 0).texture};
         pmrem.dispose();
         this.scene = scene;
 
@@ -386,8 +383,8 @@ export default class ShipViewer extends React.Component {
         this.ambient.intensity = preset.ambient;
         this.key.intensity = preset.key;
         this.rim.intensity = preset.rim;
-        const nebula = preset.reflections === 'space' ? this.nebulaEnv(name) : undefined;
-        this.scene.environment = nebula || this.envMaps[preset.reflections];
+        const nebula = this.nebulaEnv(name);
+        this.scene.environment = nebula || this.envMaps.space;
         // the client's nebulas are brighter than the generated sky, with suns in them
         this.scene.environmentIntensity = preset.env * (nebula ? NEBULA_INTENSITY : 1);
         this.bloom.strength = preset.bloom;
@@ -1283,6 +1280,7 @@ material.specularColorBlended = mix(material.specularColorBlended, areaSpecular,
                 }
 
                 <div className="ship-viewer-toolbar" ref={this.toolbar}>
+                    <span className="ship-viewer-label">Skin Selector</span>
                     <select className="field small ship-skin" value={this.state.skin} title="SKIN"
                             onChange={e => this.setState({skin: ['', 'default'].includes(e.target.value) ? e.target.value : Number(e.target.value)})}>
                         <option value="default">Default</option>
@@ -1302,7 +1300,7 @@ material.specularColorBlended = mix(material.specularColorBlended, areaSpecular,
                     </div>
                     {this.nebulas().length > 0 &&
                         <select className="field small" value={this.nebulaName() || 'none'}
-                                title="The space behind the ship (and, with In-game and Deep space lighting, reflected on it)"
+                                title="The space behind the ship, reflected on it"
                                 onChange={e => this.setState({nebula: e.target.value})}>
                             <option value="none">No backdrop</option>
                             {this.nebulas().map(name => <option key={name} value={name}>{nebulaLabel(name)}</option>)}

@@ -3685,3 +3685,9 @@ a:hover {
 .ship-skin {
     max-width: 220px;
 }
+
+.ship-viewer-label {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-right: -8px;   /* sits close to the control it names */
+}
