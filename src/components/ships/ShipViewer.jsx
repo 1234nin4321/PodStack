@@ -23,9 +23,9 @@ const COMPRESSED = {
 // reflections: 'space' is a nebula sky with a sun, as the client lights ships with the system's nebula; 'room' a studio.
 // bloom: how strongly very bright pixels glow, like the client's post-processing
 const LIGHTING = {
-    ingame: {label: 'In-game', background: 0x050506, reflections: 'space', env: 1.6, key: 3.0, rim: 1.0, ambient: 0.04, bloom: 0.9},
+    ingame: {label: 'In-game', background: 0x050506, reflections: 'space', env: 1.6, key: 3.0, rim: 1.0, ambient: 0.04, bloom: 0.6},
     studio: {label: 'Studio', background: 0x0b0e13, reflections: 'room', env: 1.6, key: 2.0, rim: 1.2, ambient: 0.15, bloom: 0.35},
-    space: {label: 'Deep space', background: 0x020306, reflections: 'space', env: 0.6, key: 3.2, rim: 0.6, ambient: 0.05, bloom: 0.9},
+    space: {label: 'Deep space', background: 0x020306, reflections: 'space', env: 0.6, key: 3.2, rim: 0.6, ambient: 0.05, bloom: 0.6},
     bright: {label: 'Bright', background: 0x1a1f27, reflections: 'room', env: 1.6, key: 1.6, rim: 1.0, ambient: 0.6, bloom: 0.2},
 };
 // where the sun (the key light) is, which the space sky's sun matches
@@ -49,7 +49,8 @@ void main() {
     float lumps = 0.6 + 0.4 * sin(d.x * 7.0 + sin(d.z * 5.0)) * sin(d.z * 6.0 - d.y * 4.0);
     vec3 color = vec3(0.004, 0.006, 0.012) + vec3(0.12, 0.38, 0.85) * band * lumps * (0.5 + 0.5 * max(dot(d, sun), 0.0));
     float facing = max(dot(d, sun), 0.0);
-    color += vec3(1.0, 0.86, 0.7) * (pow(facing, 900.0) * 60.0 + pow(facing, 12.0) * 0.6);
+    // only a soft glow: the key light already gives the sun's sharp highlight, and a second one blinds polished paint
+    color += vec3(1.0, 0.86, 0.7) * pow(facing, 12.0) * 0.5;
     gl_FragColor = vec4(color, 1.0);
 }`,
     });
@@ -184,7 +185,7 @@ export default class ShipViewer extends React.Component {
         const target = new THREE.WebGLRenderTarget(container.clientWidth, HEIGHT, {type: THREE.HalfFloatType, samples: 4});
         this.composer = new EffectComposer(renderer, target);
         this.composer.addPass(new RenderPass(scene, this.camera));
-        this.bloom = new UnrealBloomPass(new THREE.Vector2(container.clientWidth, HEIGHT), 0.9, 0.5, 1.0);
+        this.bloom = new UnrealBloomPass(new THREE.Vector2(container.clientWidth, HEIGHT), 0.6, 0.4, 1.4);
         this.composer.addPass(this.bloom);
         this.composer.addPass(new OutputPass());
 
