@@ -23,13 +23,14 @@ const COMPRESSED = {
 // reflections: 'space' is a nebula sky with a sun, as the client lights ships with the system's nebula; 'room' a studio.
 // bloom: how strongly very bright pixels glow, like the client's post-processing
 const LIGHTING = {
-    ingame: {label: 'In-game', background: 0x050506, reflections: 'space', env: 1.6, key: 3.0, rim: 1.0, ambient: 0.04, bloom: 0.6},
+    ingame: {label: 'In-game', background: 0x050506, reflections: 'space', env: 1.6, key: 1.8, rim: 1.0, ambient: 0.04, bloom: 0.6},
     studio: {label: 'Studio', background: 0x0b0e13, reflections: 'room', env: 1.6, key: 2.0, rim: 1.2, ambient: 0.15, bloom: 0.35},
-    space: {label: 'Deep space', background: 0x020306, reflections: 'space', env: 0.6, key: 3.2, rim: 0.6, ambient: 0.05, bloom: 0.6},
+    space: {label: 'Deep space', background: 0x020306, reflections: 'space', env: 0.6, key: 2.0, rim: 0.6, ambient: 0.05, bloom: 0.6},
     bright: {label: 'Bright', background: 0x1a1f27, reflections: 'room', env: 1.6, key: 1.6, rim: 1.0, ambient: 0.6, bloom: 0.2},
 };
 // the nebula space lighting reflects by default, where the client has it; its name's first letter is the region
 const NEBULA = 'c01';
+const NEBULA_INTENSITY = 0.5;
 const NEBULA_REGIONS = {a: 'Amarr', c: 'Caldari', g: 'Gallente', m: 'Minmatar', j: 'Jove'};
 
 // "Caldari 01" for c01; other names as they are
@@ -306,7 +307,7 @@ export default class ShipViewer extends React.Component {
         const target = new THREE.WebGLRenderTarget(container.clientWidth, HEIGHT, {type: THREE.HalfFloatType, samples: 4});
         this.composer = new EffectComposer(renderer, target);
         this.composer.addPass(new RenderPass(scene, this.camera));
-        this.bloom = new UnrealBloomPass(new THREE.Vector2(container.clientWidth, HEIGHT), 0.6, 0.4, 1.4);
+        this.bloom = new UnrealBloomPass(new THREE.Vector2(container.clientWidth, HEIGHT), 0.6, 0.4, 2.0);
         this.composer.addPass(this.bloom);
         this.composer.addPass(new OutputPass());
 
@@ -358,8 +359,10 @@ export default class ShipViewer extends React.Component {
         this.ambient.intensity = preset.ambient;
         this.key.intensity = preset.key;
         this.rim.intensity = preset.rim;
-        this.scene.environment = (preset.reflections === 'space' && this.nebulaEnv(this.state.nebula || this.defaultNebula())) || this.envMaps[preset.reflections];
-        this.scene.environmentIntensity = preset.env;
+        const nebula = preset.reflections === 'space' ? this.nebulaEnv(this.state.nebula || this.defaultNebula()) : undefined;
+        this.scene.environment = nebula || this.envMaps[preset.reflections];
+        // the client's nebulas are brighter than the generated sky, with suns in them
+        this.scene.environmentIntensity = preset.env * (nebula ? NEBULA_INTENSITY : 1);
         this.bloom.strength = preset.bloom;
     }
 
