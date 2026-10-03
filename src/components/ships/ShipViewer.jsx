@@ -1192,6 +1192,8 @@ material.specularColorBlended = mix(material.specularColorBlended, areaSpecular,
         this.camera.near = this.radius / 100;
         this.camera.far = distance * 20 + 5000;
         this.camera.updateProjectionMatrix();
+        // the stars stay well beyond the furthest the camera can zoom out (titans are kilometres long), inside its reach
+        this.starField.scale.setScalar(Math.max(1, distance * 10 / 4000));
         this.controls.target.set(0, 0, 0);
         this.controls.minDistance = this.radius * 0.6;
         this.controls.maxDistance = distance * 4;
