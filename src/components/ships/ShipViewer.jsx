@@ -155,6 +155,32 @@ void main() {
     gl_FragColor = vec4(color.rgb * strength, clamp(color.a, 0.0, 1.0));
 }`;
 
+// A hull's running lights (see ShipSof.lights): glowing dots in the faction's colours, each pulsing between its
+// smallest and largest size at its own rate and phase; sizes are in the hull's units. The colour sets keep lights'
+// colours low, so they're brightened to glow (and bloom) as the client's do.
+const LIGHT_BRIGHTNESS = 8;
+const LIGHT_VERTEX = `attribute vec3 lightColor;
+attribute vec4 blink;
+uniform float time;
+uniform float viewportHeight;
+varying vec3 vColor;
+void main() {
+    vec4 mv = modelViewMatrix * vec4(position, 1.0);
+    // blink: rate (per second), phase, smallest and largest size; a light that doesn't blink stays half way
+    float pulse = blink.x > 0.0 ? 0.5 + 0.5 * sin(6.2831853 * (time * blink.x + blink.y)) : 0.5;
+    float size = mix(blink.z, blink.w, pulse);
+    gl_PointSize = max(1.5, size * projectionMatrix[1][1] * viewportHeight * 0.5 / -mv.z);
+    vColor = lightColor;
+    gl_Position = projectionMatrix * mv;
+}`;
+const LIGHT_FRAGMENT = `varying vec3 vColor;
+void main() {
+    vec2 d = gl_PointCoord * 2.0 - 1.0;
+    float r = dot(d, d);
+    if (r > 1.0) discard;
+    gl_FragColor = vec4(vColor * exp(-r * 4.0), 1.0);
+}`;
+
 // a 1x1 black texture, for pattern layers that aren't in use
 const BLANK = () => dataTexture({width: 1, height: 1, data: new Uint8Array([0, 0, 0, 255])}, THREE.NoColorSpace);
 
@@ -756,7 +782,7 @@ material.specularColorBlended = mix(material.specularColorBlended, areaSpecular,
         }
         this.ship.remove(this.effects);
         this.effects.traverse(object => {
-            if (object.isMesh) {
+            if (object.isMesh || object.isPoints) {
                 object.geometry.dispose();
                 object.material.dispose();
             }
@@ -765,8 +791,8 @@ material.specularColorBlended = mix(material.specularColorBlended, areaSpecular,
     }
 
     // The effects the hull adds for the look's faction (see ShipSof.effects), such as a SKIN's holograms and glowing
-    // trails: their meshes, placed on the hull, drawn with the client's ubershader. Lights, particles and animation
-    // curves in them aren't shown.
+    // trails: their meshes, placed on the hull, drawn with the client's ubershader (lights, particles and animation
+    // curves in them aren't shown); and the hull's running lights in the faction's colours.
     addEffects() {
         if (this.ship === undefined) {
             return;
@@ -780,14 +806,47 @@ material.specularColorBlended = mix(material.specularColorBlended, areaSpecular,
         const hull = located !== undefined ? located.hull : ship.model && ship.model.hull;
         const faction = ShipSof.factionFor(ship, typeof this.state.skin === 'number' ? this.state.skin : undefined);
         const roots = ShipSof.effects(hull, faction);
-        if (roots.length === 0) {
+        const lights = ShipSof.lights(hull, faction);
+        if (roots.length === 0 && lights.length === 0) {
             return;
         }
         this.effects = new THREE.Group();
         for (const root of roots) {
             this.addEffectNode(root, this.effects);
         }
+        if (lights.length > 0) {
+            this.effects.add(this.lightPoints(lights));
+        }
         this.ship.add(this.effects);
+    }
+
+    // the hull's running lights as glowing points
+    lightPoints(lights) {
+        const positions = new Float32Array(lights.length * 3);
+        const colors = new Float32Array(lights.length * 3);
+        const blinks = new Float32Array(lights.length * 4);
+        lights.forEach((light, i) => {
+            positions.set(light.position, i * 3);
+            colors.set(light.color.map(c => c * LIGHT_BRIGHTNESS), i * 3);
+            blinks.set([light.blinkRate, light.blinkPhase, light.minScale, light.maxScale], i * 4);
+        });
+        const geometry = new THREE.BufferGeometry();
+        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        geometry.setAttribute('lightColor', new THREE.BufferAttribute(colors, 3));
+        geometry.setAttribute('blink', new THREE.BufferAttribute(blinks, 4));
+        const material = new THREE.ShaderMaterial({
+            uniforms: {time: this.effectTime, viewportHeight: {value: HEIGHT * this.renderer.getPixelRatio()}},
+            vertexShader: LIGHT_VERTEX,
+            fragmentShader: LIGHT_FRAGMENT,
+            transparent: true,
+            depthWrite: false,
+            blending: THREE.CustomBlending,
+            blendSrc: THREE.OneFactor,
+            blendDst: THREE.OneFactor,
+        });
+        const points = new THREE.Points(geometry, material);
+        points.renderOrder = 3;
+        return points;
     }
 
     // a container or mesh of an effect (and what's in it) under parent

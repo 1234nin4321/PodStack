@@ -30,8 +30,11 @@ const CLASS_FIELDS = {
     EveSOFDataHullDecalSetItem: {usage: 'u32', position: 'vec3', rotation: 'vec4', scaling: 'vec3', boneIndex: 'u32',
         meshIndex: 'u32', glowColorType: 'u32', logoType: 'u32'},
     EveSOFDataDecalIndexBuffer: {indexBuffer: 'u32array'},
+    EveSOFDataHullSpriteSet: {skinned: 'u8'},
+    EveSOFDataHullSpriteSetItem: {position: 'vec3', blinkRate: 'f32', blinkPhase: 'f32', minScale: 'f32', maxScale: 'f32',
+        boneIndex: 'u32', colorType: 'u32', intensity: 'f32', falloff: 'f32'},
 };
-const SIZES = {u8: 1, u32: 4, vec3: 12, vec4: 16};
+const SIZES = {u8: 1, u32: 4, f32: 4, vec3: 12, vec4: 16};
 // fields that are always lists of objects: tried as a list first, as a count and the first item's id can look like an
 // object header
 const LIST_FIELDS = new Set([
@@ -169,6 +172,9 @@ export default class BlackFile {
             }
             if (typed === 'u32') {
                 return {value: this.u32(p), next: p + 4};
+            }
+            if (typed === 'f32') {
+                return {value: this.view.getFloat32(p, true), next: p + 4};
             }
             const f = i => this.view.getFloat32(p + i * 4, true);
             return {value: Array.from({length: size / 4}, (_, i) => f(i)), next: p + size};

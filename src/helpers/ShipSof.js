@@ -15,6 +15,12 @@ import ShipData from '../../resources/ships';
 const SOF = 'res:/dx9/model/spaceobjectfactory/';
 const DIELECTRIC = 0.04;   // the usual specular of a non-metal, when a material doesn't give one
 
+// a colour type (as hulls' lights and decals give it) -> the faction colour set's colour; "Black" isn't stored
+const COLOR_TYPES = ['Primary', 'Secondary', 'Tertiary', 'Black', 'White', 'Yellow', 'Orange', 'Red', 'Blue', 'Green', 'Cyan',
+    'Fire', 'Hull', 'Glass', 'Reactor', 'Darkhull', 'Booster', 'Killmark', 'PrimaryLight', 'SecondaryLight', 'TertiaryLight',
+    'WhiteLight', 'PrimarySpotlight', 'SecondarySpotlight', 'TertiarySpotlight', 'PrimaryHologram', 'SecondaryHologram',
+    'TertiaryHologram'];
+
 const cache = new Map();   // res path -> parsed root object (null when missing or unreadable)
 
 function black(res) {
@@ -152,6 +158,43 @@ export default class ShipSof {
         }
         cache.set(cacheKey, decals);
         return decals;
+    }
+
+    /**
+     * A hull's running lights with a faction's look: [{position, color: [r, g, b] (from the faction's colour set),
+     * blinkRate, blinkPhase, minScale, maxScale}], from the hull's sprite sets (those in a visibility group only when the
+     * faction switches it on).
+     */
+    static lights(hull, faction) {
+        const cacheKey = `lights:${hull}:${faction}`;
+        if (cache.has(cacheKey)) {
+            return cache.get(cacheKey);
+        }
+        let lights = [];
+        try {
+            const bytes = hull ? ShipModelHelper.resource(`${SOF}hulls/${hull.toLowerCase()}.black`) : undefined;
+            const sets = bytes !== undefined ? new BlackFile(bytes).findList('spriteSets', 'EveSOFDataHullSpriteSet') : undefined;
+            const groups = ShipSof.visibilityGroups(faction);
+            const colors = ShipSof.colors(faction) || {};
+            lights = (sets || [])
+                .filter(set => set && (!set.visibilityGroup || groups.has(set.visibilityGroup)))
+                .flatMap(set => set.items || [])
+                .filter(item => item && Array.isArray(item.position))
+                .map(item => ({
+                    position: item.position,
+                    color: colors[COLOR_TYPES[item.colorType || 0]] || [0, 0, 0],
+                    blinkRate: item.blinkRate || 0,
+                    blinkPhase: item.blinkPhase || 0,
+                    minScale: item.minScale !== undefined ? item.minScale : 1,
+                    maxScale: item.maxScale !== undefined ? item.maxScale : 1,
+                }))
+                .filter(light => light.color.some(c => c > 0));
+        } catch (err) {
+            log.warn(`[SOF] Couldn't read the lights of ${hull}`, err.message);
+            lights = [];
+        }
+        cache.set(cacheKey, lights);
+        return lights;
     }
 
     // the visibility groups a faction switches on (a hull's decals and effects that belong to one show only with it)
