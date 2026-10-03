@@ -178,7 +178,8 @@ export default class RedFile {
                 yield {value: this.array(q + 6, n, size), next: q + 6 + n * size};
             }
         }
-        if (q + 2 <= end && this.u16(q) < this.strings.length && !this.isField(this.u16(q))) {
+        // (a string value can look like a field name, e.g. an effect called "mf4_t1_northern_fx")
+        if (q + 2 <= end && this.u16(q) < this.strings.length) {
             yield {value: this.strings[this.u16(q)], next: q + 2};
         }
         for (const n of FLOAT_COUNTS) {

@@ -793,8 +793,8 @@ material.specularColorBlended = mix(material.specularColorBlended, areaSpecular,
     }
 
     // The effects the hull adds for the look's faction (see ShipSof.effects), such as a SKIN's holograms and glowing
-    // trails: their meshes, placed on the hull, drawn with the client's ubershader (lights, particles and animation
-    // curves in them aren't shown); and the hull's running lights in the faction's colours.
+    // trails: their meshes, placed on the hull, drawn with the client's ubershader, and their point lights (particles
+    // and animation curves in them aren't shown); and the hull's running lights in the faction's colours.
     addEffects() {
         if (this.ship === undefined) {
             return;
@@ -891,6 +891,17 @@ material.specularColorBlended = mix(material.specularColorBlended, areaSpecular,
                 }
                 geometry.dispose();
             }
+        }
+        // its point lights, which colour the hull around it: strongest at the light, gone at its radius
+        for (const light of Array.isArray(node.lights) ? node.lights : []) {
+            const radius = light && Array.isArray(light.radius) ? light.radius[0] : 0;
+            const brightness = light && Array.isArray(light.brightness) ? light.brightness[0] : 1;
+            if (!Array.isArray(light.position) || !Array.isArray(light.color) || !(radius > 0)) {
+                continue;
+            }
+            const point = new THREE.PointLight(new THREE.Color(...light.color.slice(0, 3)), brightness * radius * radius / 16, radius, 2);
+            point.position.fromArray(light.position);
+            group.add(point);
         }
         for (const child of Array.isArray(node.objects) ? node.objects : []) {
             this.addEffectNode(child, group);
