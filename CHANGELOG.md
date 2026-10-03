@@ -1,3 +1,9 @@
+## 0.2.18 Alpha (0.2.18-alpha)
+* 3D viewer: fixed ships (such as the Avatar) showing as a black screen when their effects' lights leave a value
+  empty in the game's files.
+* 3D viewer: strategic cruisers always show their Core, Defensive, Offensive and Propulsion lists.
+* The log says which EVE folder the 3D viewer reads, and why a strategic cruiser's subsystems couldn't be told.
+
 ## 0.2.17 Alpha (0.2.17-alpha)
 * Ship Browser: View in 3D shows the ship from your own EVE install (nothing of CCP's is shipped with PodStack; set
   the EVE folder in Settings if it isn't found). Drag to orbit, scroll to zoom, double-click for full screen.
