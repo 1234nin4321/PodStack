@@ -14,14 +14,34 @@ import ShipSof from '../../helpers/ShipSof';
 import ShipData from '../../../resources/ships';
 import {parseDds, decodeInto} from '../../helpers/granny/Dds';
 
-// the view's height: from its width (16:9), at least MIN_HEIGHT and at most MAX_SHARE of the window's
+// the view's height: from its width (16:9), at least MIN_HEIGHT, and no taller than leaves its toolbar on screen
 const ASPECT = 9 / 16;
 const MIN_HEIGHT = 320;
-const MAX_SHARE = 0.75;
 const DEFAULT_HEIGHT = 460;
+// room kept below the toolbar
+const BOTTOM_MARGIN = 16;
 
-function viewerHeight(width) {
-    return Math.round(Math.max(MIN_HEIGHT, Math.min(width * ASPECT, window.innerHeight * MAX_SHARE)));
+// the element a page scrolls in (the app's content pane), else the document's
+function scrollParent(element) {
+    for (let e = element.parentElement; e; e = e.parentElement) {
+        if (/(auto|scroll)/.test(getComputedStyle(e).overflowY) && e.scrollHeight >= e.clientHeight) {
+            return e;
+        }
+    }
+    return document.scrollingElement || document.documentElement;
+}
+
+// The height for a view whose canvas is in container and toolbar in toolbar: 16:9 of its width, but with the page
+// scrolled to the top, the canvas and its toolbar fit in what's visible of the page below the canvas's top (on a wide
+// screen 16:9 would push the toolbar out of sight).
+function viewerHeight(container, toolbar, width) {
+    const pane = scrollParent(container);
+    const paneTop = pane === document.scrollingElement || pane === document.documentElement ? 0 : pane.getBoundingClientRect().top;
+    const visible = pane === document.scrollingElement || pane === document.documentElement ? window.innerHeight : pane.clientHeight;
+    // where the canvas starts in the page, whatever it's scrolled to
+    const top = container.getBoundingClientRect().top - paneTop + pane.scrollTop;
+    const room = visible - top - (toolbar ? toolbar.offsetHeight : 0) - BOTTOM_MARGIN;
+    return Math.round(Math.max(MIN_HEIGHT, Math.min(width * ASPECT, room)));
 }
 const COMPRESSED = {
     BC7: {extension: 'EXT_texture_compression_bptc', format: THREE.RGBA_BPTC_Format},
@@ -390,7 +410,7 @@ export default class ShipViewer extends React.Component {
         const container = this.mount.current;
         const renderer = new THREE.WebGLRenderer({antialias: true});
         renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-        const height = viewerHeight(container.clientWidth);
+        const height = viewerHeight(container, this.toolbar.current, container.clientWidth);
         renderer.setSize(container.clientWidth, height);
         renderer.outputColorSpace = THREE.SRGBColorSpace;
         // the client's curve (see CustomToneMapping above)
@@ -445,7 +465,8 @@ export default class ShipViewer extends React.Component {
             if (width > 0) {
                 // full screen: the whole screen but the toolbar
                 const toolbar = this.toolbar.current ? this.toolbar.current.offsetHeight : 0;
-                const h = this.isFullscreen() ? Math.max(MIN_HEIGHT, window.innerHeight - toolbar) : viewerHeight(width);
+                const h = this.isFullscreen() ? Math.max(MIN_HEIGHT, window.innerHeight - toolbar) :
+                    viewerHeight(container, this.toolbar.current, width);
                 renderer.setSize(width, h);
                 this.composer.setSize(width, h);
                 this.camera.aspect = width / h;
@@ -458,6 +479,10 @@ export default class ShipViewer extends React.Component {
         };
         this.observer = new ResizeObserver(this.resize);
         this.observer.observe(container);
+        // the toolbar wraps onto more lines in a narrow window (or with a Tech III cruiser's subsystem lists)
+        if (this.toolbar.current) {
+            this.observer.observe(this.toolbar.current);
+        }
         window.addEventListener('resize', this.resize);
         this.onFullscreen = () => {
             this.setState({fullscreen: this.isFullscreen()});
