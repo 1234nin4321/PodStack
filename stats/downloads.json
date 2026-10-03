@@ -1,31 +1,31 @@
 {
   "repository": "1234nin4321/PodStack",
-  "updated": "2026-10-02T14:33:22.455Z",
+  "updated": "2026-10-03T10:23:25.735Z",
   "totals": {
-    "installer": 3,
+    "installer": 4,
     "portable": 0,
-    "updates": 7,
-    "all": 10
+    "updates": 24,
+    "all": 28
   },
   "thisMonth": {
     "month": "2026-10",
-    "installer": 3,
+    "installer": 4,
     "portable": 0,
-    "updates": 7,
-    "all": 10
+    "updates": 24,
+    "all": 28
   },
   "last30Days": {
-    "installer": 3,
+    "installer": 4,
     "portable": 0,
-    "updates": 7,
-    "all": 10
+    "updates": 24,
+    "all": 28
   },
   "monthly": {
     "2026-10": {
-      "installer": 3,
+      "installer": 4,
       "portable": 0,
-      "updates": 7,
-      "all": 10
+      "updates": 24,
+      "all": 28
     }
   },
   "history": {
@@ -33,16 +33,117 @@
       "installer": 3,
       "portable": 0,
       "updates": 7
+    },
+    "2026-10-03": {
+      "installer": 4,
+      "portable": 0,
+      "updates": 24
     }
   },
   "releases": {
+    "v0.2.16-alpha": {
+      "published": "2026-10-02",
+      "installer": 1,
+      "portable": 0,
+      "updates": 3,
+      "removed": false,
+      "lastSeen": "2026-10-03T10:23:25.735Z"
+    },
+    "v0.2.15-alpha": {
+      "published": "2026-10-02",
+      "installer": 0,
+      "portable": 0,
+      "updates": 1,
+      "removed": false,
+      "lastSeen": "2026-10-03T10:23:25.735Z"
+    },
+    "v0.2.14-alpha": {
+      "published": "2026-10-02",
+      "installer": 0,
+      "portable": 0,
+      "updates": 1,
+      "removed": false,
+      "lastSeen": "2026-10-03T10:23:25.735Z"
+    },
+    "v0.2.13-alpha": {
+      "published": "2026-10-02",
+      "installer": 0,
+      "portable": 0,
+      "updates": 2,
+      "removed": false,
+      "lastSeen": "2026-10-03T10:23:25.735Z"
+    },
+    "v0.2.12-alpha": {
+      "published": "2026-10-02",
+      "installer": 0,
+      "portable": 0,
+      "updates": 2,
+      "removed": false,
+      "lastSeen": "2026-10-03T10:23:25.735Z"
+    },
+    "v0.2.11-alpha": {
+      "published": "2026-10-02",
+      "installer": 0,
+      "portable": 0,
+      "updates": 0,
+      "removed": false,
+      "lastSeen": "2026-10-03T10:23:25.735Z"
+    },
+    "v0.2.10-alpha": {
+      "published": "2026-10-02",
+      "installer": 0,
+      "portable": 0,
+      "updates": 1,
+      "removed": false,
+      "lastSeen": "2026-10-03T10:23:25.735Z"
+    },
+    "v0.2.9-alpha": {
+      "published": "2026-10-02",
+      "installer": 0,
+      "portable": 0,
+      "updates": 1,
+      "removed": false,
+      "lastSeen": "2026-10-03T10:23:25.735Z"
+    },
+    "v0.2.8-alpha": {
+      "published": "2026-10-02",
+      "installer": 0,
+      "portable": 0,
+      "updates": 2,
+      "removed": false,
+      "lastSeen": "2026-10-03T10:23:25.735Z"
+    },
+    "v0.2.7-alpha": {
+      "published": "2026-10-02",
+      "installer": 0,
+      "portable": 0,
+      "updates": 1,
+      "removed": false,
+      "lastSeen": "2026-10-03T10:23:25.735Z"
+    },
+    "v0.2.6-alpha": {
+      "published": "2026-10-02",
+      "installer": 0,
+      "portable": 0,
+      "updates": 2,
+      "removed": false,
+      "lastSeen": "2026-10-03T10:23:25.735Z"
+    },
+    "v0.2.5-alpha": {
+      "published": "2026-10-02",
+      "installer": 0,
+      "portable": 0,
+      "updates": 1,
+      "removed": false,
+      "lastSeen": "2026-10-03T10:23:25.735Z"
+    },
     "v0.2.4-alpha": {
       "published": "2026-10-02",
       "installer": 0,
       "portable": 0,
       "updates": 2,
       "removed": false,
-      "lastSeen": "2026-10-02T14:33:22.455Z"
+      "lastSeen": "2026-10-03T10:23:25.735Z"
     },
     "v0.2.3-alpha": {
       "published": "2026-10-02",
@@ -50,7 +151,7 @@
       "portable": 0,
       "updates": 1,
       "removed": false,
-      "lastSeen": "2026-10-02T14:33:22.455Z"
+      "lastSeen": "2026-10-03T10:23:25.735Z"
     },
     "v0.2.2-alpha": {
       "published": "2026-10-02",
@@ -58,7 +159,7 @@
       "portable": 0,
       "updates": 1,
       "removed": false,
-      "lastSeen": "2026-10-02T14:33:22.455Z"
+      "lastSeen": "2026-10-03T10:23:25.735Z"
     },
     "v0.2.1-alpha": {
       "published": "2026-10-02",
@@ -66,7 +167,7 @@
       "portable": 0,
       "updates": 1,
       "removed": false,
-      "lastSeen": "2026-10-02T14:33:22.455Z"
+      "lastSeen": "2026-10-03T10:23:25.735Z"
     },
     "v0.2.0-alpha": {
       "published": "2026-10-02",
@@ -74,7 +175,7 @@
       "portable": 0,
       "updates": 1,
       "removed": false,
-      "lastSeen": "2026-10-02T14:33:22.455Z"
+      "lastSeen": "2026-10-03T10:23:25.735Z"
     },
     "v0.1.10-alpha": {
       "published": "2026-10-02",
@@ -82,7 +183,7 @@
       "portable": 0,
       "updates": 1,
       "removed": false,
-      "lastSeen": "2026-10-02T14:33:22.455Z"
+      "lastSeen": "2026-10-03T10:23:25.735Z"
     }
   }
 }
