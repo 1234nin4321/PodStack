@@ -318,6 +318,11 @@ export default class ShipModelHelper {
         return ShipModelHelper.resource(`${NEBULA_PREFIX}${name}_cube_lowdetail.dds`);
     }
 
+    // a nebula's reflection cube: what hulls reflect of it (128 pixels, DXT3, its mip levels ever more blurred)
+    static nebulaReflection(name) {
+        return ShipModelHelper.resource(`${NEBULA_PREFIX}${name}_cube_refl.dds`);
+    }
+
     static isAvailable() {
         return ShipModelHelper.files() !== undefined;
     }

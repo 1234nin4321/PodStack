@@ -29,17 +29,39 @@ const COMPRESSED = {
     BC2: {extension: 'WEBGL_compressed_texture_s3tc', format: THREE.RGBA_S3TC_DXT3_Format},
     BC3: {extension: 'WEBGL_compressed_texture_s3tc', format: THREE.RGBA_S3TC_DXT5_Format},
 };
-// Both light the ship as the client does in space: reflecting the chosen nebula (else a generated nebula sky with a
-// sun). env: how strongly; bloom: how strongly very bright pixels glow, like the client's post-processing.
+// Both light the ship as the client does in space: one white sun, and the hull reflecting its surroundings, which also
+// light it softly (there's no other ambient light). 'In-game' reflects the chosen nebula, as the client does; 'Deep
+// space' a dark generated sky. reflection: how strongly (the nebula's own strength is used where it has one); env: how
+// strongly glass and effects reflect; bloom: how strongly bright pixels glow.
 const LIGHTING = {
-    ingame: {label: 'In-game', background: 0x050506, env: 1.6, key: 1.8, rim: 1.0, ambient: 0.04, bloom: 0.6},
-    space: {label: 'Deep space', background: 0x020306, env: 0.6, key: 2.0, rim: 0.6, ambient: 0.05, bloom: 0.6},
+    ingame: {label: 'In-game', background: 0x050506, reflection: 1, env: 0.8, bloom: 0.15},
+    space: {label: 'Deep space', background: 0x020306, reflection: 0.6, env: 0.6, bloom: 0.15},
 };
+// The sun: the client's ship preview scenes have a white sun of 1.5, which in three.js's units (its lights' diffuse is
+// divided by π, the client's isn't) is 1.5π. The client puts it behind its camera, as here.
+const SUN_INTENSITY = 1.5 * Math.PI;
 // the nebula shown by default (The Citadel), where the client has it
 const NEBULA = 'c01';
+// the nebula the client's ship preview shows each race's ships in: Caldari, Minmatar, Amarr, Gallente, ORE
+const RACE_NEBULAS = {1: 'c05', 2: 'm01', 4: 'a05', 8: 'g04', 128: 'c06'};
 const NEBULA_INTENSITY = 0.5;
-// how bright the nebula is behind the ship
-const NEBULA_BACKGROUND = 0.6;
+// how bright the nebula is behind the ship (before the exposure)
+const NEBULA_BACKGROUND = 2;
+// How strongly hulls reflect a nebula: its scene's reflectionIntensity, 1.55 in the a/c/g/j nebulas and 1.4 in the m
+// ones (dx9/scene/universe/<name>_cube.black).
+function reflectionIntensity(name) {
+    return /^m/.test(name || '') ? 1.4 : 1.55;
+}
+// The client's exposure is set as it plays, from the picture's brightness; the viewer's is fixed, set by eye (the
+// Apocalypse, Rifter and Golem in their races' nebulas).
+const EXPOSURE = 0.3;
+
+// The client's tone mapping (postprocess/tonemapping: Uncharted 2's curve, white point 11.2), in place of three.js's
+// custom one, which the viewer uses.
+THREE.ShaderChunk.tonemapping_pars_fragment = THREE.ShaderChunk.tonemapping_pars_fragment.replace(
+    'vec3 CustomToneMapping( vec3 color ) { return color; }',
+    `vec3 hableCurve( vec3 y ) { return ( y * ( 0.15 * y + 0.05 ) + 0.004 ) / ( y * ( 0.15 * y + 0.5 ) + 0.06 ) - 0.02 / 0.3; }
+vec3 CustomToneMapping( vec3 color ) { return hableCurve( 2.0 * toneMappingExposure * color ) / hableCurve( vec3( 11.2 ) ); }`);
 
 // a nebula by the regions it's seen in ("The Forge, GPMR-01" for c02, from the SDE); else its name in the client
 function nebulaLabel(name) {
@@ -47,37 +69,77 @@ function nebulaLabel(name) {
     return regions && regions.length > 0 ? regions.join(', ') : name;
 }
 
-// A nebula cubemap (BC6H, from ShipModelHelper.nebulaResource) as a compressed cube texture, or undefined when it isn't
-// one or the graphics card can't take it.
-function nebulaCube(bytes, renderer) {
-    if (bytes === undefined || !renderer.extensions.has('EXT_texture_compression_bptc')) {
+// A block-compressed cubemap from the client (DDS: a nebula's BC6H backdrop, its DXT3 reflection cube) as a compressed
+// cube texture, or undefined when it isn't one or the graphics card can't take it. allMips: with its mip chain (for
+// reflections blurred by level), else only its full-size level.
+function ddsCube(bytes, renderer, allMips) {
+    if (bytes === undefined || bytes.length < 128) {
         return undefined;
     }
     const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
     const fourCC = String.fromCharCode(bytes[84], bytes[85], bytes[86], bytes[87]);
-    const dxgi = view.getUint32(128, true);
-    const cube = (view.getUint32(136, true) & 4) !== 0;
-    if (fourCC !== 'DX10' || (dxgi !== 95 && dxgi !== 96) || !cube) {
+    let format;
+    let blockBytes;
+    let header = 128;
+    let cube = (view.getUint32(112, true) & 0x200) !== 0;
+    if (fourCC === 'DX10') {
+        const dxgi = view.getUint32(128, true);
+        header = 148;
+        cube = (view.getUint32(136, true) & 4) !== 0;
+        if ((dxgi === 95 || dxgi === 96) && renderer.extensions.has('EXT_texture_compression_bptc')) {
+            format = dxgi === 96 ? THREE.RGB_BPTC_SIGNED_Format : THREE.RGB_BPTC_UNSIGNED_Format;
+            blockBytes = 16;
+        }
+    } else if (COMPRESSED[{DXT1: 'BC1', DXT3: 'BC2', DXT5: 'BC3'}[fourCC]] !== undefined) {
+        const compressed = COMPRESSED[{DXT1: 'BC1', DXT3: 'BC2', DXT5: 'BC3'}[fourCC]];
+        if (renderer.extensions.has(compressed.extension)) {
+            format = compressed.format;
+            blockBytes = fourCC === 'DXT1' ? 8 : 16;
+        }
+    }
+    if (format === undefined || !cube) {
         return undefined;
     }
     const height = view.getUint32(12, true);
     const width = view.getUint32(16, true);
     const mips = Math.max(1, view.getUint32(28, true));
-    // each face: its whole mip chain, of which the first level is used
-    const levelSize = level => Math.max(1, (width >> level) + 3 >> 2) * Math.max(1, (height >> level) + 3 >> 2) * 16;
+    // each face: its whole mip chain
+    const levelSize = level => Math.max(1, (width >> level) + 3 >> 2) * Math.max(1, (height >> level) + 3 >> 2) * blockBytes;
     let faceSize = 0;
     for (let level = 0; level < mips; level++) {
         faceSize += levelSize(level);
     }
-    if (148 + faceSize * 6 > bytes.length) {
+    if (header + faceSize * 6 > bytes.length) {
         return undefined;
     }
+    const levels = allMips ? mips : 1;
     const images = [0, 1, 2, 3, 4, 5].map(face => {
-        const data = bytes.subarray(148 + face * faceSize, 148 + face * faceSize + levelSize(0));
-        return {width, height, mipmaps: [{data, width, height}]};
+        const mipmaps = [];
+        let offset = header + face * faceSize;
+        for (let level = 0; level < levels; level++) {
+            const size = [Math.max(1, width >> level), Math.max(1, height >> level)];
+            mipmaps.push({data: bytes.subarray(offset, offset + levelSize(level)), width: size[0], height: size[1]});
+            offset += levelSize(level);
+        }
+        // WebGL wants the chain down to 1x1, which the client's files stop short of (a 128 cube's ends at 2x2): the
+        // last level's one block again, which below 4x4 is the same size
+        while (levels > 1 && (mipmaps[mipmaps.length - 1].width > 1 || mipmaps[mipmaps.length - 1].height > 1)) {
+            const last = mipmaps[mipmaps.length - 1];
+            if (last.width > 4 || last.height > 4) {
+                break;
+            }
+            mipmaps.push({data: last.data, width: Math.max(1, last.width >> 1), height: Math.max(1, last.height >> 1)});
+        }
+        return {width, height, mipmaps};
     });
-    const texture = new THREE.CompressedCubeTexture(images, dxgi === 96 ? THREE.RGB_BPTC_SIGNED_Format : THREE.RGB_BPTC_UNSIGNED_Format, THREE.HalfFloatType);
-    texture.minFilter = THREE.LinearFilter;
+    // a chain that still stops short is left at its full-size level
+    const complete = images[0].mipmaps.length > 1 && images[0].mipmaps[images[0].mipmaps.length - 1].width === 1;
+    if (!complete) {
+        images.forEach(image => image.mipmaps.splice(1));
+    }
+    const bc6 = format === THREE.RGB_BPTC_SIGNED_Format || format === THREE.RGB_BPTC_UNSIGNED_Format;
+    const texture = new THREE.CompressedCubeTexture(images, format, bc6 ? THREE.HalfFloatType : THREE.UnsignedByteType);
+    texture.minFilter = complete ? THREE.LinearMipmapLinearFilter : THREE.LinearFilter;
     texture.magFilter = THREE.LinearFilter;
     texture.generateMipmaps = false;
     texture.needsUpdate = true;
@@ -297,8 +359,11 @@ export default class ShipViewer extends React.Component {
         if (this.controls !== undefined) {
             this.controls.dispose();
         }
+        if (this.skyTarget !== undefined) {
+            this.skyTarget.dispose();
+        }
         for (const envMap of [...Object.values(this.envMaps || {}), ...(this.nebulaEnvs || new Map()).values(),
-            ...(this.nebulaCubes || new Map()).values()]) {
+            ...(this.nebulaCubes || new Map()).values(), ...(this.reflectionCubes || new Map()).values()]) {
             if (envMap) {
                 envMap.dispose();
             }
@@ -320,8 +385,9 @@ export default class ShipViewer extends React.Component {
         const height = viewerHeight(container.clientWidth);
         renderer.setSize(container.clientWidth, height);
         renderer.outputColorSpace = THREE.SRGBColorSpace;
-        renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        renderer.toneMappingExposure = 1.0;
+        // the client's curve (see CustomToneMapping above)
+        renderer.toneMapping = THREE.CustomToneMapping;
+        renderer.toneMappingExposure = EXPOSURE;
         container.appendChild(renderer.domElement);
         this.renderer = renderer;
 
@@ -329,23 +395,30 @@ export default class ShipViewer extends React.Component {
         const pmrem = new THREE.PMREMGenerator(renderer);
         this.envMaps = {space: pmrem.fromScene(spaceSky(), 0).texture};
         pmrem.dispose();
+        // the generated sky as a cube with its mip chain, for hulls to reflect blurred by level as they do a nebula's
+        this.skyTarget = new THREE.WebGLCubeRenderTarget(128, {type: THREE.HalfFloatType, generateMipmaps: true,
+            minFilter: THREE.LinearMipmapLinearFilter});
+        new THREE.CubeCamera(0.1, 1000, this.skyTarget).update(renderer, spaceSky());
         this.scene = scene;
 
         this.camera = new THREE.PerspectiveCamera(35, container.clientWidth / height, 0.1, 10000);
         this.camera.position.set(1, 0.5, 1);
 
-        this.ambient = new THREE.AmbientLight(0xffffff, 0.25);
-        this.key = new THREE.DirectionalLight(0xfff4e6, 2.2);
-        this.key.position.set(3, 4, 2);
-        this.rim = new THREE.DirectionalLight(0x9ec8ff, 1.2);
-        this.rim.position.set(-4, 1, -3);
-        scene.add(this.ambient, this.key, this.rim);
+        // the sun, the only light: the rest comes from what the hull reflects
+        this.sun = new THREE.DirectionalLight(0xffffff, SUN_INTENSITY);
+        this.sun.position.copy(SUN);
+        scene.add(this.sun);
+        // what hulls reflect (see paintShader): a cube, its strength, and -1 to mirror it as three.js does a cube
+        // texture's backdrop (1 for the generated sky, which is drawn the right way round)
+        this.reflection = {reflectionCube: {value: this.skyTarget.texture}, reflectionIntensity: {value: 1}, reflectionFlip: {value: 1}};
 
         // drawn through bloom, then tone mapped (the output pass uses the renderer's tone mapping and colour space)
         const target = new THREE.WebGLRenderTarget(container.clientWidth, height, {type: THREE.HalfFloatType, samples: 4});
         this.composer = new EffectComposer(renderer, target);
         this.composer.addPass(new RenderPass(scene, this.camera));
-        this.bloom = new UnrealBloomPass(new THREE.Vector2(container.clientWidth, height), 0.6, 0.4, 2.0);
+        // a weak bloom on the brightest highlights (set by eye: the client's own threshold and scale don't carry over to
+        // three.js's bloom)
+        this.bloom = new UnrealBloomPass(new THREE.Vector2(container.clientWidth, height), 0.15, 0.4, 1.0);
         this.composer.addPass(this.bloom);
         this.composer.addPass(new OutputPass());
 
@@ -408,14 +481,41 @@ export default class ShipViewer extends React.Component {
         const cube = this.nebulaCube(name);
         this.scene.background = cube || new THREE.Color(preset.background);
         this.scene.backgroundIntensity = NEBULA_BACKGROUND;
-        this.ambient.intensity = preset.ambient;
-        this.key.intensity = preset.key;
-        this.rim.intensity = preset.rim;
+        // glass, decals and effects: three.js's own reflections of the nebula
         const nebula = this.nebulaEnv(name);
         this.scene.environment = nebula || this.envMaps.space;
         // the client's nebulas are brighter than the generated sky, with suns in them
         this.scene.environmentIntensity = preset.env * (nebula ? NEBULA_INTENSITY : 1);
+        // hulls: the client's own reflection cube of the nebula (the default one's when there's no backdrop)
+        const reflected = this.state.lighting === 'ingame' ? name || this.defaultNebula() : undefined;
+        const refl = this.reflectionCube(reflected);
+        this.reflection.reflectionCube.value = refl || this.skyTarget.texture;
+        this.reflection.reflectionFlip.value = refl ? -1 : 1;
+        this.reflection.reflectionIntensity.value = preset.reflection * (refl ? reflectionIntensity(reflected) : 1);
         this.bloom.strength = preset.bloom;
+    }
+
+    // the cube the client's hulls reflect of a nebula (128 pixels, blurred down its mip levels), or undefined
+    reflectionCube(name) {
+        if (!name) {
+            return undefined;
+        }
+        this.reflectionCubes = this.reflectionCubes || new Map();
+        if (!this.reflectionCubes.has(name)) {
+            let cube;
+            try {
+                cube = ddsCube(ShipModelHelper.nebulaReflection(name), this.renderer, true);
+                if (cube !== undefined) {
+                    // its values as they are (read as sRGB, the cubes average about 0.01: hulls would be black out of
+                    // the sun, which in the game they aren't)
+                    cube.colorSpace = THREE.NoColorSpace;
+                }
+            } catch (err) {
+                cube = undefined;
+            }
+            this.reflectionCubes.set(name, cube);
+        }
+        return this.reflectionCubes.get(name);
     }
 
     // the reflections of one of the client's nebulas, prefiltered for rough to polished surfaces (undefined when the
@@ -452,7 +552,7 @@ export default class ShipViewer extends React.Component {
         if (!this.nebulaCubes.has(name)) {
             let cube;
             try {
-                cube = nebulaCube(ShipModelHelper.nebulaResource(name), this.renderer);
+                cube = ddsCube(ShipModelHelper.nebulaResource(name), this.renderer, false);
             } catch (err) {
                 cube = undefined;
             }
@@ -535,6 +635,10 @@ export default class ShipViewer extends React.Component {
         this.addEffects();
         this.addOverlays(model);
 
+        // the new ship's race's nebula, unless one was chosen
+        if (this.state.nebula === undefined) {
+            this.applyLighting();
+        }
         this.radius = sphere.radius;
         this.resetView();
         this.setState({status: 'ready', textured: this.textureState(model.textures)});
@@ -727,7 +831,8 @@ export default class ShipViewer extends React.Component {
         }
         this.setTextures(hull, textures);
         hull.material.onBeforeCompile = shader => {
-            Object.assign(shader.uniforms, this.paint, this.areaPaint[areaType], {surfaceMap: hull.surfaceMap, maskBlend: hull.maskBlend});
+            Object.assign(shader.uniforms, this.paint, this.areaPaint[areaType], this.reflection,
+                {surfaceMap: hull.surfaceMap, maskBlend: hull.maskBlend});
             this.paintShader(shader);
         };
         return hull;
@@ -763,6 +868,14 @@ uniform vec3 patternDiffuse[2];
 uniform vec3 patternSpecular[2];
 uniform float patternRough[2];
 uniform vec4 patternTarget[2];
+uniform samplerCube reflectionCube;
+uniform float reflectionIntensity;
+uniform float reflectionFlip;
+// a view-space direction as the reflection cube is looked up: in the world, mirrored as the backdrop is
+vec3 reflectionDirection(vec3 viewDirection) {
+    vec3 world = inverseTransformDirection(viewDirection, viewMatrix);
+    return vec3(reflectionFlip * world.x, world.yz);
+}
 // rotates v by the inverse of the unit quaternion q
 vec3 unrotate(vec4 q, vec3 v) {
     vec3 u = -q.xyz;
@@ -816,12 +929,9 @@ for (int k = 0; k < 4; k++) {
 }
 // the roughness map scales the material's gloss (hulls are shown clean: the client's dirt map isn't used)
 float paintGloss = areaGloss * surfaceSample.g;
-// the hull's colour texture is greyscale shading (panels, recesses, highlights), which the client multiplies the
-// material's colour by as it is (it isn't stored as sRGB); scaled to the game's paint brightness measured in
-// side-by-side screenshots (top view: 0.073 in game)
-float shading = pow(max(diffuseColor.r, 0.0), 1.0 / 2.2);
-float detail = clamp(shading * 0.7, 0.0, 0.85);
-diffuseColor.rgb = mix(diffuseColor.rgb, areaColor * detail, paintAmount);`)
+// the hull's colour texture (panels, recesses, highlights; read as sRGB, as the client's shader declares it) times the
+// material's colour
+diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * areaColor, paintAmount);`)
             .replace('#include <roughnessmap_fragment>', `float roughnessFactor = roughness;
 // painted: 1 - gloss, as the client's shader has it (squared into the specular lobe's width, as here)
 roughnessFactor = mix(surfaceSample.g, clamp(1.0 - paintGloss, 0.04, 1.0), paintAmount);`)
@@ -832,7 +942,25 @@ totalEmissiveRadiance *= pow(texture2D(emissiveMap, vEmissiveMapUv).rgb, vec3(2.
             .replace('#include <metalnessmap_fragment>', `float metalnessFactor = mix(metalness, 0.0, paintAmount);`)
             // painted: the material's own specular colour, as the client's shaders use it
             .replace('#include <lights_physical_fragment>', `#include <lights_physical_fragment>
-material.specularColorBlended = mix(material.specularColorBlended, areaSpecular, paintAmount);`);
+material.specularColorBlended = mix(material.specularColorBlended, areaSpecular, paintAmount);`)
+            .replace('#include <lights_fragment_maps>', `
+// What the hull reflects, as the client's quadv5 does it: its reflection cube at a mip level that blurs with the
+// roughness (a = roughness², level 7 - log2(2 / a⁴ - 1) / 4: gloss 0.5 reflects level 4.75 of 7), dimmed where the
+// reflection would come from inside the hull; and the cube's smallest level along the normal as soft light from all
+// round (three.js divides it by π, as the client doesn't).
+#if defined( RE_IndirectDiffuse )
+    iblIrradiance += PI * reflectionIntensity * textureLod(reflectionCube, reflectionDirection(geometryNormal), 6.0).rgb;
+#endif
+#if defined( RE_IndirectSpecular )
+{
+    vec3 reflected = reflect(-geometryViewDir, geometryNormal);
+    float a = material.roughness * material.roughness;
+    float a4 = a * a * a * a;
+    float level = a >= 0.000526 ? 7.0 - log2(2.0 / a4 - 1.0) / 4.0 : 0.0;
+    float horizon = clamp(1.0 + 10.0 * (1.0 - a) * dot(nonPerturbedNormal, reflected), 0.0, 1.0);
+    radiance += reflectionIntensity * horizon * textureLod(reflectionCube, reflectionDirection(reflected), level).rgb;
+}
+#endif`);
     }
 
     // Puts the chosen paint into the hull shader: 'default' = the ship's own look, a SKIN id, or '' = unpainted (the
@@ -1418,8 +1546,14 @@ material.specularColorBlended = mix(material.specularColorBlended, areaSpecular,
         return this.nebulaNames;
     }
 
+    // the nebula the client's own ship preview shows the ship's race in (dx9/scene/preview/<faction>.black), else The
+    // Citadel's
     defaultNebula() {
         const names = this.nebulas();
+        const preview = RACE_NEBULAS[this.props.ship.race_id];
+        if (names.includes(preview)) {
+            return preview;
+        }
         return names.includes(NEBULA) ? NEBULA : names[0];
     }
 
