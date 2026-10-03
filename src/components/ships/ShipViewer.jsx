@@ -1683,7 +1683,6 @@ material.specularColorBlended = mix(material.specularColorBlended, areaSpecular,
                 }
 
                 <div className="ship-viewer-toolbar" ref={this.toolbar}>
-                    {this.subsystemSelectors()}
                     <span className="ship-viewer-label">Skin Selector</span>
                     <select className="field small ship-skin" value={this.state.skin} title="SKIN"
                             onChange={e => this.setState({skin: ['', 'default'].includes(e.target.value) ? e.target.value : Number(e.target.value)})}>
@@ -1696,6 +1695,7 @@ material.specularColorBlended = mix(material.specularColorBlended, areaSpecular,
                             'Your client\'s material files for this paint weren\'t found, so it\'s approximated from its name'}>
                             {this.state.paintSource === 'client' ? 'Client paint' : 'Approximate paint'}
                         </span>}
+                    {this.subsystemSelectors()}
                     <div className="seg">
                         {Object.entries(LIGHTING).map(([key, preset]) =>
                             <button key={key} type="button" className={this.state.lighting === key ? 'active' : ''}
