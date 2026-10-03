@@ -1,3 +1,16 @@
+## 0.2.17 Alpha (0.2.17-alpha)
+* Ship Browser: View in 3D shows the ship from your own EVE install (nothing of CCP's is shipped with PodStack; set
+  the EVE folder in Settings if it isn't found). Drag to orbit, scroll to zoom, double-click for full screen.
+* Drawn as the game draws it: the hull's own textures and paint, its engines and reactors glowing, decals and faction
+  logos, light strips, running lights and the hull's glowing effects, lit by one sun and the nebula around it, with
+  the game's reflections and tone mapping.
+* Skin Selector: every SKIN the ship can wear, with its paint, patterns, texture set and effects (holograms, trails).
+* Nebula Selector: the space behind the ship, named by the regions it's seen in; each race starts in the nebula the
+  game's own ship preview uses. In-game or Deep space lighting.
+* Strategic cruisers: Core, Defensive, Offensive and Propulsion lists change the ship's shape as its subsystems do in
+  the game.
+* The view fits the window, toolbar included, on any screen size.
+
 ## 0.2.16 Alpha (0.2.16-alpha)
 * Ship Browser in the left menu: every ship by class, race and tech level, whether the pilot can fly it, how long
   until they can, the skills it needs, and Add skills to put them in a new or existing plan.
