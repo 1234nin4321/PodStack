@@ -14,7 +14,15 @@ import ShipPaint from '../../helpers/ShipPaint';
 import ShipSof from '../../helpers/ShipSof';
 import {parseDds, decodeInto} from '../../helpers/granny/Dds';
 
-const HEIGHT = 460;
+// the view's height: from its width (16:9), at least MIN_HEIGHT and at most MAX_SHARE of the window's
+const ASPECT = 9 / 16;
+const MIN_HEIGHT = 320;
+const MAX_SHARE = 0.75;
+const DEFAULT_HEIGHT = 460;
+
+function viewerHeight(width) {
+    return Math.round(Math.max(MIN_HEIGHT, Math.min(width * ASPECT, window.innerHeight * MAX_SHARE)));
+}
 const COMPRESSED = {
     BC7: {extension: 'EXT_texture_compression_bptc', format: THREE.RGBA_BPTC_Format},
     BC1: {extension: 'WEBGL_compressed_texture_s3tc', format: THREE.RGB_S3TC_DXT1_Format},
@@ -206,7 +214,7 @@ export default class ShipViewer extends React.Component {
     constructor(props) {
         super(props);
 
-        this.state = {status: 'loading', error: undefined, autoRotate: true, lighting: 'ingame', nebula: undefined, skin: 'default', paintSource: 'none'};
+        this.state = {status: 'loading', error: undefined, autoRotate: true, lighting: 'ingame', nebula: undefined, height: DEFAULT_HEIGHT, skin: 'default', paintSource: 'none'};
         this.mount = React.createRef();
     }
 
@@ -243,6 +251,9 @@ export default class ShipViewer extends React.Component {
         if (this.observer !== undefined) {
             this.observer.disconnect();
         }
+        if (this.resize !== undefined) {
+            window.removeEventListener('resize', this.resize);
+        }
         this.clearShip();
         for (const texture of [...(this.masks || new Map()).values(), ...(this.decalTextures || new Map()).values(),
             ...(this.effectTextures || new Map()).values()]) {
@@ -273,7 +284,8 @@ export default class ShipViewer extends React.Component {
         const container = this.mount.current;
         const renderer = new THREE.WebGLRenderer({antialias: true});
         renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-        renderer.setSize(container.clientWidth, HEIGHT);
+        const height = viewerHeight(container.clientWidth);
+        renderer.setSize(container.clientWidth, height);
         renderer.outputColorSpace = THREE.SRGBColorSpace;
         renderer.toneMapping = THREE.ACESFilmicToneMapping;
         renderer.toneMappingExposure = 1.0;
@@ -286,7 +298,7 @@ export default class ShipViewer extends React.Component {
         pmrem.dispose();
         this.scene = scene;
 
-        this.camera = new THREE.PerspectiveCamera(35, container.clientWidth / HEIGHT, 0.1, 10000);
+        this.camera = new THREE.PerspectiveCamera(35, container.clientWidth / height, 0.1, 10000);
         this.camera.position.set(1, 0.5, 1);
 
         this.ambient = new THREE.AmbientLight(0xffffff, 0.25);
@@ -297,10 +309,10 @@ export default class ShipViewer extends React.Component {
         scene.add(this.ambient, this.key, this.rim);
 
         // drawn through bloom, then tone mapped (the output pass uses the renderer's tone mapping and colour space)
-        const target = new THREE.WebGLRenderTarget(container.clientWidth, HEIGHT, {type: THREE.HalfFloatType, samples: 4});
+        const target = new THREE.WebGLRenderTarget(container.clientWidth, height, {type: THREE.HalfFloatType, samples: 4});
         this.composer = new EffectComposer(renderer, target);
         this.composer.addPass(new RenderPass(scene, this.camera));
-        this.bloom = new UnrealBloomPass(new THREE.Vector2(container.clientWidth, HEIGHT), 0.6, 0.4, 2.0);
+        this.bloom = new UnrealBloomPass(new THREE.Vector2(container.clientWidth, height), 0.6, 0.4, 2.0);
         this.composer.addPass(this.bloom);
         this.composer.addPass(new OutputPass());
 
@@ -310,16 +322,27 @@ export default class ShipViewer extends React.Component {
         this.controls.autoRotateSpeed = 0.6;
         this.applyLighting();
 
-        this.observer = new ResizeObserver(() => {
+        // the canvas's height in device pixels, for sizing running lights
+        this.viewportHeight = {value: height * renderer.getPixelRatio()};
+        this.setState({height});
+        // follows the app's size: the panel's width, and the window's height
+        this.resize = () => {
             const width = container.clientWidth;
             if (width > 0) {
-                renderer.setSize(width, HEIGHT);
-                this.composer.setSize(width, HEIGHT);
-                this.camera.aspect = width / HEIGHT;
+                const h = viewerHeight(width);
+                renderer.setSize(width, h);
+                this.composer.setSize(width, h);
+                this.camera.aspect = width / h;
                 this.camera.updateProjectionMatrix();
+                this.viewportHeight.value = h * renderer.getPixelRatio();
+                if (h !== this.state.height) {
+                    this.setState({height: h});
+                }
             }
-        });
+        };
+        this.observer = new ResizeObserver(this.resize);
         this.observer.observe(container);
+        window.addEventListener('resize', this.resize);
 
         // seconds, for effects' scrolling textures
         this.effectTime = {value: 0};
@@ -848,7 +871,7 @@ material.specularColorBlended = mix(material.specularColorBlended, areaSpecular,
         geometry.setAttribute('lightColor', new THREE.BufferAttribute(colors, 3));
         geometry.setAttribute('blink', new THREE.BufferAttribute(blinks, 4));
         const material = new THREE.ShaderMaterial({
-            uniforms: {time: this.effectTime, viewportHeight: {value: HEIGHT * this.renderer.getPixelRatio()}},
+            uniforms: {time: this.effectTime, viewportHeight: this.viewportHeight},
             vertexShader: LIGHT_VERTEX,
             fragmentShader: LIGHT_FRAGMENT,
             transparent: true,
@@ -1222,12 +1245,12 @@ material.specularColorBlended = mix(material.specularColorBlended, areaSpecular,
 
         return (
             <div className="ship-viewer">
-                <div ref={this.mount} className="ship-viewer-canvas" style={{height: HEIGHT}}/>
+                <div ref={this.mount} className="ship-viewer-canvas" style={{height: this.state.height}}/>
 
                 {status === 'loading' &&
-                    <div className="ship-viewer-overlay"><span className="muted">Loading {ship.name} from your EVE client…</span></div>}
+                    <div className="ship-viewer-overlay" style={{height: this.state.height}}><span className="muted">Loading {ship.name} from your EVE client…</span></div>}
                 {status === 'error' &&
-                    <div className="ship-viewer-overlay">
+                    <div className="ship-viewer-overlay" style={{height: this.state.height}}>
                         <img src={`https://images.evetech.net/types/${ship.type_id}/render?size=256`} alt="" width={256} height={256}/>
                         <span className="muted">{error} Showing CCP's render instead.</span>
                     </div>
