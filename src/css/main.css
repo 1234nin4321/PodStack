@@ -3613,6 +3613,14 @@ a:hover {
     position: relative;
 }
 
+/* full screen: the view over the whole screen, its toolbar along the bottom */
+.ship-viewer:fullscreen {
+    background: var(--bg-0);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+}
+
 .ship-viewer-canvas {
     width: 100%;
     overflow: hidden;

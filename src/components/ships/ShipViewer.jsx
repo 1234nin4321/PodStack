@@ -214,8 +214,10 @@ export default class ShipViewer extends React.Component {
     constructor(props) {
         super(props);
 
-        this.state = {status: 'loading', error: undefined, autoRotate: true, lighting: 'ingame', nebula: undefined, height: DEFAULT_HEIGHT, skin: 'default', paintSource: 'none'};
+        this.state = {status: 'loading', error: undefined, autoRotate: true, lighting: 'ingame', nebula: undefined, height: DEFAULT_HEIGHT, fullscreen: false, skin: 'default', paintSource: 'none'};
         this.mount = React.createRef();
+        this.root = React.createRef();
+        this.toolbar = React.createRef();
     }
 
     componentDidMount() {
@@ -253,6 +255,12 @@ export default class ShipViewer extends React.Component {
         }
         if (this.resize !== undefined) {
             window.removeEventListener('resize', this.resize);
+        }
+        if (this.onFullscreen !== undefined) {
+            document.removeEventListener('fullscreenchange', this.onFullscreen);
+        }
+        if (this.isFullscreen()) {
+            document.exitFullscreen().catch(() => {});
         }
         this.clearShip();
         for (const texture of [...(this.masks || new Map()).values(), ...(this.decalTextures || new Map()).values(),
@@ -329,7 +337,9 @@ export default class ShipViewer extends React.Component {
         this.resize = () => {
             const width = container.clientWidth;
             if (width > 0) {
-                const h = viewerHeight(width);
+                // full screen: the whole screen but the toolbar
+                const toolbar = this.toolbar.current ? this.toolbar.current.offsetHeight : 0;
+                const h = this.isFullscreen() ? Math.max(MIN_HEIGHT, window.innerHeight - toolbar) : viewerHeight(width);
                 renderer.setSize(width, h);
                 this.composer.setSize(width, h);
                 this.camera.aspect = width / h;
@@ -343,6 +353,11 @@ export default class ShipViewer extends React.Component {
         this.observer = new ResizeObserver(this.resize);
         this.observer.observe(container);
         window.addEventListener('resize', this.resize);
+        this.onFullscreen = () => {
+            this.setState({fullscreen: this.isFullscreen()});
+            this.resize();
+        };
+        document.addEventListener('fullscreenchange', this.onFullscreen);
 
         // seconds, for effects' scrolling textures
         this.effectTime = {value: 0};
@@ -1224,6 +1239,16 @@ material.specularColorBlended = mix(material.specularColorBlended, areaSpecular,
         return names.includes(NEBULA) ? NEBULA : names[0];
     }
 
+    isFullscreen() {
+        return this.root.current !== null && document.fullscreenElement === this.root.current;
+    }
+
+    // the view filling the screen, with its toolbar; or back in the page (Esc does that too)
+    toggleFullscreen() {
+        const done = this.isFullscreen() ? document.exitFullscreen() : this.root.current.requestFullscreen();
+        done.catch(() => {});
+    }
+
     resetView() {
         if (this.radius === undefined) {
             return;
@@ -1244,8 +1269,9 @@ material.specularColorBlended = mix(material.specularColorBlended, areaSpecular,
         const {status, error} = this.state;
 
         return (
-            <div className="ship-viewer">
-                <div ref={this.mount} className="ship-viewer-canvas" style={{height: this.state.height}}/>
+            <div className="ship-viewer" ref={this.root}>
+                <div ref={this.mount} className="ship-viewer-canvas" style={{height: this.state.height}}
+                     onDoubleClick={() => this.toggleFullscreen()}/>
 
                 {status === 'loading' &&
                     <div className="ship-viewer-overlay" style={{height: this.state.height}}><span className="muted">Loading {ship.name} from your EVE client…</span></div>}
@@ -1256,7 +1282,7 @@ material.specularColorBlended = mix(material.specularColorBlended, areaSpecular,
                     </div>
                 }
 
-                <div className="ship-viewer-toolbar">
+                <div className="ship-viewer-toolbar" ref={this.toolbar}>
                     <select className="field small ship-skin" value={this.state.skin} title="SKIN"
                             onChange={e => this.setState({skin: ['', 'default'].includes(e.target.value) ? e.target.value : Number(e.target.value)})}>
                         <option value="default">Default</option>
@@ -1285,7 +1311,10 @@ material.specularColorBlended = mix(material.specularColorBlended, areaSpecular,
                         {this.state.autoRotate ? 'Stop rotating' : 'Rotate'}
                     </button>
                     <button type="button" className="link-button" onClick={() => this.resetView()}>Reset view</button>
-                    <span className="faint ship-viewer-hint">Drag to orbit · scroll to zoom · right-drag to pan</span>
+                    <button type="button" className="link-button" onClick={() => this.toggleFullscreen()}>
+                        {this.state.fullscreen ? 'Exit full screen' : 'Full screen'}
+                    </button>
+                    <span className="faint ship-viewer-hint">Drag to orbit · scroll to zoom · right-drag to pan · double-click for full screen</span>
                 </div>
                 {status === 'ready' && this.state.textured !== true &&
                     <p className="faint" style={{margin: 0, padding: '0 12px 10px'}}>
