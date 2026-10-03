@@ -274,31 +274,36 @@ export default class ShipSof {
         return paint !== undefined && typeof paint.textures === 'string' && !/^(none)?$/i.test(paint.textures);
     }
 
-    // the four material names a faction gives a hull's main ("Primary") paint areas
-    static factionMaterials(faction) {
+    // the four material names a faction gives one of its area types ("Primary": a hull's main paint; also "Darkhull",
+    // "Sails", ...), or undefined when it doesn't define that type
+    static factionMaterials(faction, areaType = 'Primary') {
         if (!faction) {
             return undefined;
         }
         const root = black(`${SOF}factions/${faction.toLowerCase()}.black`);
-        const primary = root && root.areaTypes && root.areaTypes.Primary;
-        if (primary === undefined) {
+        const type = root && root.areaTypes && root.areaTypes[areaType];
+        if (type === undefined) {
             return undefined;
         }
-        return ['material1', 'material2', 'material3', 'material4'].map(m => primary[m]);
+        return ['material1', 'material2', 'material3', 'material4'].map(m => type[m]);
     }
 
     /**
      * The four paint areas for a ship with a SKIN (or its own look when skinId is undefined), each as material()
      * gives it ({name, missing: true} where the client has no file for the material); undefined when the client's
-     * files don't say which materials it uses.
+     * files don't say which materials it uses. areaType: which of the faction's area types (see
+     * ShipModelHelper.hullAreas): a SKIN's own materials replace only the main one's ("Primary").
      */
-    static areas(ship, skinId) {
+    static areas(ship, skinId, areaType = 'Primary') {
         const paint = skinId !== undefined ? (ShipData.skins || {})[skinId] : undefined;
         const faction = (paint !== undefined && paint.faction) || (skinId === undefined && ship.model && ship.model.faction) || undefined;
-        const base = ShipSof.factionMaterials(faction) ||
-            (paint !== undefined ? ShipSof.factionMaterials(ship.model && ship.model.faction) : undefined) || [];
-        // a SKIN's own materials replace its faction's
-        const names = [0, 1, 2, 3].map(i => (paint !== undefined && named(paint.materials[i])) || named(base[i]));
+        const base = ShipSof.factionMaterials(faction, areaType) ||
+            (paint !== undefined ? ShipSof.factionMaterials(ship.model && ship.model.faction, areaType) : undefined);
+        if (base === undefined && areaType !== 'Primary') {
+            return undefined;
+        }
+        const own = paint !== undefined && areaType === 'Primary' ? paint.materials : [];
+        const names = [0, 1, 2, 3].map(i => named(own[i]) || named((base || [])[i]));
         if (names.every(n => !n)) {
             return undefined;
         }

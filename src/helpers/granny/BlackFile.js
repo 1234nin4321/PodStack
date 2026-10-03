@@ -30,8 +30,9 @@ const CLASS_FIELDS = {
     EveSOFDataHullDecalSetItem: {usage: 'u32', position: 'vec3', rotation: 'vec4', scaling: 'vec3', boneIndex: 'u32',
         meshIndex: 'u32', glowColorType: 'u32', logoType: 'u32'},
     EveSOFDataDecalIndexBuffer: {indexBuffer: 'u32array'},
-    // some hulls' areas start with the mesh area they cover
-    EveSOFDataHullArea: {index: 'u32', count: 'u32'},
+    // a hull area: the mesh area it covers, which of the faction's area types paints it (0 Primary, 1 Glass, 2 Sails,
+    // 3 Reactor, 4 Darkhull, 5 Rock), and a bit per paint material it doesn't take
+    EveSOFDataHullArea: {index: 'u32', count: 'u32', areaType: 'u32', blockedMaterials: 'u32'},
     EveSOFDataHullSpriteSet: {skinned: 'u8'},
     EveSOFDataHullSpriteSetItem: {position: 'vec3', blinkRate: 'f32', blinkPhase: 'f32', minScale: 'f32', maxScale: 'f32',
         boneIndex: 'u32', colorType: 'u32', intensity: 'f32', falloff: 'f32'},

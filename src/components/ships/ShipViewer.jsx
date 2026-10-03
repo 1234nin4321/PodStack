@@ -184,6 +184,9 @@ void main() {
     gl_FragColor = vec4(vColor * exp(-r * 4.0), 1.0);
 }`;
 
+// the faction area types a hull area can be painted with (see ShipModelHelper.hullAreas); others take Primary
+const AREA_TYPES = ['Primary', 'Glass', 'Sails', 'Reactor', 'Darkhull', 'Rock'];
+
 // a 1x1 black texture, for pattern layers that aren't in use
 const BLANK = () => dataTexture({width: 1, height: 1, data: new Uint8Array([0, 0, 0, 255])}, THREE.NoColorSpace);
 
@@ -441,10 +444,11 @@ export default class ShipViewer extends React.Component {
         this.removeEffects();
         this.scene.remove(this.ship);
         this.ship.geometry.dispose();
-        if (this.paint !== undefined) {
-            this.paint.surfaceMap.value.dispose();
-            this.paint = undefined;
+        for (const hull of this.hulls || []) {
+            hull.surfaceMap.value.dispose();
         }
+        this.hulls = undefined;
+        this.paint = undefined;
         for (const material of this.ship.material) {
             for (const key of ['map', 'normalMap', 'roughnessMap', 'emissiveMap']) {
                 if (material[key]) {
@@ -471,14 +475,14 @@ export default class ShipViewer extends React.Component {
         geometry.setAttribute('position', new THREE.BufferAttribute(model.positions, 3));
         geometry.setAttribute('uv', new THREE.BufferAttribute(model.uvs, 2));
         geometry.setIndex(new THREE.BufferAttribute(model.indices, 1));
-        const kinds = ['hull', 'glass', 'glow', 'booster'];
+        const {materials, slotFor} = this.materials(model);
         for (const group of model.groups) {
-            geometry.addGroup(group.start, group.count, kinds.indexOf(group.kind));
+            geometry.addGroup(group.start, group.count, slotFor(group));
         }
         geometry.computeVertexNormals();
         geometry.computeBoundingSphere();
 
-        const ship = new THREE.Mesh(geometry, this.materials(model.textures));
+        const ship = new THREE.Mesh(geometry, materials);
         // centre it, and frame it whatever its size (EVE hulls range from shuttles to titans)
         const sphere = geometry.boundingSphere;
         ship.position.copy(sphere.center).multiplyScalar(-1);
@@ -486,6 +490,7 @@ export default class ShipViewer extends React.Component {
         this.scene.add(ship);
         this.model = model;
         model.typeId = this.props.ship.type_id;
+        this.applyPaint();
         this.addDecals();
         this.addEffects();
 
@@ -495,10 +500,10 @@ export default class ShipViewer extends React.Component {
     }
 
     // A look whose texture set differs from the one loaded (a SKIN's clean "nefantar" set over the hull's weathered
-    // own, or back): its textures into the hull material, where the client has them.
+    // own, or back): its textures into the hull's materials, where the client has them.
     applyTextureSet() {
         // (not while another ship is loading: its own look is set as it loads)
-        if (this.model === undefined || this.hull === undefined || this.state.skin === '' || this.model.typeId !== this.props.ship.type_id) {
+        if (this.model === undefined || this.hulls === undefined || this.state.skin === '' || this.model.typeId !== this.props.ship.type_id) {
             return;
         }
         const skin = this.state.skin === 'default' ? undefined : this.state.skin;
@@ -507,20 +512,27 @@ export default class ShipViewer extends React.Component {
         if (wanted === current.insert && ShipSof.namesTextureSet(skin) === Boolean(current.skinSet)) {
             return;
         }
-        let textures;
+        let areaTextures;
         try {
-            textures = ShipModelHelper.texturesFor(this.props.ship, wanted);
+            areaTextures = ShipModelHelper.areaTextures(this.props.ship, wanted);
         } catch (err) {
-            textures = undefined;
+            areaTextures = undefined;
         }
-        if (textures === undefined) {
+        if (areaTextures === undefined) {
             return;
         }
-        textures.skinSet = ShipSof.namesTextureSet(skin);
+        const skinSet = ShipSof.namesTextureSet(skin);
         // the same maps as before where the set doesn't have them only costs a reload, so it's done once per set
-        this.setTextures(this.hull, textures);
-        this.model.textures = textures;
-        this.setState({textured: this.textureState(textures)});
+        for (const hull of this.hulls) {
+            const textures = hull.set !== undefined ? areaTextures.sets.get(hull.set) : areaTextures.main;
+            if (textures !== undefined) {
+                textures.skinSet = skinSet;
+                this.setTextures(hull, textures);
+            }
+        }
+        this.model.textures = areaTextures.main;
+        this.model.areaTextures = areaTextures;
+        this.setState({textured: this.textureState(areaTextures.main)});
     }
 
     // whether the hull's colour texture shows: true, or why not ('missing': none PodStack can read, 'unsupported': the
@@ -532,64 +544,62 @@ export default class ShipViewer extends React.Component {
         return this.albedoSupported ? true : 'unsupported';
     }
 
-    // the hull's maps into its material, replacing (and freeing) those it had
+    // an area's maps into its hull material, replacing (and freeing) those it had
     setTextures(hull, textures) {
-        const old = [hull.map, hull.normalMap, hull.emissiveMap, this.paint && this.paint.surfaceMap.value];
-        hull.map = null;
-        hull.normalMap = null;
-        hull.emissiveMap = null;
+        const material = hull.material;
+        const old = [material.map, material.normalMap, material.emissiveMap, hull.surfaceMap.value];
+        material.map = null;
+        material.normalMap = null;
+        material.emissiveMap = null;
 
         // the albedo stays block-compressed on the graphics card, where the card supports the format
         const albedo = textures.albedo;
         const map = albedo !== undefined ? this.ddsTexture(albedo) : undefined;
-        this.albedoSupported = map !== undefined;
+        if (hull.set === undefined) {
+            this.albedoSupported = map !== undefined;
+        }
         if (map !== undefined) {
             map.colorSpace = THREE.SRGBColorSpace;
             map.wrapS = map.wrapT = THREE.RepeatWrapping;
             map.anisotropy = 8;
-            hull.map = map;
+            material.map = map;
         } else {
             // a plain map, so the shader still has the hull's texture coordinates for the masks
-            hull.map = dataTexture({width: 1, height: 1, data: new Uint8Array([141, 147, 155, 255])}, THREE.SRGBColorSpace);
+            material.map = dataTexture({width: 1, height: 1, data: new Uint8Array([141, 147, 155, 255])}, THREE.SRGBColorSpace);
         }
         if (textures.normal !== undefined) {
-            hull.normalMap = dataTexture(textures.normal, THREE.NoColorSpace);
+            material.normalMap = dataTexture(textures.normal, THREE.NoColorSpace);
         }
         if (textures.glow !== undefined) {
-            hull.emissiveMap = dataTexture(textures.glow, THREE.NoColorSpace);
-            hull.emissive = new THREE.Color(0xffc48a);
-            hull.emissiveIntensity = 3;
+            material.emissiveMap = dataTexture(textures.glow, THREE.NoColorSpace);
+            material.emissive = new THREE.Color(0xffc48a);
+            material.emissiveIntensity = 3;
         }
 
         // SKIN paint: the surface map's R says which of four areas a pixel is in, each painted with its own material
         // (colour, roughness, metalness); G is the hull's roughness detail
-        const surface = textures.surface !== undefined ? dataTexture(textures.surface, THREE.NoColorSpace) :
+        hull.surfaceMap.value = textures.surface !== undefined ? dataTexture(textures.surface, THREE.NoColorSpace) :
             dataTexture({width: 1, height: 1, data: new Uint8Array([0, 128, 0, 255])}, THREE.NoColorSpace);
-        if (this.paint !== undefined) {
-            this.paint.surfaceMap.value = surface;
-            this.paint.maskBlend.value = maskBlends(textures) ? 1 : 0;
-        }
-        hull.needsUpdate = true;
+        // 1: blend between the mask's four levels (weathered panels part-way between two materials); 0: crisp areas
+        hull.maskBlend.value = maskBlends(textures) ? 1 : 0;
+        material.needsUpdate = true;
         for (const texture of old) {
-            if (texture && !Object.values(hull).includes(texture) && texture !== surface) {
+            if (texture && !Object.values(material).includes(texture) && texture !== hull.surfaceMap.value) {
                 texture.dispose();
             }
         }
-        return surface;
     }
 
-    materials(textures) {
-        const hull = new THREE.MeshStandardMaterial({color: 0xffffff, roughness: 0.5, metalness: 0.15});
-        this.paint = undefined;
-        const surface = this.setTextures(hull, textures);
+    /**
+     * The ship's materials: a hull material for each of its areas' texture sets and paint area types (see
+     * ShipModelHelper.areaTextures), all painted by one shader; then glass, glow and booster. {materials, slotFor (a
+     * mesh group -> its material's place in materials)}.
+     */
+    materials(model) {
+        const areaTextures = model.areaTextures || {main: model.textures, sets: new Map(), areas: new Map()};
+        // the paint every hull material shares: whether it's painted, and SKIN patterns
         this.paint = {
-            surfaceMap: {value: surface},
-            // 1: blend between the mask's four levels (weathered panels part-way between two materials); 0: crisp areas
-            maskBlend: {value: maskBlends(textures) ? 1 : 0},
             paintAmount: {value: 0},
-            mtlDiffuse: {value: [0, 1, 2, 3].map(() => new THREE.Color(0x808080))},
-            mtlSpecular: {value: [0, 1, 2, 3].map(() => new THREE.Color(0x0a0a0a))},
-            mtlRough: {value: [0.5, 0.5, 0.5, 0.5]},
             // up to two SKIN pattern layers: a mask projected through a box placed on the hull, painting a material
             patternMask0: {value: BLANK()},
             patternMask1: {value: BLANK()},
@@ -608,16 +618,87 @@ export default class ShipViewer extends React.Component {
             // the paint areas each layer paints: 1 or 0 for areas 1-4
             patternTarget: {value: [new THREE.Vector4(1, 1, 1, 1), new THREE.Vector4(1, 1, 1, 1)]},
         };
-        hull.onBeforeCompile = shader => {
-            Object.assign(shader.uniforms, this.paint);
-            // the position on the hull itself (before it's centred in the scene), which patterns are placed against
-            shader.vertexShader = shader.vertexShader
-                .replace('#include <common>', `#include <common>
+        // each area type's four paint materials (the faction's Primary, Darkhull, Sails, ...)
+        this.areaPaint = {};
+        this.hulls = [];
+
+        const materials = [];
+        const slots = new Map();
+        const hullSlot = materialIndex => {
+            const area = areaTextures.areas.get(materialIndex) || {};
+            const textures = area.set !== undefined ? areaTextures.sets.get(area.set) : undefined;
+            const set = textures !== undefined && textures.albedo !== undefined ? area.set : undefined;
+            const areaType = AREA_TYPES[area.areaType] !== undefined ? area.areaType : 0;
+            const key = `${set || ''}|${areaType}`;
+            if (!slots.has(key)) {
+                slots.set(key, materials.length);
+                const hull = this.hullMaterial(set !== undefined ? textures : areaTextures.main, set, areaType);
+                materials.push(hull.material);
+                this.hulls.push(hull);
+            }
+            return slots.get(key);
+        };
+        // the main texture set first (the one the "plain metal" note is about)
+        hullSlot(-1);
+        for (const group of model.groups) {
+            if (group.kind === 'hull') {
+                hullSlot(group.materialIndex);
+            }
+        }
+        this.hull = this.hulls[0].material;
+
+        const glass = new THREE.MeshStandardMaterial({
+            color: 0x10202c, roughness: 0.08, metalness: 0.9, transparent: true, opacity: 0.85,
+        });
+        const glow = new THREE.MeshStandardMaterial({
+            color: 0x332211, emissive: new THREE.Color(0xffa860), emissiveIntensity: 2.5, roughness: 0.4,
+        });
+        const booster = new THREE.MeshStandardMaterial({
+            color: 0x221a14, emissive: new THREE.Color(0xffb070), emissiveIntensity: 2, roughness: 0.4,
+        });
+        this.glass = glass;
+        this.glowMaterial = glow;
+        this.booster = booster;
+        const others = {glass: materials.length, glow: materials.length + 1, booster: materials.length + 2};
+        materials.push(glass, glow, booster);
+        this.applyColors();
+        return {materials, slotFor: group => (group.kind === 'hull' ? hullSlot(group.materialIndex) : others[group.kind])};
+    }
+
+    // A hull material for one area's textures and paint area type: {material, set, areaType, surfaceMap, maskBlend}.
+    hullMaterial(textures, set, areaType) {
+        const hull = {
+            material: new THREE.MeshStandardMaterial({color: 0xffffff, roughness: 0.5, metalness: 0.15}),
+            set,
+            areaType,
+            surfaceMap: {value: BLANK()},
+            maskBlend: {value: 1},
+        };
+        if (this.areaPaint[areaType] === undefined) {
+            this.areaPaint[areaType] = {
+                mtlDiffuse: {value: [0, 1, 2, 3].map(() => new THREE.Color(0x808080))},
+                mtlSpecular: {value: [0, 1, 2, 3].map(() => new THREE.Color(0x0a0a0a))},
+                mtlRough: {value: [0.5, 0.5, 0.5, 0.5]},
+            };
+        }
+        this.setTextures(hull, textures);
+        hull.material.onBeforeCompile = shader => {
+            Object.assign(shader.uniforms, this.paint, this.areaPaint[areaType], {surfaceMap: hull.surfaceMap, maskBlend: hull.maskBlend});
+            this.paintShader(shader);
+        };
+        return hull;
+    }
+
+    // the hull paint shader: the client's quadv5 paint and SKIN patterns, into a standard material's shader
+    paintShader(shader) {
+        // the position on the hull itself (before it's centred in the scene), which patterns are placed against
+        shader.vertexShader = shader.vertexShader
+            .replace('#include <common>', `#include <common>
 varying vec3 vHullPosition;`)
-                .replace('#include <begin_vertex>', `#include <begin_vertex>
+            .replace('#include <begin_vertex>', `#include <begin_vertex>
 vHullPosition = position;`);
-            shader.fragmentShader = shader.fragmentShader
-                .replace('#include <common>', `#include <common>
+        shader.fragmentShader = shader.fragmentShader
+            .replace('#include <common>', `#include <common>
 uniform sampler2D surfaceMap;
 uniform float paintAmount;
 uniform vec3 mtlDiffuse[4];
@@ -662,7 +743,7 @@ float patternMask(sampler2D mask, int i) {
     vec3 pc = patternCoords(i);
     return texture2D(mask, pc.xy).r * pc.z;
 }`)
-                .replace('#include <map_fragment>', `#include <map_fragment>
+            .replace('#include <map_fragment>', `#include <map_fragment>
 vec4 surfaceSample = texture2D(surfaceMap, vMapUv);
 // As the client's hull shader (quadv5) paints: the mask's four levels (0, 85, 170, 255) are the four areas, each fully
 // its own within about 2.5 of its level and blending linearly into the next in between (a hull's own textures are
@@ -697,35 +778,17 @@ float paintGloss = areaGloss * surfaceSample.g;
 float shading = pow(max(diffuseColor.r, 0.0), 1.0 / 2.2);
 float detail = clamp(shading * 0.7, 0.0, 0.85);
 diffuseColor.rgb = mix(diffuseColor.rgb, areaColor * detail, paintAmount);`)
-                .replace('#include <roughnessmap_fragment>', `float roughnessFactor = roughness;
+            .replace('#include <roughnessmap_fragment>', `float roughnessFactor = roughness;
 // painted: 1 - gloss, as the client's shader has it (squared into the specular lobe's width, as here)
 roughnessFactor = mix(surfaceSample.g, clamp(1.0 - paintGloss, 0.04, 1.0), paintAmount);`)
-                // the client raises the glow map to the power 2.4
-                .replace('#include <emissivemap_fragment>', `#ifdef USE_EMISSIVEMAP
+            // the client raises the glow map to the power 2.4
+            .replace('#include <emissivemap_fragment>', `#ifdef USE_EMISSIVEMAP
 totalEmissiveRadiance *= pow(texture2D(emissiveMap, vEmissiveMapUv).rgb, vec3(2.4));
 #endif`)
-                .replace('#include <metalnessmap_fragment>', `float metalnessFactor = mix(metalness, 0.0, paintAmount);`)
-                // painted: the material's own specular colour, as the client's shaders use it
-                .replace('#include <lights_physical_fragment>', `#include <lights_physical_fragment>
+            .replace('#include <metalnessmap_fragment>', `float metalnessFactor = mix(metalness, 0.0, paintAmount);`)
+            // painted: the material's own specular colour, as the client's shaders use it
+            .replace('#include <lights_physical_fragment>', `#include <lights_physical_fragment>
 material.specularColorBlended = mix(material.specularColorBlended, areaSpecular, paintAmount);`);
-        };
-        this.hull = hull;
-        this.applyPaint();
-
-        const glass = new THREE.MeshStandardMaterial({
-            color: 0x10202c, roughness: 0.08, metalness: 0.9, transparent: true, opacity: 0.85,
-        });
-        const glow = new THREE.MeshStandardMaterial({
-            color: 0x332211, emissive: new THREE.Color(0xffa860), emissiveIntensity: 2.5, roughness: 0.4,
-        });
-        const booster = new THREE.MeshStandardMaterial({
-            color: 0x221a14, emissive: new THREE.Color(0xffb070), emissiveIntensity: 2, roughness: 0.4,
-        });
-        this.glass = glass;
-        this.glowMaterial = glow;
-        this.booster = booster;
-        this.applyColors();
-        return [hull, glass, glow, booster];
     }
 
     // Puts the chosen paint into the hull shader: 'default' = the ship's own look, a SKIN id, or '' = unpainted (the
@@ -739,6 +802,8 @@ material.specularColorBlended = mix(material.specularColorBlended, areaSpecular,
         const ship = this.props.ship;
         let areas;
         let exact = false;
+        // area type -> its four paint materials
+        const typeAreas = {};
         if (skin !== '') {
             // a guessed metal/rough material as diffuse and specular: diffuse fades and specular takes the colour as
             // it gets more metallic
@@ -750,10 +815,12 @@ material.specularColorBlended = mix(material.specularColorBlended, areaSpecular,
                     roughness: a.roughness,
                 };
             };
-            const sof = ShipSof.areas(ship, skin === 'default' ? undefined : skin);
+            const skinId = skin === 'default' ? undefined : skin;
+            const fromSof = sof => sof.map(a => a.missing ? guessed(ShipPaint.fromName(a.name)) :
+                {diffuse: new THREE.Color().setRGB(...a.diffuse), specular: new THREE.Color().setRGB(...a.specular), roughness: a.roughness});
+            const sof = ShipSof.areas(ship, skinId);
             if (sof !== undefined) {
-                areas = sof.map(a => a.missing ? guessed(ShipPaint.fromName(a.name)) :
-                    {diffuse: new THREE.Color().setRGB(...a.diffuse), specular: new THREE.Color().setRGB(...a.specular), roughness: a.roughness});
+                areas = fromSof(sof);
                 exact = sof.every(a => !a.missing);
             } else if (skin !== 'default') {
                 const approx = ShipPaint.areas(skin);
@@ -761,13 +828,22 @@ material.specularColorBlended = mix(material.specularColorBlended, areaSpecular,
                     areas = approx.areas.map(guessed);
                 }
             }
+            // the hull's other area types (Darkhull, Sails, ...) take the faction's materials for them, else the main ones
+            if (areas !== undefined) {
+                for (const type of Object.keys(this.areaPaint)) {
+                    const other = Number(type) !== 0 ? ShipSof.areas(ship, skinId, AREA_TYPES[type]) : undefined;
+                    // a slot the faction leaves blank for this type keeps the main paint's
+                    typeAreas[type] = other !== undefined ? fromSof(other).map((a, i) => (other[i].name ? a : areas[i])) : areas;
+                }
+            }
         }
         this.paint.paintAmount.value = areas !== undefined ? 1 : 0;
-        if (areas !== undefined) {
-            areas.forEach((area, i) => {
-                this.paint.mtlDiffuse.value[i].copy(area.diffuse);
-                this.paint.mtlSpecular.value[i].copy(area.specular);
-                this.paint.mtlRough.value[i] = area.roughness;
+        for (const [type, list] of Object.entries(typeAreas)) {
+            const uniforms = this.areaPaint[type];
+            list.forEach((area, i) => {
+                uniforms.mtlDiffuse.value[i].copy(area.diffuse);
+                uniforms.mtlSpecular.value[i].copy(area.specular);
+                uniforms.mtlRough.value[i] = area.roughness;
             });
         }
         this.applyPattern(skin, areas);
@@ -1215,8 +1291,10 @@ material.specularColorBlended = mix(material.specularColorBlended, areaSpecular,
                 material.emissiveIntensity = fallback === '#000000' ? 0 : 2.5;
             }
         };
-        if (this.hull !== undefined && this.hull.emissiveMap) {
-            set(this.hull, 'Hull', '#ffc48a', 0.6);
+        for (const hull of this.hulls || []) {
+            if (hull.material.emissiveMap) {
+                set(hull.material, 'Hull', '#ffc48a', 0.6);
+            }
         }
         set(this.glowMaterial, 'Reactor', '#ffa860', 0.6);
         set(this.booster, 'Booster', '#ffb070', 1.5);
