@@ -270,6 +270,7 @@ export default class ShipModelHelper {
             const positions = [];
             const uvs = [];
             const indices = [];
+            const normals = [];
             let base = 0;
             for (const mesh of full.length > 0 ? full : all.slice(0, 1)) {
                 const vertices = granny.vertexArray(mesh.PrimaryVertexData && mesh.PrimaryVertexData.Vertices);
@@ -285,12 +286,18 @@ export default class ShipModelHelper {
                 positions.push(firstComponents(pos, 3, vertices.count));
                 uvs.push(uv !== undefined && uv.components >= 2 ? firstComponents(uv, 2, vertices.count) : new Float32Array(vertices.count * 2));
                 indices.push(Uint32Array.from(meshIndices, i => i + base));
+                const frames = tangentFrames(vertices.fields.Tangent, vertices.count);
+                normals.push(frames !== undefined ? frames.normals : undefined);
                 base += vertices.count;
             }
             if (positions.length === 0) {
                 return undefined;
             }
-            return {positions: concat(Float32Array, positions), uvs: concat(Float32Array, uvs), indices: concat(Uint32Array, indices)};
+            return {
+                positions: concat(Float32Array, positions), uvs: concat(Float32Array, uvs), indices: concat(Uint32Array, indices),
+                // only when every mesh has its own
+                normals: normals.every(Boolean) ? concat(Float32Array, normals) : undefined,
+            };
         } catch (err) {
             log.warn(`[Models] Couldn't read ${res}`, err.message);
             return undefined;
@@ -317,7 +324,8 @@ export default class ShipModelHelper {
 
     /**
      * Loads a ship's hull for the viewer:
-     * {positions, uvs, indices, groups: [{start, count, kind: 'hull'|'glass'|'glow'|'booster'}], textures: {albedo (parsed BC7/BC
+     * {positions, uvs, indices, normals and tangents (the model's own, see tangentFrames; undefined without), groups:
+     * [{start, count, kind: 'hull'|'glass'|'glow'|'booster'}], textures: {albedo (parsed BC7/BC
      * DDS), normal, surface (paint area mask in R, roughness in G), glow (in R): each {width, height, data} RGBA}}.
      * Textures that are missing are left out.
      */
@@ -346,6 +354,7 @@ export default class ShipModelHelper {
         const positions = [];
         const uvs = [];
         const indices = [];
+        const frames = [];
         const groups = [];
         const problems = [];
         let vertexBase = 0;
@@ -372,6 +381,7 @@ export default class ShipModelHelper {
                 positions.push(firstComponents(pos, 3, vertices.count));
                 uvs.push(uv !== undefined && uv.components >= 2 ? firstComponents(uv, 2, vertices.count) : new Float32Array(vertices.count * 2));
                 indices.push(meshIndices.map(i => i + vertexBase));
+                frames.push(tangentFrames(vertices.fields.Tangent, vertices.count));
 
                 const materials = (mesh.MaterialBindings || []).map(b => ((b.Material && b.Material.Name) || '').toLowerCase());
                 const meshGroups = topology.Groups && topology.Groups.length > 0 ? topology.Groups :
@@ -407,10 +417,14 @@ export default class ShipModelHelper {
             log.warn(`[Models] Textures for ${found.model} failed`, err);
         }
 
+        // the model's own normals and tangents, when every mesh has them
+        const framed = frames.every(Boolean);
         return {
             positions: concat(Float32Array, positions),
             uvs: concat(Float32Array, uvs),
             indices: concat(Uint32Array, indices),
+            normals: framed ? concat(Float32Array, frames.map(f => f.normals)) : undefined,
+            tangents: framed ? concat(Float32Array, frames.map(f => f.tangents)) : undefined,
             groups,
             textures: areaTextures.main,
             areaTextures,
@@ -632,6 +646,37 @@ function materialKind(name) {
         return 'booster';
     }
     return /reactor|glow|light/.test(name) ? 'glow' : 'hull';
+}
+
+/**
+ * The model's own normals and tangents, from its Tangent field: four bytes per vertex, each an angle (0-255 over -π to
+ * π), as the client's vertex shader (quadv5) unpacks them: the tangent T and binormal B are unit vectors in spherical
+ * coordinates (angles 0-1 and 2-3), and the normal is T × B, flipped unless angles 1 and 3 are both positive. Returns
+ * {normals (xyz), tangents (xyzw: T, with w the sign that turns N × T into B, as three.js rebuilds the binormal)}, or
+ * undefined without the field (the viewer then works normals out from the triangles).
+ */
+function tangentFrames(field, count) {
+    if (field === undefined || field.components !== 4) {
+        return undefined;
+    }
+    const normals = new Float32Array(count * 3);
+    const tangents = new Float32Array(count * 4);
+    const angle = b => b / 255 * 2 * Math.PI - Math.PI;
+    for (let i = 0; i < count; i++) {
+        const a = [0, 1, 2, 3].map(k => angle(field.data[i * 4 + k]));
+        const t = [Math.abs(Math.sin(a[1])) * Math.cos(a[0]), Math.abs(Math.sin(a[1])) * Math.sin(a[0]), Math.cos(a[1])];
+        const b = [Math.abs(Math.sin(a[3])) * Math.cos(a[2]), Math.abs(Math.sin(a[3])) * Math.sin(a[2]), Math.cos(a[3])];
+        const flip = a[1] > 0 && a[3] > 0 ? 1 : -1;
+        let n = [t[1] * b[2] - b[1] * t[2], t[2] * b[0] - b[2] * t[0], t[0] * b[1] - b[0] * t[1]];
+        const length = Math.hypot(...n) || 1;
+        n = n.map(c => c * flip / length);
+        // which way N × T points along B
+        const nt = [n[1] * t[2] - n[2] * t[1], n[2] * t[0] - n[0] * t[2], n[0] * t[1] - n[1] * t[0]];
+        const w = nt[0] * b[0] + nt[1] * b[1] + nt[2] * b[2] < 0 ? -1 : 1;
+        normals.set(n, i * 3);
+        tangents.set([...t, w], i * 4);
+    }
+    return {normals, tangents};
 }
 
 // the first n components of each item of a vertex field ({components, data}), packed tightly

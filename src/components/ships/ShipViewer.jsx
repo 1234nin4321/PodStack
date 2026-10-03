@@ -479,7 +479,14 @@ export default class ShipViewer extends React.Component {
         for (const group of model.groups) {
             geometry.addGroup(group.start, group.count, slotFor(group));
         }
-        geometry.computeVertexNormals();
+        // the model's own normals (smoothed and bevelled as modelled, and whole across texture seams, where the mesh's
+        // vertices are split) and tangents, which the normal map tilts the surface along as the client's shader does
+        if (model.normals !== undefined) {
+            geometry.setAttribute('normal', new THREE.BufferAttribute(model.normals, 3));
+            geometry.setAttribute('tangent', new THREE.BufferAttribute(model.tangents, 4));
+        } else {
+            geometry.computeVertexNormals();
+        }
         geometry.computeBoundingSphere();
 
         const ship = new THREE.Mesh(geometry, materials);
@@ -1000,7 +1007,11 @@ material.specularColorBlended = mix(material.specularColorBlended, areaSpecular,
                 geometry.setAttribute('position', new THREE.BufferAttribute(model.positions, 3));
                 geometry.setAttribute('uv', new THREE.BufferAttribute(model.uvs, 2));
                 geometry.setIndex(new THREE.BufferAttribute(model.indices, 1));
-                geometry.computeVertexNormals();
+                if (model.normals !== undefined) {
+                    geometry.setAttribute('normal', new THREE.BufferAttribute(model.normals, 3));
+                } else {
+                    geometry.computeVertexNormals();
+                }
                 for (const [areas, additive] of [[mesh.transparentAreas, false], [mesh.additiveAreas, true]]) {
                     for (const area of Array.isArray(areas) ? areas : []) {
                         const material = area && this.effectMaterial(area.effect, additive);
