@@ -82,6 +82,11 @@ function hex(color) {
 }
 
 // Each ship's SKINs ([{id, name}], by skin material, without duplicates) and each skin material's paint.
+// a material or pattern name, or null where the SDE gives none ("None" means not set)
+function named(value) {
+    return value && !/^none$/i.test(value) ? value : null;
+}
+
 function buildSkins(dir) {
     const sets = new Map(readJsonl(dir, 'graphicMaterialSets.jsonl').map(m => [m._key, m]));
     const materials = new Map(readJsonl(dir, 'skinMaterials.jsonl').map(m => [m._key, m]));
@@ -98,9 +103,9 @@ function buildSkins(dir) {
             name: material.displayName.en,
             faction: set.sofFactionName,
             colors: [hex(set.colorHull), hex(set.colorPrimary), hex(set.colorSecondary), hex(set.colorWindow)],
-            materials: [set.material1, set.material2, set.material3, set.material4],
-            custom: [set.custommaterial1, set.custommaterial2],
-            pattern: set.sofPatternName,
+            materials: [named(set.material1), named(set.material2), named(set.material3), named(set.material4)],
+            custom: [named(set.custommaterial1), named(set.custommaterial2)],
+            pattern: named(set.sofPatternName) || undefined,
             textures: set.resPathInsert,
         };
         for (const typeId of skin.types || []) {

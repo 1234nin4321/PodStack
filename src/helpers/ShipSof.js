@@ -23,6 +23,11 @@ const COLOR_TYPES = ['Primary', 'Secondary', 'Tertiary', 'Black', 'White', 'Yell
 
 const cache = new Map();   // res path -> parsed root object (null when missing or unreadable)
 
+// a material name, or undefined where none is set (the SDE writes "None" for that)
+function named(name) {
+    return name && !/^none$/i.test(name) ? name : undefined;
+}
+
 function black(res) {
     if (!cache.has(res)) {
         let root = null;
@@ -43,7 +48,7 @@ export default class ShipSof {
     // {diffuse: [r, g, b], specular: [r, g, b] (both linear), roughness, name} of a named material, as the client
     // defines it (diffuse colour, Fresnel colour, gloss), or undefined when the client doesn't have it
     static material(name) {
-        if (!name) {
+        if (!named(name)) {
             return undefined;
         }
         const root = black(`${SOF}materials/${name.toLowerCase()}.black`);
@@ -293,7 +298,7 @@ export default class ShipSof {
         const base = ShipSof.factionMaterials(faction) ||
             (paint !== undefined ? ShipSof.factionMaterials(ship.model && ship.model.faction) : undefined) || [];
         // a SKIN's own materials replace its faction's
-        const names = [0, 1, 2, 3].map(i => (paint !== undefined && paint.materials[i]) || base[i]);
+        const names = [0, 1, 2, 3].map(i => (paint !== undefined && named(paint.materials[i])) || named(base[i]));
         if (names.every(n => !n)) {
             return undefined;
         }
