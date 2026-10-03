@@ -233,7 +233,9 @@ void main() {
     if (mapCount > 1.5) { color *= texture2D(map2, layerUv(transform2, scroll2)); }
     if (mapCount > 2.5) { color *= texture2D(map3, layerUv(transform3, scroll3)); }
     color *= texture2D(maskMap, vUv) * diffuseColor;
-    float facing = pow(1.0 - clamp(dot(normalize(vView), normalize(vNormal)) - fresnel.z, 0.0, 1.0), fresnel.x);
+    // (a zero normal, or 0 to the power 0, would give NaN, which bloom spreads into black blocks)
+    vec3 n = dot(vNormal, vNormal) > 1e-12 ? normalize(vNormal) : normalize(vView);
+    float facing = pow(max(1.0 - clamp(dot(normalize(vView), n) - fresnel.z, 0.0, 1.0), 1e-6), fresnel.x);
     float strength = fresnel.y < 0.0 ? -fresnel.y * (1.0 - min(1.0, facing)) : fresnel.y * facing;
     gl_FragColor = vec4(color.rgb * strength, clamp(color.a, 0.0, 1.0));
 }`;
@@ -258,7 +260,9 @@ vec2 layerUv(vec4 transform, vec4 scroll) { return vUv * transform.xy + transfor
 void main() {
     vec4 color = texture2D(layer1, layerUv(transform1, scroll1)) * texture2D(layer2, layerUv(transform2, scroll2)) *
         texture2D(mask, vUv) * baseColor;
-    float facing = pow(1.0 - clamp(dot(normalize(vView), normalize(vNormal)) - fresnel.z, 0.0, 1.0), fresnel.x);
+    // (a zero normal, or 0 to the power 0, would give NaN, which bloom spreads into black blocks)
+    vec3 n = dot(vNormal, vNormal) > 1e-12 ? normalize(vNormal) : normalize(vView);
+    float facing = pow(max(1.0 - clamp(dot(normalize(vView), n) - fresnel.z, 0.0, 1.0), 1e-6), fresnel.x);
     float strength = fresnel.y < 0.0 ? -fresnel.y * (1.0 - min(1.0, facing)) : fresnel.y * facing;
     gl_FragColor = vec4(color.rgb * strength, 1.0);
 }`;
@@ -1286,10 +1290,14 @@ material.specularColorBlended = mix(material.specularColorBlended, areaSpecular,
             }
         }
         // its point lights, which colour the hull around it: strongest at the light, gone at its radius
+        // (every value checked: some files leave one empty, e.g. the Avatar's exhaust lights' brightness, and a light
+        // that isn't a number turns the whole hull black)
+        const finite = (values, count) => Array.isArray(values) && values.length >= count &&
+            values.slice(0, count).every(v => Number.isFinite(v));
         for (const light of Array.isArray(node.lights) ? node.lights : []) {
-            const radius = light && Array.isArray(light.radius) ? light.radius[0] : 0;
-            const brightness = light && Array.isArray(light.brightness) ? light.brightness[0] : 1;
-            if (!Array.isArray(light.position) || !Array.isArray(light.color) || !(radius > 0)) {
+            const radius = light && finite(light.radius, 1) ? light.radius[0] : 0;
+            const brightness = light && finite(light.brightness, 1) ? light.brightness[0] : 1;
+            if (!light || !finite(light.position, 3) || !finite(light.color, 3) || !(radius > 0)) {
                 continue;
             }
             const point = new THREE.PointLight(new THREE.Color(...light.color.slice(0, 3)), brightness * radius * radius / 16, radius, 2);
@@ -1641,22 +1649,25 @@ material.specularColorBlended = mix(material.specularColorBlended, areaSpecular,
     }
 
     // A Tech III cruiser's subsystems, one list per slot, which change its shape as they do in the game (nothing for
-    // other ships, or when the client lacks the models).
+    // other ships). Each starts on the ship's own subsystem; where the client's files don't say which that is, on
+    // "Default" (the ship's own model), and the other slots take their first subsystem once one is picked.
     subsystemSelectors() {
         const {ship} = this.props;
         const subsystems = ship.subsystems || [];
-        const own = ship.model ? ShipModelHelper.defaultSubsystems(ship.model.hull) : undefined;
-        if (subsystems.length === 0 || own === undefined) {
+        if (subsystems.length === 0) {
             return null;
         }
+        const own = ship.model ? ShipModelHelper.defaultSubsystems(ship.model.hull) : undefined;
         const chosen = this.state.subsystems || own;
         return SUBSYSTEM_SLOTS.map((label, i) => {
             const options = subsystems.filter(s => s.slot === i + 1);
+            const pick = value => (chosen || SUBSYSTEM_SLOTS.map(() => 1)).map((v, j) => (j === i ? value : v));
             return (
                 <React.Fragment key={label}>
                     <span className="ship-viewer-label">{label}</span>
-                    <select className="field small" value={chosen[i]} title={`${label} subsystem`}
-                            onChange={e => this.setState({subsystems: chosen.map((v, j) => (j === i ? Number(e.target.value) : v))})}>
+                    <select className="field small" value={chosen ? chosen[i] : ''} title={`${label} subsystem`}
+                            onChange={e => e.target.value !== '' && this.setState({subsystems: pick(Number(e.target.value))})}>
+                        {!chosen && <option value="">Default</option>}
                         {options.map(s => <option key={s.id} value={s.variant}>{s.name.replace(/^.* - /, '')}</option>)}
                     </select>
                 </React.Fragment>

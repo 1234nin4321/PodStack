@@ -55,8 +55,11 @@ How the client paints a hull, as worked out from its files and its decompiled sh
   (texture set, area type). A SKIN's materials replace only Primary; other area types use the faction's.
 - **Geometry:** a gr2 vertex's `Tangent` (4 bytes) packs the tangent frame: each byte an angle (b/255·2π − π); T and
   B are spherical unit vectors (angles 0-1, 2-3), N = T × B, negated unless angles 1 and 3 are both > 0 (quadv5's
-  vertex shader). The viewer uses these normals and tangents; working normals out from triangles is wrong on most hulls
-  (authored bevels, and seams where vertices are split). A hull area's `index` is the mesh's group **position**, not its
+  vertex shader). Only hulls pack it so (Granny type 14, all 370): most effect meshes keep a plain float tangent
+  (type 21/10) and get normals from their triangles. Effect files' point lights often leave values empty (22,728 of
+  33,020 have no brightness): check every number, as one NaN light turns the hull black. Hulls use the packed
+  normals and tangents: working normals out from triangles is wrong on most hulls (authored bevels, and seams where
+  vertices are split). A hull area's `index` is the mesh's group **position**, not its
   MaterialIndex (Tech III cruisers' full-detail meshes name material 0 for nearly every group).
 - **Tech III cruisers:** every subsystem combination is its own model, `<folder>/<hull>_all/<hull>_<core><def><off>
   <prop>.gr2` (variants 1-3; the hull's own model is its default combination, e.g. csc1_t3 = 2213). Its mesh groups

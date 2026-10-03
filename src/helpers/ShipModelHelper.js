@@ -38,6 +38,9 @@ const NEBULA = /^res:\/dx9\/scene\/universe\/([a-z0-9_]+)_cube_lowdetail\.dds$/;
 
 let index;      // {folder, files: Map(res path -> absolute file)}
 const declaredAreas = new Map();   // hull -> its areas as its SOF file gives them (null when it has no file)
+const unreadFits = new Set();      // Tech III hulls whose own subsystems couldn't be told (logged once)
+// Granny's type for a vertex field of bytes read as 0-1 (the packed tangent frame; see tangentFrames)
+const NORMAL_UINT8 = 14;
 // a hull area's texture parameters -> the map suffix PodStack uses for them
 const TEXTURE_PARAMETERS = {AlbedoMap: 'a', NormalMap: 'n', MaterialMap: 'm', RoughnessMap: 'r', GlowMap: 'g', PaintMaskMap: 'p3', DirtMap: 'd'};
 let detected;   // the auto-detected folder (null when none), found once per session
@@ -228,6 +231,8 @@ export default class ShipModelHelper {
                 files.set(res.toLowerCase(), path.join(folder, 'ResFiles', ...file.split('/')));
             }
             index = {folder, files};
+            // which install the viewer reads, for reports of ships looking different on another PC
+            log.info(`[Models] EVE folder ${folder}: ${files.size} resources indexed`);
         }
         return index.files;
     }
@@ -565,6 +570,15 @@ export default class ShipModelHelper {
             const match = areas.map(a => (a.textures.a || '').match(new RegExp(`_s${slot}v(\\d)_a\\.dds$`))).find(Boolean);
             return match ? Number(match[1]) : undefined;
         });
+        if (!variants.every(Boolean) && !unreadFits.has(hull)) {
+            // once per hull: what the client's file gave, so a report says why
+            unreadFits.add(hull);
+            const res = `${SOF_PREFIX}hulls/${String(hull).toLowerCase()}.black`;
+            const files = ShipModelHelper.files();
+            log.warn(`[Models] ${hull}: couldn't tell its subsystems (${files === undefined ? 'no EVE folder' :
+                !files.has(res) ? `${res} not in the client's index` :
+                    `${areas.length} areas, colour textures ${areas.map(a => (a.textures.a || '-').split('/').pop()).join(', ') || 'none'}`})`);
+        }
         return variants.every(Boolean) ? variants : undefined;
     }
 
@@ -807,7 +821,9 @@ function materialKind(name) {
  * undefined without the field (the viewer then works normals out from the triangles).
  */
 function tangentFrames(field, count) {
-    if (field === undefined || field.components !== 4) {
+    // only the packed bytes (Granny's NormalUInt8, type 14), which every hull has; effect meshes (holograms, glowing
+    // pipes) mostly keep a plain tangent in floats instead, from which the frame can't be unpacked
+    if (field === undefined || field.components !== 4 || field.type !== NORMAL_UINT8) {
         return undefined;
     }
     const normals = new Float32Array(count * 3);
