@@ -325,7 +325,7 @@ export default class ShipModelHelper {
     /**
      * Loads a ship's hull for the viewer:
      * {positions, uvs, indices, normals and tangents (the model's own, see tangentFrames; undefined without), groups:
-     * [{start, count, kind: 'hull'|'glass'|'glow'|'booster'}], textures: {albedo (parsed BC7/BC
+     * [{start, count, kind: 'hull'|'glass'|'glow'|'booster'|'none' (not drawn), materialIndex (its slot)}], passes (see slotPasses), textures: {albedo (parsed BC7/BC
      * DDS), normal, surface (paint area mask in R, roughness in G), glow (in R): each {width, height, data} RGBA}}.
      * Textures that are missing are left out.
      */
@@ -356,6 +356,8 @@ export default class ShipModelHelper {
         const indices = [];
         const frames = [];
         const groups = [];
+        // how the client draws each slot (its SOF file's areas); by the part's name for a hull without one
+        const passes = ShipModelHelper.slotPasses(ship.model.hull) || ShipModelHelper.slotPasses(found.hull);
         const problems = [];
         let vertexBase = 0;
         let indexBase = 0;
@@ -386,16 +388,18 @@ export default class ShipModelHelper {
                 const materials = (mesh.MaterialBindings || []).map(b => ((b.Material && b.Material.Name) || '').toLowerCase());
                 const meshGroups = topology.Groups && topology.Groups.length > 0 ? topology.Groups :
                     [{MaterialIndex: 0, TriFirst: 0, TriCount: meshIndices.length / 3}];
-                for (const group of meshGroups) {
+                meshGroups.forEach((group, slot) => {
                     const name = materials[group.MaterialIndex] || '';
                     groups.push({
                         start: indexBase + group.TriFirst * 3,
                         count: group.TriCount * 3,
-                        kind: materialKind(name),
-                        // the hull area (see hullAreas) that paints it
-                        materialIndex: group.MaterialIndex || 0,
+                        kind: passes !== undefined ? slotKind(passes.get(slot)) : materialKind(name),
+                        // the hull area (see hullAreas) that paints it: the client counts the mesh's groups in order,
+                        // whatever material they name (a Tech III cruiser's full-detail mesh names material 0 for all
+                        // but its exhaust, though each subsystem has its own textures)
+                        materialIndex: slot,
                     });
-                }
+                });
                 vertexBase += vertices.count;
                 indexBase += meshIndices.length;
             } catch (err) {
@@ -426,6 +430,7 @@ export default class ShipModelHelper {
             normals: framed ? concat(Float32Array, frames.map(f => f.normals)) : undefined,
             tangents: framed ? concat(Float32Array, frames.map(f => f.tangents)) : undefined,
             groups,
+            passes,
             textures: areaTextures.main,
             areaTextures,
         };
@@ -479,26 +484,79 @@ export default class ShipModelHelper {
         if (!hull) {
             return undefined;
         }
+        const declared = ShipModelHelper.declared(hull);
+        return declared !== undefined ? declared.opaque : undefined;
+    }
+
+    /**
+     * How the client draws each of a hull's mesh material slots, from all of its SOF file's area lists: Map(slot ->
+     * {opaque (the area painting it, as hullAreas gives them), transparent (a glass area drawn see-through), additive
+     * ([areas drawn over it, glowing: fxv5's layers]), distortion (whether it bends what's behind it, which isn't
+     * drawn)}), or undefined when the hull has no file. A slot no area names isn't drawn by the client.
+     */
+    static slotPasses(hull) {
+        const declared = hull ? ShipModelHelper.declared(hull) : undefined;
+        return declared !== undefined ? declared.passes : undefined;
+    }
+
+    // a hull's areas, read once: {opaque: [areas], passes (see slotPasses)}, or undefined when it has no file
+    static declared(hull) {
         if (!declaredAreas.has(hull)) {
-            let areas = null;
+            let declared = null;
             try {
                 const bytes = ShipModelHelper.resource(`${SOF_PREFIX}hulls/${hull.toLowerCase()}.black`);
-                const list = bytes !== undefined ? new BlackFile(bytes).findList('opaqueAreas', 'EveSOFDataHullArea') : undefined;
-                if (list !== undefined) {
-                    areas = list.filter(Boolean).map(area => {
-                        const textures = {};
-                        for (const t of area.textures || []) {
-                            if (t && TEXTURE_PARAMETERS[t.name] && t.resFilePath) {
+                const file = bytes !== undefined ? new BlackFile(bytes) : undefined;
+                const list = name => ((file && file.findList(name, 'EveSOFDataHullArea')) || []).filter(Boolean).map(area => {
+                    const textures = {};
+                    const maps = {};
+                    for (const t of area.textures || []) {
+                        if (t && t.name && t.resFilePath) {
+                            maps[t.name] = t.resFilePath.toLowerCase();
+                            if (TEXTURE_PARAMETERS[t.name]) {
                                 textures[TEXTURE_PARAMETERS[t.name]] = t.resFilePath.toLowerCase();
                             }
                         }
-                        return {index: area.index || 0, name: area.name, shader: area.shader, areaType: area.areaType || 0, textures};
-                    });
+                    }
+                    const parameters = Object.fromEntries((area.parameters || [])
+                        .filter(p => p && p.name && Array.isArray(p.value)).map(p => [p.name, p.value]));
+                    return {
+                        index: area.index || 0, name: area.name, shader: area.shader || '', areaType: area.areaType || 0,
+                        // engines and reactors: painted hull whose glow map glows in the faction's heat colour
+                        heat: /quadheat/i.test(area.shader || ''),
+                        textures, maps, parameters,
+                    };
+                });
+                const opaque = file !== undefined ? file.findList('opaqueAreas', 'EveSOFDataHullArea') : undefined;
+                if (opaque !== undefined) {
+                    const passes = new Map();
+                    const slot = index => {
+                        if (!passes.has(index)) {
+                            passes.set(index, {opaque: undefined, transparent: undefined, additive: [], distortion: false});
+                        }
+                        return passes.get(index);
+                    };
+                    const areas = list('opaqueAreas');
+                    // alpha-cut parts (grilles, gantries) are drawn as hull: better than not at all
+                    for (const area of [...areas, ...list('decalAreas')]) {
+                        if (slot(area.index).opaque === undefined) {
+                            slot(area.index).opaque = area;
+                        }
+                    }
+                    for (const area of list('transparentAreas')) {
+                        slot(area.index).transparent = area;
+                    }
+                    for (const area of list('additiveAreas')) {
+                        slot(area.index).additive.push(area);
+                    }
+                    for (const area of list('distortionAreas')) {
+                        slot(area.index).distortion = true;
+                    }
+                    declared = {opaque: areas, passes};
                 }
             } catch (err) {
                 log.warn(`[Models] Couldn't read the areas of ${hull}`, err.message);
             }
-            declaredAreas.set(hull, areas);
+            declaredAreas.set(hull, declared);
         }
         return declaredAreas.get(hull) || undefined;
     }
@@ -536,7 +594,7 @@ export default class ShipModelHelper {
                 set = area.textures.a;
             }
             if (!byIndex.has(area.index)) {
-                byIndex.set(area.index, {set, areaType: area.areaType});
+                byIndex.set(area.index, {set, areaType: area.areaType, heat: area.heat});
             }
         }
         return {main, sets, areas: byIndex};
@@ -635,6 +693,19 @@ export default class ShipModelHelper {
         }
         return textures;
     }
+}
+
+// how a mesh slot is drawn, from the hull's areas for it (see slotPasses): painted hull (engines and reactors too: they
+// glow through their glow map), glass, or 'none' where the client draws no surface (nothing names the slot, or only
+// glowing layers over it and heat shimmer behind it, which the viewer adds separately or not at all)
+function slotKind(pass) {
+    if (pass === undefined) {
+        return 'none';
+    }
+    if (pass.opaque !== undefined) {
+        return /glass/i.test(pass.opaque.shader) ? 'glass' : 'hull';
+    }
+    return pass.transparent !== undefined ? 'glass' : 'none';
 }
 
 // how a material is drawn, from its name: glass, an engine's exhaust, another glowing part (reactor, lights), or hull

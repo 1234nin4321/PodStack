@@ -156,6 +156,31 @@ void main() {
     gl_FragColor = vec4(color.rgb * strength, clamp(color.a, 0.0, 1.0));
 }`;
 
+// The client's fxv5 (graphics/effect/managed/space/spaceobject/v5/fx), which glowing layers over hull parts are drawn
+// with: each layer's texture coordinates scaled (transform.xy), offset (.zw) and scrolling (scroll.xy per second, plus
+// .zw), the two layers multiplied with the mask and the colour, then faded by the Fresnel factors.
+const FX_FRAGMENT = `uniform sampler2D layer1;
+uniform sampler2D layer2;
+uniform sampler2D mask;
+uniform vec4 transform1;
+uniform vec4 transform2;
+uniform vec4 scroll1;
+uniform vec4 scroll2;
+uniform vec4 baseColor;
+uniform vec4 fresnel;
+uniform float time;
+varying vec2 vUv;
+varying vec3 vNormal;
+varying vec3 vView;
+vec2 layerUv(vec4 transform, vec4 scroll) { return vUv * transform.xy + transform.zw + scroll.xy * time + scroll.zw; }
+void main() {
+    vec4 color = texture2D(layer1, layerUv(transform1, scroll1)) * texture2D(layer2, layerUv(transform2, scroll2)) *
+        texture2D(mask, vUv) * baseColor;
+    float facing = pow(1.0 - clamp(dot(normalize(vView), normalize(vNormal)) - fresnel.z, 0.0, 1.0), fresnel.x);
+    float strength = fresnel.y < 0.0 ? -fresnel.y * (1.0 - min(1.0, facing)) : fresnel.y * facing;
+    gl_FragColor = vec4(color.rgb * strength, 1.0);
+}`;
+
 // A hull's running lights (see ShipSof.lights): glowing dots in the faction's colours, each pulsing between its
 // smallest and largest size at its own rate and phase; sizes are in the hull's units. The colour sets keep lights'
 // colours low, so they're brightened to glow (and bloom) as the client's do.
@@ -442,6 +467,12 @@ export default class ShipViewer extends React.Component {
         }
         this.removeDecals();
         this.removeEffects();
+        // (overlays share the hull's vertex buffers, so they go with it)
+        for (const overlay of this.overlays || []) {
+            overlay.geometry.dispose();
+            overlay.material.dispose();
+        }
+        this.overlays = undefined;
         this.scene.remove(this.ship);
         this.ship.geometry.dispose();
         for (const hull of this.hulls || []) {
@@ -477,7 +508,9 @@ export default class ShipViewer extends React.Component {
         geometry.setIndex(new THREE.BufferAttribute(model.indices, 1));
         const {materials, slotFor} = this.materials(model);
         for (const group of model.groups) {
-            geometry.addGroup(group.start, group.count, slotFor(group));
+            if (group.kind !== 'none') {
+                geometry.addGroup(group.start, group.count, slotFor(group));
+            }
         }
         // the model's own normals (smoothed and bevelled as modelled, and whole across texture seams, where the mesh's
         // vertices are split) and tangents, which the normal map tilts the surface along as the client's shader does
@@ -500,6 +533,7 @@ export default class ShipViewer extends React.Component {
         this.applyPaint();
         this.addDecals();
         this.addEffects();
+        this.addOverlays(model);
 
         this.radius = sphere.radius;
         this.resetView();
@@ -636,10 +670,11 @@ export default class ShipViewer extends React.Component {
             const textures = area.set !== undefined ? areaTextures.sets.get(area.set) : undefined;
             const set = textures !== undefined && textures.albedo !== undefined ? area.set : undefined;
             const areaType = AREA_TYPES[area.areaType] !== undefined ? area.areaType : 0;
-            const key = `${set || ''}|${areaType}`;
+            const heat = Boolean(area.heat);
+            const key = `${set || ''}|${areaType}|${heat}`;
             if (!slots.has(key)) {
                 slots.set(key, materials.length);
-                const hull = this.hullMaterial(set !== undefined ? textures : areaTextures.main, set, areaType);
+                const hull = this.hullMaterial(set !== undefined ? textures : areaTextures.main, set, areaType, heat);
                 materials.push(hull.material);
                 this.hulls.push(hull);
             }
@@ -672,12 +707,14 @@ export default class ShipViewer extends React.Component {
         return {materials, slotFor: group => (group.kind === 'hull' ? hullSlot(group.materialIndex) : others[group.kind])};
     }
 
-    // A hull material for one area's textures and paint area type: {material, set, areaType, surfaceMap, maskBlend}.
-    hullMaterial(textures, set, areaType) {
+    // A hull material for one area's textures and paint area type: {material, set, areaType, heat (an engine's or
+    // reactor's: its glow map glows in the faction's heat colour), surfaceMap, maskBlend}.
+    hullMaterial(textures, set, areaType, heat) {
         const hull = {
             material: new THREE.MeshStandardMaterial({color: 0xffffff, roughness: 0.5, metalness: 0.15}),
             set,
             areaType,
+            heat,
             surfaceMap: {value: BLANK()},
             maskBlend: {value: 1},
         };
@@ -904,6 +941,59 @@ material.specularColorBlended = mix(material.specularColorBlended, areaSpecular,
             } else {
                 this.paint.patternOn.value[i] = 0;
             }
+        });
+    }
+
+    // The glowing layers the client draws over some of the hull's parts (its additive areas, fxv5: a Golem's energy
+    // fields, an Osprey's glowing panels, a Dominix's reactor), each over its slot's triangles.
+    addOverlays(model) {
+        this.overlays = [];
+        const geometry = this.ship.geometry;
+        for (const [slot, pass] of model.passes || new Map()) {
+            const groups = model.groups.filter(g => g.materialIndex === slot);
+            for (const area of groups.length > 0 ? pass.additive : []) {
+                const overlay = new THREE.BufferGeometry();
+                for (const name of ['position', 'normal', 'uv']) {
+                    overlay.setAttribute(name, geometry.getAttribute(name));
+                }
+                overlay.setIndex(geometry.getIndex());
+                groups.forEach(g => overlay.addGroup(g.start, g.count, 0));
+                const mesh = new THREE.Mesh(overlay, [this.fxMaterial(area)]);
+                mesh.renderOrder = 2;
+                this.ship.add(mesh);
+                this.overlays.push({geometry: overlay, material: mesh.material[0]});
+            }
+        }
+    }
+
+    // the client's fxv5 for a hull area: two scrolling layers times a mask and a colour, faded by the angle to the
+    // camera (FresnelFactors: power, strength, shift; a negative strength makes it brightest face-on), added on
+    fxMaterial(area) {
+        const p = area.parameters;
+        const vec4 = (name, fallback) => new THREE.Vector4(...(p[name] && p[name].length === 4 ? p[name] : fallback));
+        return new THREE.ShaderMaterial({
+            uniforms: {
+                layer1: {value: this.effectTexture(area.maps.Layer1Map)},
+                layer2: {value: this.effectTexture(area.maps.Layer2Map)},
+                mask: {value: this.effectTexture(area.maps.LayerMaskMap)},
+                transform1: {value: vec4('Layer1Transform', [1, 1, 0, 0])},
+                transform2: {value: vec4('Layer2Transform', [1, 1, 0, 0])},
+                scroll1: {value: vec4('Layer1Scroll', [0, 0, 0, 0])},
+                scroll2: {value: vec4('Layer2Scroll', [0, 0, 0, 0])},
+                baseColor: {value: vec4('BaseColor', [1, 1, 1, 1])},
+                fresnel: {value: vec4('FresnelFactors', [1, -1, -1, 0])},
+                time: this.effectTime,
+            },
+            vertexShader: UBER_VERTEX,
+            fragmentShader: FX_FRAGMENT,
+            transparent: true,
+            depthWrite: false,
+            polygonOffset: true,
+            polygonOffsetFactor: -1,
+            polygonOffsetUnits: -1,
+            blending: THREE.CustomBlending,
+            blendSrc: THREE.OneFactor,
+            blendDst: THREE.OneFactor,
         });
     }
 
@@ -1304,7 +1394,15 @@ material.specularColorBlended = mix(material.specularColorBlended, areaSpecular,
         };
         for (const hull of this.hulls || []) {
             if (hull.material.emissiveMap) {
-                set(hull.material, 'Hull', '#ffc48a', 0.6);
+                // engines (quadheatv5) glow in the booster colour, reactors in the reactor colour, the rest of the hull
+                // in its own glow colour
+                if (hull.heat && hull.areaType === 3) {
+                    set(hull.material, 'Reactor', '#ffa860', 0.6);
+                } else if (hull.heat) {
+                    set(hull.material, 'Booster', '#ffb070', 1.5);
+                } else {
+                    set(hull.material, 'Hull', '#ffc48a', 0.6);
+                }
             }
         }
         set(this.glowMaterial, 'Reactor', '#ffa860', 0.6);
