@@ -158,7 +158,9 @@ void main() {
 // A hull's running lights (see ShipSof.lights): glowing dots in the faction's colours, each pulsing between its
 // smallest and largest size at its own rate and phase; sizes are in the hull's units. The colour sets keep lights'
 // colours low, so they're brightened to glow (and bloom) as the client's do.
-const LIGHT_BRIGHTNESS = 8;
+const LIGHT_BRIGHTNESS = 4;
+// the share of a light's size its glow covers on screen
+const LIGHT_SIZE = 0.5;
 const LIGHT_VERTEX = `attribute vec3 lightColor;
 attribute vec4 blink;
 uniform float time;
@@ -169,7 +171,7 @@ void main() {
     // blink: rate (per second), phase, smallest and largest size; a light that doesn't blink stays half way
     float pulse = blink.x > 0.0 ? 0.5 + 0.5 * sin(6.2831853 * (time * blink.x + blink.y)) : 0.5;
     float size = mix(blink.z, blink.w, pulse);
-    gl_PointSize = max(1.5, size * projectionMatrix[1][1] * viewportHeight * 0.5 / -mv.z);
+    gl_PointSize = max(1.0, size * projectionMatrix[1][1] * viewportHeight * 0.5 / -mv.z);
     vColor = lightColor;
     gl_Position = projectionMatrix * mv;
 }`;
@@ -828,7 +830,7 @@ material.specularColorBlended = mix(material.specularColorBlended, areaSpecular,
         lights.forEach((light, i) => {
             positions.set(light.position, i * 3);
             colors.set(light.color.map(c => c * LIGHT_BRIGHTNESS), i * 3);
-            blinks.set([light.blinkRate, light.blinkPhase, light.minScale, light.maxScale], i * 4);
+            blinks.set([light.blinkRate, light.blinkPhase, light.minScale * LIGHT_SIZE, light.maxScale * LIGHT_SIZE], i * 4);
         });
         const geometry = new THREE.BufferGeometry();
         geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
