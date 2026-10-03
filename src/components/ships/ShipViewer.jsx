@@ -4,6 +4,10 @@ import React from 'react';
 import * as THREE from 'three';
 import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls.js';
 import {RoomEnvironment} from 'three/examples/jsm/environments/RoomEnvironment.js';
+import {EffectComposer} from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import {RenderPass} from 'three/examples/jsm/postprocessing/RenderPass.js';
+import {UnrealBloomPass} from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
+import {OutputPass} from 'three/examples/jsm/postprocessing/OutputPass.js';
 
 import ShipModelHelper from '../../helpers/ShipModelHelper';
 import ShipPaint from '../../helpers/ShipPaint';
@@ -16,12 +20,42 @@ const COMPRESSED = {
     BC1: {extension: 'WEBGL_compressed_texture_s3tc', format: THREE.RGB_S3TC_DXT1_Format},
     BC3: {extension: 'WEBGL_compressed_texture_s3tc', format: THREE.RGBA_S3TC_DXT5_Format},
 };
+// reflections: 'space' is a nebula sky with a sun, as the client lights ships with the system's nebula; 'room' a studio.
+// bloom: how strongly very bright pixels glow, like the client's post-processing
 const LIGHTING = {
-    ingame: {label: 'In-game', background: 0x050506, env: 1.1, key: 3.0, rim: 1.4, ambient: 0.04},
-    studio: {label: 'Studio', background: 0x0b0e13, env: 1.6, key: 2.0, rim: 1.2, ambient: 0.15},
-    space: {label: 'Deep space', background: 0x020306, env: 0.35, key: 3.2, rim: 0.6, ambient: 0.05},
-    bright: {label: 'Bright', background: 0x1a1f27, env: 1.6, key: 1.6, rim: 1.0, ambient: 0.6},
+    ingame: {label: 'In-game', background: 0x050506, reflections: 'space', env: 1.6, key: 3.0, rim: 1.0, ambient: 0.04, bloom: 0.9},
+    studio: {label: 'Studio', background: 0x0b0e13, reflections: 'room', env: 1.6, key: 2.0, rim: 1.2, ambient: 0.15, bloom: 0.35},
+    space: {label: 'Deep space', background: 0x020306, reflections: 'space', env: 0.6, key: 3.2, rim: 0.6, ambient: 0.05, bloom: 0.9},
+    bright: {label: 'Bright', background: 0x1a1f27, reflections: 'room', env: 1.6, key: 1.6, rim: 1.0, ambient: 0.6, bloom: 0.2},
 };
+// where the sun (the key light) is, which the space sky's sun matches
+const SUN = new THREE.Vector3(3, 4, 2).normalize();
+
+// A sky to reflect for the 'space' lighting: dark space with a blue nebula band and a warm sun, bright enough (above 1)
+// for the hull's polished paint to pick out, as the client's nebula cubemaps are.
+function spaceSky() {
+    const scene = new THREE.Scene();
+    const material = new THREE.ShaderMaterial({
+        side: THREE.BackSide,
+        uniforms: {sun: {value: SUN}},
+        vertexShader: `varying vec3 vDir;
+void main() { vDir = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+        fragmentShader: `uniform vec3 sun;
+varying vec3 vDir;
+void main() {
+    vec3 d = normalize(vDir);
+    // a soft, lumpy band of nebula around the sky, brightest towards the sun's side
+    float band = exp(-pow(d.y * 2.2 + 0.25 * sin(d.x * 3.0 + d.z * 2.0), 2.0));
+    float lumps = 0.6 + 0.4 * sin(d.x * 7.0 + sin(d.z * 5.0)) * sin(d.z * 6.0 - d.y * 4.0);
+    vec3 color = vec3(0.004, 0.006, 0.012) + vec3(0.12, 0.38, 0.85) * band * lumps * (0.5 + 0.5 * max(dot(d, sun), 0.0));
+    float facing = max(dot(d, sun), 0.0);
+    color += vec3(1.0, 0.86, 0.7) * (pow(facing, 900.0) * 60.0 + pow(facing, 12.0) * 0.6);
+    gl_FragColor = vec4(color, 1.0);
+}`,
+    });
+    scene.add(new THREE.Mesh(new THREE.SphereGeometry(100, 64, 32), material));
+    return scene;
+}
 
 // how dirty the hull is: the client sets a dirt level per ship while it runs (it isn't in its files), which scales the
 // hull's dirt map
@@ -106,8 +140,11 @@ export default class ShipViewer extends React.Component {
         if (this.controls !== undefined) {
             this.controls.dispose();
         }
-        if (this.envMap !== undefined) {
-            this.envMap.dispose();
+        for (const envMap of Object.values(this.envMaps || {})) {
+            envMap.dispose();
+        }
+        if (this.composer !== undefined) {
+            this.composer.dispose();
         }
         if (this.renderer !== undefined) {
             this.renderer.dispose();
@@ -129,9 +166,8 @@ export default class ShipViewer extends React.Component {
 
         const scene = new THREE.Scene();
         const pmrem = new THREE.PMREMGenerator(renderer);
-        this.envMap = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+        this.envMaps = {room: pmrem.fromScene(new RoomEnvironment(), 0.04).texture, space: pmrem.fromScene(spaceSky(), 0).texture};
         pmrem.dispose();
-        scene.environment = this.envMap;
         this.scene = scene;
 
         this.camera = new THREE.PerspectiveCamera(35, container.clientWidth / HEIGHT, 0.1, 10000);
@@ -144,6 +180,14 @@ export default class ShipViewer extends React.Component {
         this.rim.position.set(-4, 1, -3);
         scene.add(this.ambient, this.key, this.rim, this.stars());
 
+        // drawn through bloom, then tone mapped (the output pass uses the renderer's tone mapping and colour space)
+        const target = new THREE.WebGLRenderTarget(container.clientWidth, HEIGHT, {type: THREE.HalfFloatType, samples: 4});
+        this.composer = new EffectComposer(renderer, target);
+        this.composer.addPass(new RenderPass(scene, this.camera));
+        this.bloom = new UnrealBloomPass(new THREE.Vector2(container.clientWidth, HEIGHT), 0.9, 0.5, 1.0);
+        this.composer.addPass(this.bloom);
+        this.composer.addPass(new OutputPass());
+
         this.controls = new OrbitControls(this.camera, renderer.domElement);
         this.controls.enableDamping = true;
         this.controls.autoRotate = this.state.autoRotate;
@@ -154,6 +198,7 @@ export default class ShipViewer extends React.Component {
             const width = container.clientWidth;
             if (width > 0) {
                 renderer.setSize(width, HEIGHT);
+                this.composer.setSize(width, HEIGHT);
                 this.camera.aspect = width / HEIGHT;
                 this.camera.updateProjectionMatrix();
             }
@@ -163,7 +208,7 @@ export default class ShipViewer extends React.Component {
         const loop = () => {
             this.frame = requestAnimationFrame(loop);
             this.controls.update();
-            renderer.render(scene, this.camera);
+            this.composer.render();
         };
         loop();
     }
@@ -188,7 +233,9 @@ export default class ShipViewer extends React.Component {
         this.ambient.intensity = preset.ambient;
         this.key.intensity = preset.key;
         this.rim.intensity = preset.rim;
+        this.scene.environment = this.envMaps[preset.reflections];
         this.scene.environmentIntensity = preset.env;
+        this.bloom.strength = preset.bloom;
     }
 
     clearShip() {
