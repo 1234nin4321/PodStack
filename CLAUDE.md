@@ -58,6 +58,12 @@ How the client paints a hull, as worked out from its files and its decompiled sh
   vertex shader). The viewer uses these normals and tangents; working normals out from triangles is wrong on most hulls
   (authored bevels, and seams where vertices are split). A hull area's `index` is the mesh's group **position**, not its
   MaterialIndex (Tech III cruisers' full-detail meshes name material 0 for nearly every group).
+- **Tech III cruisers:** every subsystem combination is its own model, `<folder>/<hull>_all/<hull>_<core><def><off>
+  <prop>.gr2` (variants 1-3; the hull's own model is its default combination, e.g. csc1_t3 = 2213). Its mesh groups
+  are each subsystem's SOF hull areas in turn (`<hull>_s<slot>v<variant>.black`: area 0 hull, 1 engine where it has
+  one; checked on all 324 models). Subsystem decals count vertices from their subsystem's first vertex; their decals and
+  lights sit at their subsystem's offset: the core at the origin, each next one at the previous one's `next_subsystem`
+  locator. The SDE names each subsystem's SOF hull (graphics `sofHullName`), so `update-ships` lists them per ship.
 - **Parts by shader** (all of a hull's area lists, `ShipModelHelper.slotPasses`): quadv5/quadsails/quaddetail painted;
   quadheatv5 (engines, reactors) painted too, its glow map in the faction's Booster (Reactor for area type 3) colour;
   quadglassv5 glass; additive fxv5/fxdirectionalv5 areas drawn as glowing layers over their slot; fxdistortionv5 (heat

@@ -331,11 +331,14 @@ export default class ShipModelHelper {
      * Loads a ship's hull for the viewer:
      * {positions, uvs, indices, normals and tangents (the model's own, see tangentFrames; undefined without), groups:
      * [{start, count, kind: 'hull'|'glass'|'glow'|'booster'|'none' (not drawn), materialIndex (its slot)}], passes (see slotPasses), textures: {albedo (parsed BC7/BC
-     * DDS), normal, surface (paint area mask in R, roughness in G), glow (in R): each {width, height, data} RGBA}}.
-     * Textures that are missing are left out.
+     * DDS), normal, surface (paint area mask in R, roughness in G), glow (in R): each {width, height, data} RGBA},
+     * parts (a Tech III cruiser with subsystems: [{hull, offset, vertexBase (its first vertex in the model)}])}.
+     * Textures that are missing are left out. subsystems: a Tech III cruiser's choice (see subsystemModel), else its own.
      */
-    static load(ship, insert) {
-        const found = ShipModelHelper.locate(ship);
+    static load(ship, insert, subsystems) {
+        const assembled = subsystems !== undefined ? ShipModelHelper.subsystemModel(ship, subsystems) : undefined;
+        const located = ShipModelHelper.locate(ship);
+        const found = assembled !== undefined && located !== undefined ? {...located, model: assembled.model} : located;
         if (found === undefined) {
             throw new Error('Your EVE client has no model for this ship.');
         }
@@ -362,7 +365,10 @@ export default class ShipModelHelper {
         const frames = [];
         const groups = [];
         // how the client draws each slot (its SOF file's areas); by the part's name for a hull without one
-        const passes = ShipModelHelper.slotPasses(ship.model.hull) || ShipModelHelper.slotPasses(found.hull);
+        const passes = assembled !== undefined ? assembled.passes :
+            ShipModelHelper.slotPasses(ship.model.hull) || ShipModelHelper.slotPasses(found.hull);
+        // each subsystem's first vertex: its decals count from there
+        const partBase = assembled !== undefined ? assembled.parts.map(() => Infinity) : [];
         const problems = [];
         let vertexBase = 0;
         let indexBase = 0;
@@ -404,6 +410,12 @@ export default class ShipModelHelper {
                         // but its exhaust, though each subsystem has its own textures)
                         materialIndex: slot,
                     });
+                    const area = assembled !== undefined ? assembled.opaque[slot] : undefined;
+                    if (area !== undefined) {
+                        for (let i = group.TriFirst * 3; i < (group.TriFirst + group.TriCount) * 3; i++) {
+                            partBase[area.part] = Math.min(partBase[area.part], meshIndices[i] + vertexBase);
+                        }
+                    }
                 });
                 vertexBase += vertices.count;
                 indexBase += meshIndices.length;
@@ -421,7 +433,7 @@ export default class ShipModelHelper {
         // textures are a bonus: without them the hull is shown in plain metal
         let areaTextures = {main: {}, sets: new Map(), areas: new Map()};
         try {
-            areaTextures = ShipModelHelper.areaTextures(ship, insert) || areaTextures;
+            areaTextures = ShipModelHelper.areaTextures(ship, insert, subsystems) || areaTextures;
         } catch (err) {
             log.warn(`[Models] Textures for ${found.model} failed`, err);
         }
@@ -438,6 +450,8 @@ export default class ShipModelHelper {
             passes,
             textures: areaTextures.main,
             areaTextures,
+            parts: assembled !== undefined ?
+                assembled.parts.map((part, i) => ({...part, vertexBase: Number.isFinite(partBase[i]) ? partBase[i] : 0})) : undefined,
         };
     }
 
@@ -504,7 +518,58 @@ export default class ShipModelHelper {
         return declared !== undefined ? declared.passes : undefined;
     }
 
-    // a hull's areas, read once: {opaque: [areas], passes (see slotPasses)}, or undefined when it has no file
+    /**
+     * A Tech III cruiser with a choice of subsystems ([core, defensive, offensive, propulsion]: each a variant, 1-3):
+     * {model (the client's model of that combination), parts: [{hull (the subsystem's SOF hull, e.g. "csc1_t3_s2v3"),
+     * offset (where it sits: the core at the origin, each next one where the one before says, its "next_subsystem"
+     * locator)}], opaque, passes (areas and passes as hullAreas and slotPasses give them, for the model's mesh groups:
+     * each subsystem's areas in turn)}; undefined when the client hasn't got it.
+     */
+    static subsystemModel(ship, variants) {
+        const files = ShipModelHelper.files();
+        const hull = ship.model && ship.model.hull;
+        if (files === undefined || !hull || !Array.isArray(variants) || variants.length !== 4) {
+            return undefined;
+        }
+        const model = `${ship.model.folder}/${hull}_all/${hull}_${variants.join('')}.gr2`;
+        if (!files.has(model)) {
+            return undefined;
+        }
+        const parts = [];
+        const opaque = [];
+        const passes = new Map();
+        let offset = [0, 0, 0];
+        for (let slot = 1; slot <= 4; slot++) {
+            const part = `${hull}_s${slot}v${variants[slot - 1]}`;
+            const declared = ShipModelHelper.declared(part);
+            if (declared === undefined) {
+                return undefined;
+            }
+            parts.push({hull: part, offset});
+            // the model's groups: each subsystem's areas in turn, in their order
+            for (const area of [...declared.opaque].sort((a, b) => a.index - b.index)) {
+                const index = opaque.length;
+                opaque.push({...area, index, part: slot - 1});
+                passes.set(index, {...(declared.passes.get(area.index) || {}), opaque: {...area, index}});
+            }
+            offset = declared.next ? offset.map((v, i) => v + declared.next[i]) : offset;
+        }
+        return {model, parts, opaque, passes};
+    }
+
+    // the subsystems a Tech III cruiser's own model has ([core, defensive, offensive, propulsion] variants, from the
+    // subsystem textures its areas name, e.g. "csc1_t3_s1v2_a.dds"), or undefined
+    static defaultSubsystems(hull) {
+        const areas = ShipModelHelper.hullAreas(hull) || [];
+        const variants = [1, 2, 3, 4].map(slot => {
+            const match = areas.map(a => (a.textures.a || '').match(new RegExp(`_s${slot}v(\\d)_a\\.dds$`))).find(Boolean);
+            return match ? Number(match[1]) : undefined;
+        });
+        return variants.every(Boolean) ? variants : undefined;
+    }
+
+    // a hull's areas, read once: {opaque: [areas], passes (see slotPasses), next (a Tech III subsystem's: where the
+    // next one attaches)}, or undefined when it has no file
     static declared(hull) {
         if (!declaredAreas.has(hull)) {
             let declared = null;
@@ -556,7 +621,11 @@ export default class ShipModelHelper {
                     for (const area of list('distortionAreas')) {
                         slot(area.index).distortion = true;
                     }
-                    declared = {opaque: areas, passes};
+                    // a Tech III subsystem's: where the next subsystem attaches
+                    const locators = file.findList('locatorSets', 'EveSOFDataHullLocatorSet') || [];
+                    const next = (locators.find(s => s && s.name === 'next_subsystem') || {}).locators;
+                    const position = next && next[0] && next[0].position;
+                    declared = {opaque: areas, passes, next: position && position.length === 3 ? Array.from(position) : undefined};
                 }
             } catch (err) {
                 log.warn(`[Models] Couldn't read the areas of ${hull}`, err.message);
@@ -576,18 +645,24 @@ export default class ShipModelHelper {
     /**
      * A ship's textures area by area: {main (its main area's, as textures() gives them), sets: Map(colour texture res
      * -> textures) of the areas with other textures, areas: Map(mesh material slot -> {set (a key of sets; undefined
-     * for main), areaType})}; undefined when the client has no model for it.
+     * for main), areaType})}; undefined when the client has no model for it. subsystems: a Tech III cruiser's choice,
+     * whose areas are its subsystems' (see subsystemModel).
      */
-    static areaTextures(ship, insert) {
+    static areaTextures(ship, insert, subsystems) {
         const files = ShipModelHelper.files();
         const found = ShipModelHelper.locate(ship);
         if (files === undefined || found === undefined) {
             return undefined;
         }
         const hull = ship.model.hull;
-        const main = ShipModelHelper.textures(files, found, hull, insert);
-        const areas = ShipModelHelper.hullAreas(hull) || ShipModelHelper.hullAreas(found.hull) || [];
-        const mainAlbedo = (ShipModelHelper.hullTextures(hull) || ShipModelHelper.hullTextures(found.hull) || {}).a;
+        const assembled = subsystems !== undefined ? ShipModelHelper.subsystemModel(ship, subsystems) : undefined;
+        const areas = assembled !== undefined ? assembled.opaque :
+            ShipModelHelper.hullAreas(hull) || ShipModelHelper.hullAreas(found.hull) || [];
+        // the main area's textures: the core subsystem's, for an assembled Tech III cruiser
+        const mainTextures = assembled !== undefined ? (assembled.opaque[0] || {}).textures :
+            ShipModelHelper.hullTextures(hull) || ShipModelHelper.hullTextures(found.hull);
+        const main = ShipModelHelper.textures(files, found, hull, insert, assembled !== undefined ? mainTextures : undefined);
+        const mainAlbedo = (mainTextures || {}).a;
         const sets = new Map();
         const byIndex = new Map();
         for (const area of areas) {

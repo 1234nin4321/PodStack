@@ -34,6 +34,8 @@ const CLASS_FIELDS = {
     // 3 Reactor, 4 Darkhull, 5 Rock), and a bit per paint material it doesn't take
     EveSOFDataHullArea: {index: 'u32', count: 'u32', areaType: 'u32', blockedMaterials: 'u32'},
     EveSOFDataHullSpriteSet: {skinned: 'u8'},
+    // a locator (e.g. where a Tech III cruiser's next subsystem attaches)
+    EveSOFDataTransform: {position: 'vec3', rotation: 'vec4', scaling: 'vec3', boneIndex: 'u32'},
     EveSOFDataHullSpriteSetItem: {position: 'vec3', blinkRate: 'f32', blinkPhase: 'f32', minScale: 'f32', maxScale: 'f32',
         boneIndex: 'u32', colorType: 'u32', intensity: 'f32', falloff: 'f32'},
 };
@@ -43,6 +45,7 @@ const SIZES = {u8: 1, u32: 4, f32: 4, vec3: 12, vec4: 16};
 const LIST_FIELDS = new Set([
     'items', 'parameters', 'textures', 'indexBuffers', 'projections', 'visibilityGroups', 'decalSets', 'opaqueAreas',
     'transparentAreas', 'additiveAreas', 'decalAreas', 'spriteSets', 'planeSets', 'children', 'booster', 'locatorSets',
+    'locators',
 ]);
 
 export default class BlackFile {

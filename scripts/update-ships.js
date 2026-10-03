@@ -4,8 +4,9 @@
 //
 //   resources/ships.js   every published ship on the market: class, race, tech/meta group, the skills it needs, and
 //                        where its hull model is in the EVE client's files and the SKINs it can wear (for the 3D
-//                        viewer), plus each SKIN's paint: colours, materials and pattern; and the names of the
-//                        regions each of the client's nebulas is seen in (the viewer's backdrops)
+//                        viewer), plus each SKIN's paint: colours, materials and pattern; a Tech III cruiser's
+//                        subsystems (which pick its model); and the names of the regions each of the client's
+//                        nebulas is seen in (the viewer's backdrops)
 //
 // Usage: `npm run update-ships` downloads the latest SDE from CCP (about 100 MB), or
 // `npm run update-ships -- <folder>` uses an already extracted JSONL SDE. It prints which ships are new or removed.
@@ -19,6 +20,9 @@ const {execFileSync} = require('child_process');
 const ROOT = path.join(__dirname, '..');
 const SDE_URL = 'https://developers.eveonline.com/static-data/tranquility';
 const SHIP_CATEGORY = 6;
+const SUBSYSTEM_CATEGORY = 32;
+// the dogma attribute naming the ship a subsystem fits
+const FITS_TO_SHIP_TYPE = 1380;
 const FILES = ['types.jsonl', 'groups.jsonl', 'typeDogma.jsonl', 'races.jsonl', 'metaGroups.jsonl', 'graphics.jsonl',
     'skins.jsonl', 'skinMaterials.jsonl', 'graphicMaterialSets.jsonl', 'mapRegions.jsonl', '_sde.jsonl'];
 
@@ -117,6 +121,28 @@ function buildSkins(dir) {
     return {byType, paints};
 }
 
+// The subsystems each Tech III cruiser can fit: ship type -> [{id, name, slot (1 core, 2 defensive, 3 offensive,
+// 4 propulsion), variant}], from the subsystem's model in the client ("csc1_t3_s2v3": slot 2, variant 3), which the
+// ship's model is assembled from.
+function buildSubsystems(dir, groups, graphics, dogma) {
+    const byShip = new Map();
+    for (const type of readJsonl(dir, 'types.jsonl')) {
+        const group = groups.get(type.groupID);
+        const match = ((graphics.get(type.graphicID) || {}).sofHullName || '').match(/_s([1-4])v(\d+)$/i);
+        const ship = (dogma.get(type._key) || new Map()).get(FITS_TO_SHIP_TYPE);
+        if (!group || group.categoryID !== SUBSYSTEM_CATEGORY || !type.published || !match || ship === undefined) {
+            continue;
+        }
+        const list = byShip.get(ship) || [];
+        list.push({id: type._key, name: type.name.en, slot: Number(match[1]), variant: Number(match[2])});
+        byShip.set(ship, list);
+    }
+    for (const list of byShip.values()) {
+        list.sort((a, b) => a.slot - b.slot || a.variant - b.variant);
+    }
+    return byShip;
+}
+
 // each nebula the regions use (by the name of its cubemap in the client, e.g. "c02") -> those regions' names, e.g.
 // ["The Forge", "GPMR-01"]
 function buildNebulas(dir, graphics) {
@@ -141,6 +167,7 @@ function build(dir) {
         .map(t => [t._key, new Map((t.dogmaAttributes || []).map(a => [a.attributeID, a.value]))]));
 
     const {byType, paints} = buildSkins(dir);
+    const subsystems = buildSubsystems(dir, groups, graphics, dogma);
     const ships = {};
     const usedRaces = {};
     for (const type of readJsonl(dir, 'types.jsonl')) {
@@ -169,6 +196,9 @@ function build(dir) {
             model: modelOf(graphics.get(type.graphicID)),
             skins: [...(byType.get(type._key) || new Map()).values()].sort((a, b) => a.name.localeCompare(b.name)),
         };
+        if (subsystems.has(type._key)) {
+            ships[type._key].subsystems = subsystems.get(type._key);
+        }
     }
 
     // only the paints some ship here can wear

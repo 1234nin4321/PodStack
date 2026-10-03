@@ -271,6 +271,9 @@ void main() {
     gl_FragColor = vec4(vColor * exp(-r * 4.0), 1.0);
 }`;
 
+// a Tech III cruiser's subsystem slots, in the order of its models' names (csc1_t3_<core><defensive><offensive><propulsion>)
+const SUBSYSTEM_SLOTS = ['Core', 'Defensive', 'Offensive', 'Propulsion'];
+
 // the faction area types a hull area can be painted with (see ShipModelHelper.hullAreas); others take Primary
 const AREA_TYPES = ['Primary', 'Glass', 'Sails', 'Reactor', 'Darkhull', 'Rock'];
 
@@ -301,7 +304,8 @@ export default class ShipViewer extends React.Component {
     constructor(props) {
         super(props);
 
-        this.state = {status: 'loading', error: undefined, autoRotate: true, lighting: 'ingame', nebula: undefined, height: DEFAULT_HEIGHT, fullscreen: false, skin: 'default', paintSource: 'none'};
+        // subsystems: a Tech III cruiser's chosen [core, defensive, offensive, propulsion] variants (undefined: its own)
+        this.state = {status: 'loading', error: undefined, autoRotate: true, lighting: 'ingame', nebula: undefined, height: DEFAULT_HEIGHT, fullscreen: false, skin: 'default', paintSource: 'none', subsystems: undefined};
         this.mount = React.createRef();
         this.root = React.createRef();
         this.toolbar = React.createRef();
@@ -315,9 +319,13 @@ export default class ShipViewer extends React.Component {
 
     componentDidUpdate(prevProps, prevState) {
         if (prevProps.ship.type_id !== this.props.ship.type_id) {
-            this.setState({status: 'loading', error: undefined, skin: 'default'});
+            this.setState({status: 'loading', error: undefined, skin: 'default', subsystems: undefined});
             clearTimeout(this.loadTimer);
             this.loadTimer = setTimeout(() => this.loadShip(), 30);
+        } else if (prevState.subsystems !== this.state.subsystems) {
+            // another Tech III model: the same view of it
+            clearTimeout(this.loadTimer);
+            this.loadTimer = setTimeout(() => this.loadShip(true), 30);
         }
         if (prevState.lighting !== this.state.lighting || prevState.nebula !== this.state.nebula) {
             this.applyLighting();
@@ -590,10 +598,11 @@ export default class ShipViewer extends React.Component {
         this.ship = undefined;
     }
 
-    loadShip() {
+    // keepView: the camera stays where it is (another of a Tech III cruiser's subsystem models)
+    loadShip(keepView) {
         let model;
         try {
-            model = ShipModelHelper.load(this.props.ship, ShipSof.textureSet(this.props.ship, undefined));
+            model = ShipModelHelper.load(this.props.ship, ShipSof.textureSet(this.props.ship, undefined), this.state.subsystems);
         } catch (err) {
             this.clearShip();
             this.setState({status: 'error', error: err.message});
@@ -629,6 +638,8 @@ export default class ShipViewer extends React.Component {
         this.scene.add(ship);
         this.model = model;
         model.typeId = this.props.ship.type_id;
+        // the SKIN's texture set, when one is on (a Tech III cruiser keeps its SKIN as its subsystems change)
+        this.applyTextureSet();
         this.applyPaint();
         this.addDecals();
         this.addEffects();
@@ -639,7 +650,9 @@ export default class ShipViewer extends React.Component {
             this.applyLighting();
         }
         this.radius = sphere.radius;
-        this.resetView();
+        if (!keepView) {
+            this.resetView();
+        }
         this.setState({status: 'ready', textured: this.textureState(model.textures)});
     }
 
@@ -658,7 +671,7 @@ export default class ShipViewer extends React.Component {
         }
         let areaTextures;
         try {
-            areaTextures = ShipModelHelper.areaTextures(this.props.ship, wanted);
+            areaTextures = ShipModelHelper.areaTextures(this.props.ship, wanted, this.state.subsystems);
         } catch (err) {
             areaTextures = undefined;
         }
@@ -1155,7 +1168,11 @@ material.specularColorBlended = mix(material.specularColorBlended, areaSpecular,
         const hull = located !== undefined ? located.hull : ship.model && ship.model.hull;
         const faction = ShipSof.factionFor(ship, typeof this.state.skin === 'number' ? this.state.skin : undefined);
         const roots = ShipSof.effects(hull, faction);
-        const lights = ShipSof.lights(hull, faction);
+        // an assembled Tech III cruiser's lights are its subsystems', each moved to where its subsystem sits
+        const lights = this.model && this.model.parts ?
+            this.model.parts.flatMap(part => ShipSof.lights(part.hull, faction)
+                .map(light => ({...light, position: light.position.map((v, i) => v + part.offset[i])}))) :
+            ShipSof.lights(hull, faction);
         if (roots.length === 0 && lights.length === 0) {
             return;
         }
@@ -1360,8 +1377,17 @@ material.specularColorBlended = mix(material.specularColorBlended, areaSpecular,
         const p = new THREE.Vector3();
         const q = new THREE.Quaternion();
 
+        // an assembled Tech III cruiser's decals are its subsystems': each counts its triangles from its subsystem's
+        // first vertex, and its box is placed in its subsystem
+        const decals = this.model.parts ?
+            this.model.parts.flatMap(part => ShipSof.decals(part.hull, faction).map(decal => ({
+                ...decal,
+                indices: Array.from(decal.indices, i => i + part.vertexBase),
+                position: decal.position.map((v, i) => v + part.offset[i]),
+            }))) :
+            ShipSof.decals(hull, faction);
         this.decals = [];
-        for (const decal of ShipSof.decals(hull, faction)) {
+        for (const decal of decals) {
             const glow = decal.kind === 'glow';
             // a light strip glows through its glow map (one channel); the others are painted with their colour map
             const albedo = glow ? this.decalTexture(decal.textures.DecalGlowMap, 'mask') : this.decalTexture(decal.textures.DecalAlbedoMap, 'color');
@@ -1589,6 +1615,30 @@ material.specularColorBlended = mix(material.specularColorBlended, areaSpecular,
         this.controls.update();
     }
 
+    // A Tech III cruiser's subsystems, one list per slot, which change its shape as they do in the game (nothing for
+    // other ships, or when the client lacks the models).
+    subsystemSelectors() {
+        const {ship} = this.props;
+        const subsystems = ship.subsystems || [];
+        const own = ship.model ? ShipModelHelper.defaultSubsystems(ship.model.hull) : undefined;
+        if (subsystems.length === 0 || own === undefined) {
+            return null;
+        }
+        const chosen = this.state.subsystems || own;
+        return SUBSYSTEM_SLOTS.map((label, i) => {
+            const options = subsystems.filter(s => s.slot === i + 1);
+            return (
+                <React.Fragment key={label}>
+                    <span className="ship-viewer-label">{label}</span>
+                    <select className="field small" value={chosen[i]} title={`${label} subsystem`}
+                            onChange={e => this.setState({subsystems: chosen.map((v, j) => (j === i ? Number(e.target.value) : v))})}>
+                        {options.map(s => <option key={s.id} value={s.variant}>{s.name.replace(/^.* - /, '')}</option>)}
+                    </select>
+                </React.Fragment>
+            );
+        });
+    }
+
     render() {
         const {ship} = this.props;
         const {status, error} = this.state;
@@ -1608,6 +1658,7 @@ material.specularColorBlended = mix(material.specularColorBlended, areaSpecular,
                 }
 
                 <div className="ship-viewer-toolbar" ref={this.toolbar}>
+                    {this.subsystemSelectors()}
                     <span className="ship-viewer-label">Skin Selector</span>
                     <select className="field small ship-skin" value={this.state.skin} title="SKIN"
                             onChange={e => this.setState({skin: ['', 'default'].includes(e.target.value) ? e.target.value : Number(e.target.value)})}>
