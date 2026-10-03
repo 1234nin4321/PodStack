@@ -21,6 +21,9 @@ const COLOR_TYPES = ['Primary', 'Secondary', 'Tertiary', 'Black', 'White', 'Yell
     'WhiteLight', 'PrimarySpotlight', 'SecondarySpotlight', 'TertiarySpotlight', 'PrimaryHologram', 'SecondaryHologram',
     'TertiaryHologram'];
 
+// a logo decal's logo type -> the faction's logo set entry
+const LOGO_TYPES = ['Primary', 'Secondary', 'Tertiary', 'Marking'];
+
 const cache = new Map();   // res path -> parsed root object (null when missing or unreadable)
 
 // a material name, or undefined where none is set (the SDE writes "None" for that)
@@ -112,10 +115,13 @@ export default class ShipSof {
 
     /**
      * The decals the client puts on a hull with a faction's look (markings, registry lettering, caution stripes, the
-     * faction's logo):
-     * [{name, meshIndex, indices (the full-detail triangles it covers, as vertex indices), position, rotation,
-     * scaling (its projection box: it projects along the box's x, its texture spans y and z), textures: {DecalAlbedoMap,
-     * DecalTransparencyMap, ...: res paths}}]. Logo decals take their textures from the faction's logo set.
+     * faction's logos, glowing light strips):
+     * [{name, kind ('paint', or 'glow': a light strip, glowing in glowColor at intensity), indices (the full-detail
+     * triangles it covers, as vertex indices: its first index buffer is always the full-detail mesh's, whatever its
+     * meshIndex says), position, rotation, scaling (its projection box: it projects along the box's x, its texture spans
+     * y and z), textures: {DecalAlbedoMap, DecalTransparencyMap, DecalGlowMap, ...: res paths}, glowColor, intensity}].
+     * Logo decals take their textures from the faction's logo set (its Primary, Secondary, ... logo, by the decal's
+     * logo type; none where the faction has no such logo). Killmarks and battle damage aren't included.
      */
     static decals(hull, faction) {
         const cacheKey = `decals:${hull}:${faction}`;
@@ -131,32 +137,40 @@ export default class ShipSof {
             // the hull's decal sets: those without a visibility group always show; the others (Tech I lettering, police,
             // tournament and event markings) only when the faction switches their group on
             const groups = ShipSof.visibilityGroups(faction);
+            const colors = ShipSof.colors(faction) || {};
             const items = (sets || [])
                 .filter(set => set && (!set.visibilityGroup || groups.has(set.visibilityGroup)))
                 .flatMap(set => set.items || []);
             decals = items
                 .filter(item => item && Array.isArray(item.indexBuffers) && item.indexBuffers[0] && item.position && item.scaling)
+                // killmarks (1) and battle damage (2) depend on the ship's history
+                .filter(item => item.usage !== 1 && item.usage !== 2)
                 .map(item => {
                     let textures = Object.fromEntries((item.textures || [])
                         .filter(t => t && t.name && t.resFilePath)
                         .map(t => [t.name, t.resFilePath]));
-                    if (Object.keys(textures).length === 0 && /logo/i.test(item.name || '')) {
-                        const logo = logos.Primary;
+                    // a logo (usage 6): the faction's logo of its type
+                    if (Object.keys(textures).length === 0 && (item.usage === 6 || /logo/i.test(item.name || ''))) {
+                        const logo = logos[LOGO_TYPES[item.logoType || 0]];
                         textures = Object.fromEntries(((logo && logo.textures) || [])
                             .filter(t => t && t.name && t.resFilePath)
                             .map(t => [t.name, t.resFilePath]));
                     }
+                    const parameters = Object.fromEntries((item.parameters || [])
+                        .filter(p => p && p.name && Array.isArray(p.value)).map(p => [p.name, p.value]));
                     return {
                         name: item.name,
-                        meshIndex: item.meshIndex || 0,
+                        kind: item.usage === 5 ? 'glow' : 'paint',
                         indices: item.indexBuffers[0].indexBuffer,
                         position: item.position,
                         rotation: item.rotation || [0, 0, 0, 1],
                         scaling: item.scaling,
                         textures,
+                        glowColor: colors[COLOR_TYPES[item.glowColorType || 0]] || [0, 0, 0],
+                        intensity: parameters.DecalIntensityData !== undefined ? parameters.DecalIntensityData[0] : 1,
                     };
                 })
-                .filter(d => d.textures.DecalAlbedoMap !== undefined);
+                .filter(d => (d.kind === 'glow' ? d.textures.DecalGlowMap : d.textures.DecalAlbedoMap) !== undefined);
         } catch (err) {
             log.warn(`[SOF] Couldn't read the decals of ${hull}`, err.message);
             decals = [];

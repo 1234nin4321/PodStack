@@ -1362,10 +1362,9 @@ material.specularColorBlended = mix(material.specularColorBlended, areaSpecular,
 
         this.decals = [];
         for (const decal of ShipSof.decals(hull, faction)) {
-            if (decal.meshIndex !== 0) {
-                continue;   // only the main mesh's decals
-            }
-            const albedo = this.decalTexture(decal.textures.DecalAlbedoMap, 'color');
+            const glow = decal.kind === 'glow';
+            // a light strip glows through its glow map (one channel); the others are painted with their colour map
+            const albedo = glow ? this.decalTexture(decal.textures.DecalGlowMap, 'mask') : this.decalTexture(decal.textures.DecalAlbedoMap, 'color');
             if (albedo === undefined) {
                 continue;
             }
@@ -1399,11 +1398,19 @@ material.specularColorBlended = mix(material.specularColorBlended, areaSpecular,
             geometry.setAttribute('normal', new THREE.BufferAttribute(nor.subarray(0, used * 3), 3));
             geometry.setAttribute('uv', new THREE.BufferAttribute(uv.subarray(0, used * 2), 2));
 
-            const material = new THREE.MeshStandardMaterial({
-                map: albedo, alphaMap: transparency, transparent: true, depthWrite: false,
-                roughness: 0.5, metalness: 0.2,
-                polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2,
-            });
+            const material = glow ?
+                // added on in the faction's colour for it, at the decal's intensity
+                new THREE.MeshBasicMaterial({
+                    map: albedo, alphaMap: transparency, transparent: true, depthWrite: false,
+                    color: new THREE.Color(...decal.glowColor.map(c => c * decal.intensity)),
+                    blending: THREE.AdditiveBlending,
+                    polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2,
+                }) :
+                new THREE.MeshStandardMaterial({
+                    map: albedo, alphaMap: transparency, transparent: true, depthWrite: false,
+                    roughness: 0.5, metalness: 0.2,
+                    polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2,
+                });
             // nothing outside the decal's box
             material.onBeforeCompile = shader => {
                 shader.fragmentShader = shader.fragmentShader.replace('#include <map_fragment>', `if (vMapUv.x < 0.0 || vMapUv.x > 1.0 || vMapUv.y < 0.0 || vMapUv.y > 1.0) discard;
