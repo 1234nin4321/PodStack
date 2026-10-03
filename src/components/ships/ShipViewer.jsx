@@ -31,6 +31,8 @@ const LIGHTING = {
 // the nebula space lighting reflects by default, where the client has it; its name's first letter is the region
 const NEBULA = 'c01';
 const NEBULA_INTENSITY = 0.5;
+// how bright the nebula is behind the ship
+const NEBULA_BACKGROUND = 0.6;
 const NEBULA_REGIONS = {a: 'Amarr', c: 'Caldari', g: 'Gallente', m: 'Minmatar', j: 'Jove'};
 
 // "Caldari 01" for c01; other names as they are
@@ -261,7 +263,8 @@ export default class ShipViewer extends React.Component {
         if (this.controls !== undefined) {
             this.controls.dispose();
         }
-        for (const envMap of [...Object.values(this.envMaps || {}), ...(this.nebulaEnvs || new Map()).values()]) {
+        for (const envMap of [...Object.values(this.envMaps || {}), ...(this.nebulaEnvs || new Map()).values(),
+            ...(this.nebulaCubes || new Map()).values()]) {
             if (envMap) {
                 envMap.dispose();
             }
@@ -301,7 +304,7 @@ export default class ShipViewer extends React.Component {
         this.key.position.set(3, 4, 2);
         this.rim = new THREE.DirectionalLight(0x9ec8ff, 1.2);
         this.rim.position.set(-4, 1, -3);
-        scene.add(this.ambient, this.key, this.rim, this.stars());
+        scene.add(this.ambient, this.key, this.rim);
 
         // drawn through bloom, then tone mapped (the output pass uses the renderer's tone mapping and colour space)
         const target = new THREE.WebGLRenderTarget(container.clientWidth, HEIGHT, {type: THREE.HalfFloatType, samples: 4});
@@ -339,27 +342,23 @@ export default class ShipViewer extends React.Component {
         loop();
     }
 
-    // a faint starfield far away, for depth
-    stars() {
-        const count = 1500;
-        const positions = new Float32Array(count * 3);
-        for (let i = 0; i < count; i++) {
-            const v = new THREE.Vector3().randomDirection().multiplyScalar(4000);
-            positions.set([v.x, v.y, v.z], i * 3);
-        }
-        const geometry = new THREE.BufferGeometry();
-        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-        this.starField = new THREE.Points(geometry, new THREE.PointsMaterial({color: 0xaab4c8, size: 1.4, sizeAttenuation: false}));
-        return this.starField;
+    // the chosen nebula's name, or undefined for none (a plain background)
+    nebulaName() {
+        const name = this.state.nebula === undefined ? this.defaultNebula() : this.state.nebula;
+        return name === 'none' ? undefined : name;
     }
 
     applyLighting() {
         const preset = LIGHTING[this.state.lighting];
-        this.scene.background = new THREE.Color(preset.background);
+        // the chosen nebula behind the ship, as the client draws space; else the preset's plain colour
+        const name = this.nebulaName();
+        const cube = this.nebulaCube(name);
+        this.scene.background = cube || new THREE.Color(preset.background);
+        this.scene.backgroundIntensity = NEBULA_BACKGROUND;
         this.ambient.intensity = preset.ambient;
         this.key.intensity = preset.key;
         this.rim.intensity = preset.rim;
-        const nebula = preset.reflections === 'space' ? this.nebulaEnv(this.state.nebula || this.defaultNebula()) : undefined;
+        const nebula = preset.reflections === 'space' ? this.nebulaEnv(name) : undefined;
         this.scene.environment = nebula || this.envMaps[preset.reflections];
         // the client's nebulas are brighter than the generated sky, with suns in them
         this.scene.environmentIntensity = preset.env * (nebula ? NEBULA_INTENSITY : 1);
@@ -376,12 +375,11 @@ export default class ShipViewer extends React.Component {
         if (!this.nebulaEnvs.has(name)) {
             let env;
             try {
-                const cube = nebulaCube(ShipModelHelper.nebulaResource(name), this.renderer);
+                const cube = this.nebulaCube(name);
                 if (cube !== undefined) {
                     const pmrem = new THREE.PMREMGenerator(this.renderer);
                     env = pmrem.fromCubemap(cube).texture;
                     pmrem.dispose();
-                    cube.dispose();
                 }
             } catch (err) {
                 env = undefined;
@@ -389,6 +387,25 @@ export default class ShipViewer extends React.Component {
             this.nebulaEnvs.set(name, env);
         }
         return this.nebulaEnvs.get(name);
+    }
+
+    // one of the client's nebulas as a cube texture, for the background and its reflections (undefined when it can't
+    // be shown)
+    nebulaCube(name) {
+        if (!name) {
+            return undefined;
+        }
+        this.nebulaCubes = this.nebulaCubes || new Map();
+        if (!this.nebulaCubes.has(name)) {
+            let cube;
+            try {
+                cube = nebulaCube(ShipModelHelper.nebulaResource(name), this.renderer);
+            } catch (err) {
+                cube = undefined;
+            }
+            this.nebulaCubes.set(name, cube);
+        }
+        return this.nebulaCubes.get(name);
     }
 
     clearShip() {
@@ -1192,8 +1209,6 @@ material.specularColorBlended = mix(material.specularColorBlended, areaSpecular,
         this.camera.near = this.radius / 100;
         this.camera.far = distance * 20 + 5000;
         this.camera.updateProjectionMatrix();
-        // the stars stay well beyond the furthest the camera can zoom out (titans are kilometres long), inside its reach
-        this.starField.scale.setScalar(Math.max(1, distance * 10 / 4000));
         this.controls.target.set(0, 0, 0);
         this.controls.minDistance = this.radius * 0.6;
         this.controls.maxDistance = distance * 4;
@@ -1235,9 +1250,11 @@ material.specularColorBlended = mix(material.specularColorBlended, areaSpecular,
                                     onClick={() => this.setState({lighting: key})}>{preset.label}</button>
                         )}
                     </div>
-                    {LIGHTING[this.state.lighting].reflections === 'space' && this.nebulas().length > 0 &&
-                        <select className="field small" value={this.state.nebula || this.defaultNebula()} title="Nebula reflected on the hull"
+                    {this.nebulas().length > 0 &&
+                        <select className="field small" value={this.nebulaName() || 'none'}
+                                title="The space behind the ship (and, with In-game and Deep space lighting, reflected on it)"
                                 onChange={e => this.setState({nebula: e.target.value})}>
+                            <option value="none">No backdrop</option>
                             {this.nebulas().map(name => <option key={name} value={name}>{nebulaLabel(name)}</option>)}
                         </select>}
                     <div className="seg" title="Dirt">
