@@ -1,3 +1,7 @@
+## 0.2.19 Alpha (0.2.19-alpha)
+* 3D viewer: an Anti-aliasing option in its toolbar for smoother edges, thin parts and highlights (drawn at 1.5x and
+  scaled down, then smoothed). Off unless turned on, as it's about twice the work for the graphics card; remembered.
+
 ## 0.2.18 Alpha (0.2.18-alpha)
 * 3D viewer: fixed ships (such as the Avatar) showing as a black screen when their effects' lights leave a value
   empty in the game's files.
