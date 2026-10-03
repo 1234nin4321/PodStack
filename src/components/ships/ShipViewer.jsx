@@ -66,6 +66,48 @@ const DIRT = {
     dirty: {label: 'Dirty', level: 1},
 };
 
+// The client's "ubershader" (graphics/effect/managed/space/specialfx/ubershader.fx), which effects such as a SKIN's
+// holograms and glowing trails are drawn with: up to three textures multiplied together, each scaled, offset and
+// scrolling over time, times a mask and a colour, faded by how squarely the surface faces the camera ("Fresnel":
+// power, strength, bias; a negative strength makes it brightest face-on).
+const UBER_VERTEX = `varying vec2 vUv;
+varying vec3 vNormal;
+varying vec3 vView;
+void main() {
+    vUv = uv;
+    vec4 mv = modelViewMatrix * vec4(position, 1.0);
+    vNormal = normalize(normalMatrix * normal);
+    vView = normalize(-mv.xyz);
+    gl_Position = projectionMatrix * mv;
+}`;
+const UBER_FRAGMENT = `uniform vec4 diffuseColor;
+uniform sampler2D map1;
+uniform sampler2D map2;
+uniform sampler2D map3;
+uniform sampler2D maskMap;
+uniform vec4 transform1;
+uniform vec4 transform2;
+uniform vec4 transform3;
+uniform vec4 scroll1;
+uniform vec4 scroll2;
+uniform vec4 scroll3;
+uniform float mapCount;
+uniform vec4 fresnel;
+uniform float time;
+varying vec2 vUv;
+varying vec3 vNormal;
+varying vec3 vView;
+vec2 layerUv(vec4 transform, vec4 scroll) { return vUv * transform.zw + transform.xy + scroll.xy * time + scroll.zw; }
+void main() {
+    vec4 color = texture2D(map1, layerUv(transform1, scroll1));
+    if (mapCount > 1.5) { color *= texture2D(map2, layerUv(transform2, scroll2)); }
+    if (mapCount > 2.5) { color *= texture2D(map3, layerUv(transform3, scroll3)); }
+    color *= texture2D(maskMap, vUv) * diffuseColor;
+    float facing = pow(1.0 - clamp(dot(normalize(vView), normalize(vNormal)) - fresnel.z, 0.0, 1.0), fresnel.x);
+    float strength = fresnel.y < 0.0 ? -fresnel.y * (1.0 - min(1.0, facing)) : fresnel.y * facing;
+    gl_FragColor = vec4(color.rgb * strength, clamp(color.a, 0.0, 1.0));
+}`;
+
 // a 1x1 black texture, for pattern layers that aren't in use
 const BLANK = () => dataTexture({width: 1, height: 1, data: new Uint8Array([0, 0, 0, 255])}, THREE.NoColorSpace);
 
@@ -118,8 +160,9 @@ export default class ShipViewer extends React.Component {
         if (prevState.skin !== this.state.skin) {
             this.applyTextureSet();
             this.applyPaint();
-            // logos follow the SKIN's faction
+            // logos and effects follow the SKIN's faction
             this.addDecals();
+            this.addEffects();
         }
         if (this.controls !== undefined) {
             this.controls.autoRotate = this.state.autoRotate;
@@ -133,7 +176,8 @@ export default class ShipViewer extends React.Component {
             this.observer.disconnect();
         }
         this.clearShip();
-        for (const texture of [...(this.masks || new Map()).values(), ...(this.decalTextures || new Map()).values()]) {
+        for (const texture of [...(this.masks || new Map()).values(), ...(this.decalTextures || new Map()).values(),
+            ...(this.effectTextures || new Map()).values()]) {
             if (texture !== undefined) {
                 texture.dispose();
             }
@@ -206,9 +250,12 @@ export default class ShipViewer extends React.Component {
         });
         this.observer.observe(container);
 
+        // seconds, for effects' scrolling textures
+        this.effectTime = {value: 0};
         const loop = () => {
             this.frame = requestAnimationFrame(loop);
             this.controls.update();
+            this.effectTime.value = performance.now() / 1000;
             this.composer.render();
         };
         loop();
@@ -244,6 +291,7 @@ export default class ShipViewer extends React.Component {
             return;
         }
         this.removeDecals();
+        this.removeEffects();
         this.scene.remove(this.ship);
         this.ship.geometry.dispose();
         if (this.paint !== undefined) {
@@ -292,6 +340,7 @@ export default class ShipViewer extends React.Component {
         this.model = model;
         model.typeId = this.props.ship.type_id;
         this.addDecals();
+        this.addEffects();
 
         this.radius = sphere.radius;
         this.resetView();
@@ -625,6 +674,162 @@ material.specularColorBlended = mix(material.specularColorBlended, areaSpecular,
                 this.paint.patternOn.value[i] = 0;
             }
         });
+    }
+
+    removeEffects() {
+        if (this.effects === undefined) {
+            return;
+        }
+        this.ship.remove(this.effects);
+        this.effects.traverse(object => {
+            if (object.isMesh) {
+                object.geometry.dispose();
+                object.material.dispose();
+            }
+        });
+        this.effects = undefined;
+    }
+
+    // The effects the hull adds for the look's faction (see ShipSof.effects), such as a SKIN's holograms and glowing
+    // trails: their meshes, placed on the hull, drawn with the client's ubershader. Lights, particles and animation
+    // curves in them aren't shown.
+    addEffects() {
+        if (this.ship === undefined) {
+            return;
+        }
+        this.removeEffects();
+        if (this.state.skin === '') {
+            return;
+        }
+        const ship = this.props.ship;
+        const located = ShipModelHelper.locate(ship);
+        const hull = located !== undefined ? located.hull : ship.model && ship.model.hull;
+        const faction = ShipSof.factionFor(ship, typeof this.state.skin === 'number' ? this.state.skin : undefined);
+        const roots = ShipSof.effects(hull, faction);
+        if (roots.length === 0) {
+            return;
+        }
+        this.effects = new THREE.Group();
+        for (const root of roots) {
+            this.addEffectNode(root, this.effects);
+        }
+        this.ship.add(this.effects);
+    }
+
+    // a container or mesh of an effect (and what's in it) under parent
+    addEffectNode(node, parent) {
+        if (!node || typeof node !== 'object' || !['EveChildContainer', 'EveChildMesh'].includes(node._class)) {
+            return;
+        }
+        const group = new THREE.Group();
+        if (Array.isArray(node.translation) && node.translation.length === 3) {
+            group.position.fromArray(node.translation);
+        }
+        if (Array.isArray(node.rotation) && node.rotation.length === 4) {
+            const q = new THREE.Quaternion().fromArray(node.rotation);
+            if (q.length() > 1e-6) {
+                group.quaternion.copy(q.normalize());
+            }
+        }
+        if (Array.isArray(node.scaling) && node.scaling.length === 3) {
+            group.scale.fromArray(node.scaling);
+        }
+        parent.add(group);
+        const mesh = node.mesh;
+        if (node._class === 'EveChildMesh' && mesh && mesh.geometryResPath) {
+            const model = ShipModelHelper.geometry(mesh.geometryResPath);
+            if (model !== undefined) {
+                const geometry = new THREE.BufferGeometry();
+                geometry.setAttribute('position', new THREE.BufferAttribute(model.positions, 3));
+                geometry.setAttribute('uv', new THREE.BufferAttribute(model.uvs, 2));
+                geometry.setIndex(new THREE.BufferAttribute(model.indices, 1));
+                geometry.computeVertexNormals();
+                for (const [areas, additive] of [[mesh.transparentAreas, false], [mesh.additiveAreas, true]]) {
+                    for (const area of Array.isArray(areas) ? areas : []) {
+                        const material = area && this.effectMaterial(area.effect, additive);
+                        if (material !== undefined) {
+                            const part = new THREE.Mesh(geometry.clone(), material);
+                            part.renderOrder = 2;
+                            group.add(part);
+                        }
+                    }
+                }
+                geometry.dispose();
+            }
+        }
+        for (const child of Array.isArray(node.objects) ? node.objects : []) {
+            this.addEffectNode(child, group);
+        }
+    }
+
+    // an ubershader material for an effect's settings (undefined for other shaders)
+    effectMaterial(effect, additive) {
+        if (!effect || !/ubershader[a-z]*\.fx$/i.test(effect.effectFilePath || '')) {
+            return undefined;
+        }
+        // its values: constant ones, then those that can be animated
+        const values = {};
+        for (const p of Array.isArray(effect.constParameters) ? effect.constParameters : []) {
+            if (Array.isArray(p) && typeof p[0] === 'string') {
+                values[p[0]] = p.slice(1, 5);
+            }
+        }
+        for (const p of Array.isArray(effect.parameters) ? effect.parameters : []) {
+            if (p && p.name && Array.isArray(p.value)) {
+                values[p.name] = p.value;
+            }
+        }
+        const textures = Object.fromEntries((Array.isArray(effect.resources) ? effect.resources : [])
+            .filter(r => r && r.name && r.resourcePath)
+            .map(r => [r.name, r.resourcePath]));
+        const vec4 = (name, fallback) => new THREE.Vector4(...(values[name] && values[name].length === 4 ? values[name] : fallback));
+        const mapCount = ['DiffuseMap1', 'DiffuseMap2', 'DiffuseMap3'].filter(name => textures[name]).length;
+        return new THREE.ShaderMaterial({
+            uniforms: {
+                diffuseColor: {value: vec4('DiffuseColor', [1, 1, 1, 1])},
+                map1: {value: this.effectTexture(textures.DiffuseMap1)},
+                map2: {value: this.effectTexture(textures.DiffuseMap2)},
+                map3: {value: this.effectTexture(textures.DiffuseMap3)},
+                maskMap: {value: this.effectTexture(textures.MaskMap)},
+                transform1: {value: vec4('TextureTransform1', [0, 0, 1, 1])},
+                transform2: {value: vec4('TextureTransform2', [0, 0, 1, 1])},
+                transform3: {value: vec4('TextureTransform3', [0, 0, 1, 1])},
+                scroll1: {value: vec4('TextureScroll1', [0, 0, 0, 0])},
+                scroll2: {value: vec4('TextureScroll2', [0, 0, 0, 0])},
+                scroll3: {value: vec4('TextureScroll3', [0, 0, 0, 0])},
+                mapCount: {value: Math.max(1, mapCount)},
+                // without its own: full strength at every angle
+                fresnel: {value: vec4('FresnelFactors', [1, -1, -1, 0])},
+                time: this.effectTime,
+            },
+            vertexShader: UBER_VERTEX,
+            fragmentShader: UBER_FRAGMENT,
+            transparent: true,
+            depthWrite: false,
+            blending: additive ? THREE.CustomBlending : THREE.NormalBlending,
+            blendSrc: THREE.OneFactor,
+            blendDst: THREE.OneFactor,
+        });
+    }
+
+    // an effect's texture, repeating (white where it has none, or the client doesn't have it)
+    effectTexture(res) {
+        this.effectTextures = this.effectTextures || new Map();
+        if (!this.effectTextures.has(res || '')) {
+            let texture;
+            try {
+                const bytes = res ? ShipModelHelper.resource(res) : undefined;
+                texture = bytes !== undefined ? this.ddsTexture(parseDds(bytes)) : undefined;
+            } catch (err) {
+                texture = undefined;
+            }
+            if (texture === undefined) {
+                texture = dataTexture({width: 1, height: 1, data: new Uint8Array([255, 255, 255, 255])}, THREE.NoColorSpace);
+            }
+            texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+            this.effectTextures.set(res || '', texture);
+        }
+        return this.effectTextures.get(res || '');
     }
 
     removeDecals() {

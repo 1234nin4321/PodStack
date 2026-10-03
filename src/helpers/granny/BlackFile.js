@@ -15,7 +15,7 @@ const MAGIC = 0xb1acf11e;
 // fields holding a string (as a string table index)
 const STRING_FIELDS = new Set([
     'name', 'description', 'resPathInsert', 'material1', 'material2', 'material3', 'material4', 'textureName',
-    'textureResFilePath', 'resFilePath', 'shader', 'geometryResFilePath', 'category', 'sofFactionName', 'visibilityGroup', 'str',
+    'textureResFilePath', 'resFilePath', 'redFilePath', 'shader', 'geometryResFilePath', 'category', 'sofFactionName', 'visibilityGroup', 'str',
 ]);
 // fields holding four floats
 const VEC4_FIELDS = new Set(['value', 'color', 'coneColor', 'spriteColor', 'flareColor']);

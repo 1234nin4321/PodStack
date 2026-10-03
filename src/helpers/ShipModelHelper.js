@@ -26,11 +26,14 @@ const EVE_LIKE = /eve|ccp|sharedcache|games|steam/i;
 const SHIP_PREFIX = 'res:/dx9/model/ship/';
 // the space object factory's factions (a ship's look, and each SKIN's) and materials, for paint
 const SOF_PREFIX = 'res:/dx9/model/spaceobjectfactory/';
-// the masks SKIN patterns project onto hulls
-const PATTERN_PREFIX = 'res:/texture/projection/';
+// textures: the masks SKIN patterns project onto hulls, and the ones effects use (holograms, caustics, gradients)
+const TEXTURE_PREFIX = 'res:/texture/';
 // decal textures: markings, lettering, logos
 const DECAL_PREFIX = 'res:/dx9/model/decal/';
-const PREFIXES = [SHIP_PREFIX, SOF_PREFIX, PATTERN_PREFIX, DECAL_PREFIX];
+// effects' meshes and textures shared between hulls, and generic meshes (planes)
+const SHARED_PREFIX = 'res:/dx9/model/shared/';
+const GENERIC_PREFIX = 'res:/graphics/generic/';
+const PREFIXES = [SHIP_PREFIX, SOF_PREFIX, TEXTURE_PREFIX, DECAL_PREFIX, SHARED_PREFIX, GENERIC_PREFIX];
 
 let index;      // {folder, files: Map(res path -> absolute file)}
 let detected;   // the auto-detected folder (null when none), found once per session
@@ -247,6 +250,47 @@ export default class ShipModelHelper {
         const files = ShipModelHelper.files();
         const file = files !== undefined ? files.get(res.toLowerCase()) : undefined;
         return file !== undefined ? readFile(file) : undefined;
+    }
+
+    // A plain mesh, such as an effect's (a hologram, a plane): {positions, uvs, indices} of its full-detail meshes
+    // together, or undefined when the client doesn't have it or it can't be read.
+    static geometry(res) {
+        const bytes = ShipModelHelper.resource(res);
+        if (bytes === undefined) {
+            return undefined;
+        }
+        try {
+            const granny = new GrannyFile(bytes);
+            const all = (granny.root().Meshes || []).filter(m => m !== undefined);
+            const full = all.filter(m => !/ LOD \d+$/.test(m.Name || ''));
+            const positions = [];
+            const uvs = [];
+            const indices = [];
+            let base = 0;
+            for (const mesh of full.length > 0 ? full : all.slice(0, 1)) {
+                const vertices = granny.vertexArray(mesh.PrimaryVertexData && mesh.PrimaryVertexData.Vertices);
+                const pos = vertices.fields.Position;
+                const uv = vertices.fields.TextureCoordinates0;
+                let meshIndices = granny.numberArray(mesh.PrimaryTopology, 'Indices16');
+                if (meshIndices.length === 0) {
+                    meshIndices = granny.numberArray(mesh.PrimaryTopology, 'Indices');
+                }
+                if (pos === undefined || pos.components < 3 || vertices.count === 0 || meshIndices.length === 0) {
+                    continue;
+                }
+                positions.push(firstComponents(pos, 3, vertices.count));
+                uvs.push(uv !== undefined && uv.components >= 2 ? firstComponents(uv, 2, vertices.count) : new Float32Array(vertices.count * 2));
+                indices.push(Uint32Array.from(meshIndices, i => i + base));
+                base += vertices.count;
+            }
+            if (positions.length === 0) {
+                return undefined;
+            }
+            return {positions: concat(Float32Array, positions), uvs: concat(Float32Array, uvs), indices: concat(Uint32Array, indices)};
+        } catch (err) {
+            log.warn(`[Models] Couldn't read ${res}`, err.message);
+            return undefined;
+        }
     }
 
     static isAvailable() {

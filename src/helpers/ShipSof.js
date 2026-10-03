@@ -8,6 +8,7 @@
 import log from 'electron-log';
 
 import BlackFile from './granny/BlackFile';
+import RedFile from './granny/RedFile';
 import ShipModelHelper from './ShipModelHelper';
 import ShipData from '../../resources/ships';
 
@@ -118,8 +119,7 @@ export default class ShipSof {
             const logos = (factionRoot && factionRoot.logoSet) || {};
             // the hull's decal sets: those without a visibility group always show; the others (Tech I lettering, police,
             // tournament and event markings) only when the faction switches their group on
-            const groupSet = factionRoot && factionRoot.visibilityGroupSet;
-            const groups = new Set(((groupSet && groupSet.visibilityGroups) || []).map(g => g && g.str).filter(Boolean));
+            const groups = ShipSof.visibilityGroups(faction);
             const items = (sets || [])
                 .filter(set => set && (!set.visibilityGroup || groups.has(set.visibilityGroup)))
                 .flatMap(set => set.items || []);
@@ -152,6 +152,51 @@ export default class ShipSof {
         }
         cache.set(cacheKey, decals);
         return decals;
+    }
+
+    // the visibility groups a faction switches on (a hull's decals and effects that belong to one show only with it)
+    static visibilityGroups(faction) {
+        const root = faction ? black(`${SOF}factions/${faction.toLowerCase()}.black`) : undefined;
+        const groupSet = root && root.visibilityGroupSet;
+        return new Set(((groupSet && groupSet.visibilityGroups) || []).map(g => g && g.str).filter(Boolean));
+    }
+
+    /**
+     * The effects a hull adds for a faction's look, such as a SKIN's holograms and glowing trails: the root objects of
+     * the effect files (see granny/RedFile.js) in the hull's child sets whose visibility group the faction switches on.
+     * The hull's always-on children (engine exhausts, lights) aren't included.
+     */
+    static effects(hull, faction) {
+        const cacheKey = `effects:${hull}:${faction}`;
+        if (cache.has(cacheKey)) {
+            return cache.get(cacheKey);
+        }
+        let effects = [];
+        try {
+            const bytes = hull ? ShipModelHelper.resource(`${SOF}hulls/${hull.toLowerCase()}.black`) : undefined;
+            const sets = bytes !== undefined ? new BlackFile(bytes).findList('childSets', 'EveSOFDataHullChildSet') : undefined;
+            const groups = ShipSof.visibilityGroups(faction);
+            const paths = new Set((sets || [])
+                .filter(set => set && set.visibilityGroup && groups.has(set.visibilityGroup))
+                .flatMap(set => set.items || [])
+                .map(item => item && item.redFilePath)
+                .filter(Boolean));
+            for (const res of paths) {
+                // the client keeps .red files under a .black name
+                const red = ShipModelHelper.resource(res) || ShipModelHelper.resource(res.replace(/\.red$/i, '.black'));
+                const root = red !== undefined ? new RedFile(red).root : undefined;
+                if (root !== undefined) {
+                    effects.push(root);
+                } else {
+                    log.warn(`[SOF] Couldn't read the effect ${res}`);
+                }
+            }
+        } catch (err) {
+            log.warn(`[SOF] Couldn't read the effects of ${hull}`, err.message);
+            effects = [];
+        }
+        cache.set(cacheKey, effects);
+        return effects;
     }
 
     // the faction whose look a ship has with a SKIN (its own faction when skinId is undefined)
