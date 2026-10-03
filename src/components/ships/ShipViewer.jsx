@@ -53,8 +53,8 @@ function reflectionIntensity(name) {
     return /^m/.test(name || '') ? 1.4 : 1.55;
 }
 // The client's exposure is set as it plays, from the picture's brightness; the viewer's is fixed, set by eye (the
-// Apocalypse, Rifter and Golem in their races' nebulas).
-const EXPOSURE = 0.3;
+// Tengu, Apocalypse and Rifter in their races' nebulas).
+const EXPOSURE = 0.9;
 
 // The client's tone mapping (postprocess/tonemapping: Uncharted 2's curve, white point 11.2), in place of three.js's
 // custom one, which the viewer uses.

@@ -85,7 +85,7 @@ How the client paints a hull, as worked out from its files and its decompiled sh
   `7 − log2(2/a⁴ − 1)/4` (a = roughness²) × the scene's reflectionIntensity (1.55; 1.4 for m nebulas), its smallest
   mip along N as ambient; no other lights. Backdrop `<name>_cube_lowdetail.dds` (BC6H); each race in its preview
   nebula (`dx9/scene/preview/`). Tone mapping is Uncharted 2 (`H(2x)/H(11.2)`, the client's postprocess shader);
-  exposure (0.3), backdrop (2) and bloom are set by eye, as the client's exposure is automatic.
+  exposure (0.9), backdrop (2) and bloom are set by eye, as the client's exposure is automatic.
 - **Checking a change:** `npm start` bundles once (esbuild, no watch): run `node scripts/build.js --dev` and reload
   the window (Ctrl+R) to see edits.
 
