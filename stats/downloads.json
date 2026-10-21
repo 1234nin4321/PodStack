@@ -1,31 +1,31 @@
 {
   "repository": "1234nin4321/PodStack",
-  "updated": "2026-10-06T12:00:12.199Z",
+  "updated": "2026-10-21T10:05:15.483Z",
   "totals": {
     "installer": 5,
     "portable": 0,
-    "updates": 31,
-    "all": 36
+    "updates": 32,
+    "all": 37
   },
   "thisMonth": {
     "month": "2026-10",
     "installer": 5,
     "portable": 0,
-    "updates": 31,
-    "all": 36
+    "updates": 32,
+    "all": 37
   },
   "last30Days": {
     "installer": 5,
     "portable": 0,
-    "updates": 31,
-    "all": 36
+    "updates": 32,
+    "all": 37
   },
   "monthly": {
     "2026-10": {
       "installer": 5,
       "portable": 0,
-      "updates": 31,
-      "all": 36
+      "updates": 32,
+      "all": 37
     }
   },
   "history": {
@@ -48,6 +48,11 @@
       "installer": 5,
       "portable": 0,
       "updates": 31
+    },
+    "2026-10-21": {
+      "installer": 5,
+      "portable": 0,
+      "updates": 32
     }
   },
   "releases": {
@@ -55,9 +60,9 @@
       "published": "2026-10-03",
       "installer": 0,
       "portable": 0,
-      "updates": 3,
+      "updates": 4,
       "removed": false,
-      "lastSeen": "2026-10-06T12:00:12.199Z"
+      "lastSeen": "2026-10-21T10:05:15.483Z"
     },
     "v0.2.18-alpha": {
       "published": "2026-10-03",
@@ -65,7 +70,7 @@
       "portable": 0,
       "updates": 1,
       "removed": false,
-      "lastSeen": "2026-10-06T12:00:12.199Z"
+      "lastSeen": "2026-10-21T10:05:15.483Z"
     },
     "v0.2.17-alpha": {
       "published": "2026-10-03",
@@ -73,7 +78,7 @@
       "portable": 0,
       "updates": 3,
       "removed": false,
-      "lastSeen": "2026-10-06T12:00:12.199Z"
+      "lastSeen": "2026-10-21T10:05:15.483Z"
     },
     "v0.2.16-alpha": {
       "published": "2026-10-02",
@@ -81,7 +86,7 @@
       "portable": 0,
       "updates": 3,
       "removed": false,
-      "lastSeen": "2026-10-06T12:00:12.199Z"
+      "lastSeen": "2026-10-21T10:05:15.483Z"
     },
     "v0.2.15-alpha": {
       "published": "2026-10-02",
@@ -89,7 +94,7 @@
       "portable": 0,
       "updates": 1,
       "removed": false,
-      "lastSeen": "2026-10-06T12:00:12.199Z"
+      "lastSeen": "2026-10-21T10:05:15.483Z"
     },
     "v0.2.14-alpha": {
       "published": "2026-10-02",
@@ -97,7 +102,7 @@
       "portable": 0,
       "updates": 1,
       "removed": false,
-      "lastSeen": "2026-10-06T12:00:12.199Z"
+      "lastSeen": "2026-10-21T10:05:15.483Z"
     },
     "v0.2.13-alpha": {
       "published": "2026-10-02",
@@ -105,7 +110,7 @@
       "portable": 0,
       "updates": 2,
       "removed": false,
-      "lastSeen": "2026-10-06T12:00:12.199Z"
+      "lastSeen": "2026-10-21T10:05:15.483Z"
     },
     "v0.2.12-alpha": {
       "published": "2026-10-02",
@@ -113,7 +118,7 @@
       "portable": 0,
       "updates": 2,
       "removed": false,
-      "lastSeen": "2026-10-06T12:00:12.199Z"
+      "lastSeen": "2026-10-21T10:05:15.483Z"
     },
     "v0.2.11-alpha": {
       "published": "2026-10-02",
@@ -121,7 +126,7 @@
       "portable": 0,
       "updates": 0,
       "removed": false,
-      "lastSeen": "2026-10-06T12:00:12.199Z"
+      "lastSeen": "2026-10-21T10:05:15.483Z"
     },
     "v0.2.10-alpha": {
       "published": "2026-10-02",
@@ -129,7 +134,7 @@
       "portable": 0,
       "updates": 1,
       "removed": false,
-      "lastSeen": "2026-10-06T12:00:12.199Z"
+      "lastSeen": "2026-10-21T10:05:15.483Z"
     },
     "v0.2.9-alpha": {
       "published": "2026-10-02",
@@ -137,7 +142,7 @@
       "portable": 0,
       "updates": 1,
       "removed": false,
-      "lastSeen": "2026-10-06T12:00:12.199Z"
+      "lastSeen": "2026-10-21T10:05:15.483Z"
     },
     "v0.2.8-alpha": {
       "published": "2026-10-02",
@@ -145,7 +150,7 @@
       "portable": 0,
       "updates": 2,
       "removed": false,
-      "lastSeen": "2026-10-06T12:00:12.199Z"
+      "lastSeen": "2026-10-21T10:05:15.483Z"
     },
     "v0.2.7-alpha": {
       "published": "2026-10-02",
@@ -153,7 +158,7 @@
       "portable": 0,
       "updates": 1,
       "removed": false,
-      "lastSeen": "2026-10-06T12:00:12.199Z"
+      "lastSeen": "2026-10-21T10:05:15.483Z"
     },
     "v0.2.6-alpha": {
       "published": "2026-10-02",
@@ -161,7 +166,7 @@
       "portable": 0,
       "updates": 2,
       "removed": false,
-      "lastSeen": "2026-10-06T12:00:12.199Z"
+      "lastSeen": "2026-10-21T10:05:15.483Z"
     },
     "v0.2.5-alpha": {
       "published": "2026-10-02",
@@ -169,7 +174,7 @@
       "portable": 0,
       "updates": 1,
       "removed": false,
-      "lastSeen": "2026-10-06T12:00:12.199Z"
+      "lastSeen": "2026-10-21T10:05:15.483Z"
     },
     "v0.2.4-alpha": {
       "published": "2026-10-02",
@@ -177,7 +182,7 @@
       "portable": 0,
       "updates": 2,
       "removed": false,
-      "lastSeen": "2026-10-06T12:00:12.199Z"
+      "lastSeen": "2026-10-21T10:05:15.483Z"
     },
     "v0.2.3-alpha": {
       "published": "2026-10-02",
@@ -185,7 +190,7 @@
       "portable": 0,
       "updates": 1,
       "removed": false,
-      "lastSeen": "2026-10-06T12:00:12.199Z"
+      "lastSeen": "2026-10-21T10:05:15.483Z"
     },
     "v0.2.2-alpha": {
       "published": "2026-10-02",
@@ -193,7 +198,7 @@
       "portable": 0,
       "updates": 1,
       "removed": false,
-      "lastSeen": "2026-10-06T12:00:12.199Z"
+      "lastSeen": "2026-10-21T10:05:15.483Z"
     },
     "v0.2.1-alpha": {
       "published": "2026-10-02",
@@ -201,7 +206,7 @@
       "portable": 0,
       "updates": 1,
       "removed": false,
-      "lastSeen": "2026-10-06T12:00:12.199Z"
+      "lastSeen": "2026-10-21T10:05:15.483Z"
     },
     "v0.2.0-alpha": {
       "published": "2026-10-02",
@@ -209,7 +214,7 @@
       "portable": 0,
       "updates": 1,
       "removed": false,
-      "lastSeen": "2026-10-06T12:00:12.199Z"
+      "lastSeen": "2026-10-21T10:05:15.483Z"
     },
     "v0.1.10-alpha": {
       "published": "2026-10-02",
@@ -217,7 +222,7 @@
       "portable": 0,
       "updates": 1,
       "removed": false,
-      "lastSeen": "2026-10-06T12:00:12.199Z"
+      "lastSeen": "2026-10-21T10:05:15.483Z"
     }
   }
 }
